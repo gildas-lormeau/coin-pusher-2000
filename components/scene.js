@@ -27,7 +27,9 @@ const DIRECTIONAL_LIGHT_SHADOW_RIGHT = 5;
 const DIRECTIONAL_LIGHT_SHADOW_TOP = 5;
 const DIRECTIONAL_LIGHT_SHADOW_BOTTOM = -5;
 
-class GameScene {
+export default class {
+
+    static TIMESTEP = TIMESTEP;
 
     constructor({ containerElement, camera }) {
         this.#camera = camera;
@@ -244,10 +246,6 @@ class GameScene {
         this.#world.removeCollider(collider);
     }
 }
-
-GameScene.TIMESTEP = TIMESTEP;
-
-export default GameScene;
 
 async function getCompressedBase64String(uint8Array) {
     const dataStream = new Blob([uint8Array]).stream();
