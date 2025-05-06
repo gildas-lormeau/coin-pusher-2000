@@ -1,0 +1,75 @@
+import { LineSegments, Mesh, LineBasicMaterial, BoxGeometry, CylinderGeometry, EdgesGeometry, BufferGeometry, Float32BufferAttribute, Uint32BufferAttribute } from "three";
+import { VertexNormalsHelper } from "three/examples/jsm/helpers/VertexNormalsHelper";
+
+export default class {
+    constructor({ scene }) {
+        this.#scene = scene;
+    }
+
+    #scene;
+
+    initialize() {
+        this.#scene.forEachCollider(collider => {
+            const debugMaterial = new LineBasicMaterial({ color: 0xffffff * Math.random() });
+            const shape = collider.shapeType();
+            const position = collider.translation();
+            const rotation = collider.rotation();
+            let geometry;
+            if (shape === 1) {
+                const halfExtents = collider.halfExtents();
+                geometry = new BoxGeometry(halfExtents.x * 2, halfExtents.y * 2, halfExtents.z * 2);
+            } else if (shape === 6) {
+                const vertices = collider.vertices();
+                const indices = collider.indices();
+                geometry = new BufferGeometry();
+                geometry.setIndex(new Uint32BufferAttribute(indices, 1));
+                geometry.setAttribute("position", new Float32BufferAttribute(vertices, 3));
+                geometry.computeVertexNormals();
+            } else if (shape === 10) {
+                const radius = collider.radius();
+                const height = collider.halfHeight() * 2;
+                geometry = new CylinderGeometry(radius, radius, height, 6);
+            } else {
+                console.warn("Unsupported collider shape:", shape);
+            }
+            if (geometry) {
+                const wireframe = new LineSegments(new EdgesGeometry(geometry), debugMaterial);
+                wireframe.position.set(position.x, position.y, position.z);
+                wireframe.quaternion.set(rotation.x, rotation.y, rotation.z, rotation.w);
+                wireframe.material.depthTest = false;
+                wireframe.material.transparent = true;
+                wireframe.material.opacity = .5;
+                this.#scene.addObject(wireframe);
+                const normalMesh = new Mesh(geometry);
+                normalMesh.position.copy(position);
+                normalMesh.quaternion.copy(rotation);
+                const normalsHelper = new VertexNormalsHelper(normalMesh, 0.05, 0x00ff00);
+                normalsHelper.material.transparent = true;
+                normalsHelper.material.opacity = .25;
+                this.#scene.addObject(normalsHelper);
+                this.#collidersData.set(collider, { wireframe, normalsHelper, normalMesh });
+            }
+        });
+    }
+
+    #collidersData = new Map();
+
+    update() {
+        this.#scene.forEachCollider((collider) => {
+            const debugData = this.#collidersData.get(collider);
+            if (debugData) {
+                const { wireframe, normalsHelper, normalMesh } = debugData;
+                const position = collider.translation();
+                const rotation = collider.rotation();
+                wireframe.position.set(position.x, position.y, position.z);
+                wireframe.quaternion.set(rotation.x, rotation.y, rotation.z, rotation.w);
+                const isSleeping = collider.parent().isSleeping();
+                normalMesh.position.set(position.x, position.y, position.z);
+                normalMesh.quaternion.set(rotation.x, rotation.y, rotation.z, rotation.w);
+                const color = isSleeping ? 0x000000 : 0x00ff00;
+                normalsHelper.material.color.setHex(color);
+                normalsHelper.update();
+            }
+        });
+    }
+}

@@ -1,0 +1,21 @@
+{
+  "name": "coin-pusher-2000",
+  "version": "0.0.1",
+  "description": "A coin pusher game using Three.js and Rapier",
+  "author": "Gildas Lormeau",
+  "license": "AGPL",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@dimforge/rapier3d": "^0.16.2",
+    "three": "^0.176.0"
+  },
+  "devDependencies": {
+    "vite": "^6.3.5",
+    "vite-plugin-wasm": "^3.4.1"
+  }
+}
