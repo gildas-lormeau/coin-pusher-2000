@@ -7,7 +7,8 @@ export default defineConfig(() => {
         plugins: [wasm()],
         base: "./",
         build: {
-            outDir: "build"
+            outDir: "build",
+            target: "esnext"
         },
         server: {
             port: 3000,
