@@ -10,7 +10,7 @@ const STEP_DELAY = Scene.TIMESTEP * 1000;
 
 export default class {
 
-    static DEBUG_STEP_NO_DELAY = false;
+    static DEBUG_MAX_SPEED = false;
     static DEBUG_EMPTY_POOL = false;
     static DEBUG_COLLIDERS = false;
     static DEBUG_FPS = false;
@@ -95,7 +95,7 @@ export default class {
             Debug.update();
             this.#state.time += STEP_DELAY;
         }
-        if (this.DEBUG_STEP_NO_DELAY) {
+        if (this.DEBUG_MAX_SPEED) {
             setTimeout(() => this.#update(), 0);
         } else {
             requestAnimationFrame(() => this.#update());
