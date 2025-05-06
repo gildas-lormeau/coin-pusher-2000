@@ -4,7 +4,7 @@ import Cabinet from "./cabinet.js";
 import Pointer from "./pointer.js";
 import Camera from "./camera.js";
 
-import initialState from "./data/initial-state.json" assert { type: "json" };
+import initialState from "./data/initial-state.json" with { type: "json" };
 
 const STEP_DELAY = Scene.TIMESTEP * 1000;
 
