@@ -4,7 +4,12 @@ import wasm from "vite-plugin-wasm";
 
 export default defineConfig(() => {
     return {
-        plugins: [wasm()],
+        plugins: [wasm(), {
+            name: 'html-transform',
+            transformIndexHtml(html) {
+                return html.replace(/<head>/, `<head>\n  <base href="/build/">`);
+            }
+        }],
         base: "./",
         build: {
             outDir: "build",
