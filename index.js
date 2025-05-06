@@ -7,6 +7,7 @@ Game.DEBUG_FPS = true;
 Game.DEBUG_POLYGONS = false;
 Game.DEBUG_CONTROLS = true;
 Game.DEBUG_AUTOPLAY = false;
+Game.DEBUG_HIDE_CABINET = false;
 
 await Game.initialize();
 Game.run();

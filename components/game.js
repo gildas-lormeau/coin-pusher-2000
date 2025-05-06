@@ -17,6 +17,7 @@ export default class {
     static DEBUG_POLYGONS = false;
     static DEBUG_CONTROLS = false;
     static DEBUG_AUTOPLAY = false;
+    static DEBUG_HIDE_CABINET = false;
 
     static #state = {
         score: 0,
@@ -45,6 +46,7 @@ export default class {
             state: this.#state
         }));
         this.#cabinet.DEBUG_AUTOPLAY = this.DEBUG_AUTOPLAY;
+        this.#cabinet.DEBUG_HIDE_CABINET = this.DEBUG_HIDE_CABINET;
         await this.#cabinet.initialize();
         if (!this.DEBUG_EMPTY_POOL) {
             await this.load(initialState);

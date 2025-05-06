@@ -19,6 +19,7 @@ const MODEL_PATH = "./../assets/cabinet.glb";
 export default class {
 
     DEBUG_AUTOPLAY = false;
+    DEBUG_HIDE_CABINET = false;
 
     constructor({ scene, state }) {
         this.#scene = scene;
@@ -67,7 +68,12 @@ export default class {
     #reelsBox;
 
     async initialize() {
-        const mesh = await initializeModel({ scene: this.#scene, sensorListeners: this.#sensorListeners, colliders: this.#colliders });
+        const mesh = await initializeModel({
+            scene: this.#scene,
+            sensorListeners: this.#sensorListeners,
+            colliders: this.#colliders,
+            DEBUG_HIDE_CABINET: this.DEBUG_HIDE_CABINET
+        });
         this.#mesh = mesh;
         await InstancedMeshes.initialize({ scene: this.#scene });
         const wall = new Wall({ scene: this.#scene });
@@ -221,7 +227,7 @@ function recycleObject(object) {
     }
 }
 
-async function initializeModel({ scene, sensorListeners, colliders }) {
+async function initializeModel({ scene, sensorListeners, colliders, DEBUG_HIDE_CABINET }) {
     const cabinetModel = await scene.loadModel(MODEL_PATH);
     const mesh = cabinetModel.scene.children[0];
     const body = scene.createFixedBody();
@@ -271,6 +277,8 @@ async function initializeModel({ scene, sensorListeners, colliders }) {
             }
         }
     });
-    scene.addObject(mesh);
+    if (!DEBUG_HIDE_CABINET) {
+        scene.addObject(mesh);
+    }
     return mesh;
 }
