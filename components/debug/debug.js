@@ -18,12 +18,12 @@ export default class {
     static #debugPolygons;
     static #debugControls;
 
-    static async initialize({ scene, containerElement, camera }) {
+    static async initialize({ scene, containerElement, camera, joints }) {
         this.#scene = scene;
         this.#containerElement = containerElement;
         this.#camera = camera;
         if (this.DEBUG_COLLIDERS) {
-            this.#debugWireframes = new DebugWireframes({ scene: this.#scene });
+            this.#debugWireframes = new DebugWireframes({ scene: this.#scene, joints });
             this.#debugWireframes.initialize();
         }
         if (this.DEBUG_FPS) {
