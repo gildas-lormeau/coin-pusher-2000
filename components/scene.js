@@ -1,6 +1,6 @@
 import { Quaternion, Vector3, Euler, Scene, Color, WebGLRenderer, VSMShadowMap, AmbientLight, DirectionalLight } from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
-import { World, RigidBodyDesc, ColliderDesc, TriMeshFlags } from "@dimforge/rapier3d";
+import { World, RigidBodyDesc, ColliderDesc, TriMeshFlags, JointData } from "@dimforge/rapier3d";
 
 const BACKGROUND_COLOR = 0x222222;
 const NUM_SOLVER_ITERATIONS = 2;
@@ -161,6 +161,16 @@ export default class {
             collider.userData = userData;
         }
         return collider;
+    }
+
+    connectBodiesWithSphericalJoint({ body1, body2, anchor1, anchor2 }) {
+        const jointData = JointData.spherical(anchor1, anchor2);
+        return this.#world.createImpulseJoint(jointData, body1, body2);
+    }
+
+    connectBodiesWithRevoluteJoint({ body1, body2, anchor1, anchor2, axis }) {
+        const jointData = JointData.revolute(anchor1, anchor2, axis);
+        return this.#world.createImpulseJoint(jointData, body1, body2);
     }
 
     addObject(object) {
