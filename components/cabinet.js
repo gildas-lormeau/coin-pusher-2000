@@ -10,8 +10,6 @@ import ScoreBoard from "./scoreboard.js";
 import SensorGate from "./sensor-gate.js";
 import ReelsBox from "./reels-box.js";
 
-const POSITION_COLLIDERS_Y = 0;
-const POSITION_COLLIDERS_Z = 0;
 const RESTITUTION = 0;
 const MIN_POSITION_Y_OBJECTS = 0.05;
 const MODEL_PATH = "./../assets/cabinet.glb";
@@ -248,14 +246,14 @@ async function initializeModel({ scene, sensorListeners, colliders, DEBUG_HIDE_C
                     const vertexC = index.getX(indexVertex + 2);
                     vertices.push(
                         positionAttribute.getX(vertexA),
-                        positionAttribute.getY(vertexA) + POSITION_COLLIDERS_Y,
-                        positionAttribute.getZ(vertexA) + POSITION_COLLIDERS_Z,
+                        positionAttribute.getY(vertexA),
+                        positionAttribute.getZ(vertexA),
                         positionAttribute.getX(vertexB),
-                        positionAttribute.getY(vertexB) + POSITION_COLLIDERS_Y,
-                        positionAttribute.getZ(vertexB) + POSITION_COLLIDERS_Z,
+                        positionAttribute.getY(vertexB),
+                        positionAttribute.getZ(vertexB),
                         positionAttribute.getX(vertexC),
-                        positionAttribute.getY(vertexC) + POSITION_COLLIDERS_Y,
-                        positionAttribute.getZ(vertexC) + POSITION_COLLIDERS_Z
+                        positionAttribute.getY(vertexC),
+                        positionAttribute.getZ(vertexC)
                     );
                     indices.push(indexVertex, indexVertex + 1, indexVertex + 2);
                 }
