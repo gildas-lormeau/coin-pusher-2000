@@ -1,12 +1,16 @@
-import { LineSegments, Mesh, LineBasicMaterial, BoxGeometry, CylinderGeometry, EdgesGeometry, BufferGeometry, Float32BufferAttribute, Uint32BufferAttribute } from "three";
+import { Vector3, LineSegments, Mesh, LineBasicMaterial, BoxGeometry, CylinderGeometry, EdgesGeometry, BufferGeometry, SphereGeometry, Float32BufferAttribute, Uint32BufferAttribute, MeshBasicMaterial } from "three";
 import { VertexNormalsHelper } from "three/examples/jsm/helpers/VertexNormalsHelper";
 
 export default class {
-    constructor({ scene }) {
+    constructor({ scene, joints = [] }) {
         this.#scene = scene;
+        this.#joints = joints;
     }
 
     #scene;
+    #joints;
+    #collidersData = new Map();
+    #jointsData = new Map();
 
     initialize() {
         this.#scene.forEachCollider(collider => {
@@ -49,10 +53,19 @@ export default class {
                 this.#scene.addObject(normalsHelper);
                 this.#collidersData.set(collider, { wireframe, normalsHelper, normalMesh });
             }
+            this.#joints.forEach(joint => {
+                const sphereGeo = new SphereGeometry(0.001, 4, 4);
+                const sphereMat = new MeshBasicMaterial({ color: 0xff0000, depthTest: false });
+                const anchor1Mesh = new Mesh(sphereGeo, sphereMat);
+                anchor1Mesh.position.copy(joint.anchor1());
+                this.#scene.addObject(anchor1Mesh);
+                const anchor2Mesh = new Mesh(sphereGeo, sphereMat);
+                anchor2Mesh.position.copy(joint.anchor2());
+                this.#scene.addObject(anchor2Mesh);
+                this.#jointsData.set(joint, { anchor1Mesh, anchor2Mesh });
+            });
         });
     }
-
-    #collidersData = new Map();
 
     update() {
         this.#scene.forEachCollider((collider) => {
@@ -71,5 +84,21 @@ export default class {
                 normalsHelper.update();
             }
         });
+        this.#joints.forEach(joint => {
+            const debugData = this.#jointsData.get(joint);
+            if (debugData) {
+                const { anchor1Mesh, anchor2Mesh } = debugData;
+                const worldAnchor1 = localToWorld(joint.body1(), joint.anchor1());
+                const worldAnchor2 = localToWorld(joint.body2(), joint.anchor2());
+                anchor1Mesh.position.copy(worldAnchor1);
+                anchor2Mesh.position.copy(worldAnchor2);
+            }
+        });
     }
+}
+
+function localToWorld(body, localAnchor) {
+    const worldPoint = new Vector3().copy(body.translation());
+    worldPoint.add(new Vector3().copy(localAnchor).applyQuaternion(body.rotation()));
+    return worldPoint;
 }
