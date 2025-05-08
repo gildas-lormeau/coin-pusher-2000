@@ -25,7 +25,10 @@ export default class {
             const position = collider.translation();
             const rotation = collider.rotation();
             let geometry;
-            if (shape === 1) {
+            if (shape === 0) {
+                const radius = collider.radius();
+                geometry = new SphereGeometry(radius, 8, 8);
+            } else if (shape === 1) {
                 const halfExtents = collider.halfExtents();
                 geometry = new BoxGeometry(halfExtents.x * 2, halfExtents.y * 2, halfExtents.z * 2);
             } else if (shape === 6) {
@@ -64,7 +67,7 @@ export default class {
             }
         });
         this.#joints.forEach(({ joint, jointData }) => {
-            const sphereGeo = new SphereGeometry(0.001, 4, 4);
+            const sphereGeo = new SphereGeometry(0.0005, 4, 4);
             const body1 = joint.body1();
             const body2 = joint.body2();
             const sphereMatBody1 = new MeshBasicMaterial({ color: this.#bodiesColors.get(body1), depthTest: false });
