@@ -1,4 +1,5 @@
 import { Vector3, LineSegments, Mesh, LineBasicMaterial, BoxGeometry, CylinderGeometry, EdgesGeometry, BufferGeometry, SphereGeometry, Float32BufferAttribute, Uint32BufferAttribute, MeshBasicMaterial, Line } from "three";
+import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeometry.js';
 import { VertexNormalsHelper } from "three/examples/jsm/helpers/VertexNormalsHelper";
 
 export default class {
@@ -10,10 +11,16 @@ export default class {
     #scene;
     #joints;
     #collidersData = new Map();
+    #bodiesColors = new WeakMap();
 
     initialize() {
         this.#scene.forEachCollider(collider => {
-            const debugMaterial = new LineBasicMaterial({ color: 0xffffff * Math.random() });
+            let color = this.#bodiesColors.get(collider.parent());
+            if (!color) {
+                color = Math.round(0xffffff * Math.random());
+                this.#bodiesColors.set(collider.parent(), color);
+            }
+            const debugMaterial = new LineBasicMaterial({ color });
             const shape = collider.shapeType();
             const position = collider.translation();
             const rotation = collider.rotation();
@@ -27,15 +34,18 @@ export default class {
                 geometry = new BufferGeometry();
                 geometry.setIndex(new Uint32BufferAttribute(indices, 1));
                 geometry.setAttribute("position", new Float32BufferAttribute(vertices, 3));
-                geometry.computeVertexNormals();
             } else if (shape === 10) {
                 const radius = collider.radius();
                 const height = collider.halfHeight() * 2;
                 geometry = new CylinderGeometry(radius, radius, height, 6);
+            } else if (shape === 12) {
+                const halfExtents = collider.halfExtents();
+                geometry = new RoundedBoxGeometry(halfExtents.x * 2, halfExtents.y * 2, halfExtents.z * 2, 1, collider.roundRadius());
             } else {
                 console.warn("Unsupported collider shape:", shape);
             }
             if (geometry) {
+                geometry.computeVertexNormals();
                 const wireframe = new LineSegments(new EdgesGeometry(geometry), debugMaterial);
                 wireframe.position.set(position.x, position.y, position.z);
                 wireframe.quaternion.set(rotation.x, rotation.y, rotation.z, rotation.w);
@@ -46,7 +56,7 @@ export default class {
                 const normalMesh = new Mesh(geometry);
                 normalMesh.position.copy(position);
                 normalMesh.quaternion.copy(rotation);
-                const normalsHelper = new VertexNormalsHelper(normalMesh, 0.01, 0x00ff00);
+                const normalsHelper = new VertexNormalsHelper(normalMesh, 0.025);
                 normalsHelper.material.transparent = true;
                 normalsHelper.material.opacity = .25;
                 this.#scene.addObject(normalsHelper);
@@ -55,9 +65,12 @@ export default class {
         });
         this.#joints.forEach(({ joint, jointData }) => {
             const sphereGeo = new SphereGeometry(0.001, 4, 4);
-            const sphereMat = new MeshBasicMaterial({ color: 0xff0000, depthTest: false });
-            const anchor1Mesh = new Mesh(sphereGeo, sphereMat);
-            const anchor2Mesh = new Mesh(sphereGeo, sphereMat);
+            const body1 = joint.body1();
+            const body2 = joint.body2();
+            const sphereMatBody1 = new MeshBasicMaterial({ color: this.#bodiesColors.get(body1), depthTest: false });
+            const sphereMatBody2 = new MeshBasicMaterial({ color: this.#bodiesColors.get(body2), depthTest: false });
+            const anchor1Mesh = new Mesh(sphereGeo, sphereMatBody1);
+            const anchor2Mesh = new Mesh(sphereGeo, sphereMatBody2);
             const worldAnchor1 = localToWorld(joint.body1(), joint.anchor1());
             const worldAnchor2 = localToWorld(joint.body2(), joint.anchor2());
             anchor1Mesh.position.copy(worldAnchor1);
@@ -92,7 +105,7 @@ export default class {
                 const isSleeping = collider.parent().isSleeping();
                 normalMesh.position.set(position.x, position.y, position.z);
                 normalMesh.quaternion.set(rotation.x, rotation.y, rotation.z, rotation.w);
-                const color = isSleeping ? 0x000000 : 0x00ff00;
+                const color = isSleeping ? 0x000000 : this.#bodiesColors.get(collider.parent());
                 normalsHelper.material.color.setHex(color);
                 normalsHelper.update();
             }
