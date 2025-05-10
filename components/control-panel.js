@@ -34,7 +34,7 @@ export default class {
     }
 
     update(time) {
-        DropButtons.update(time);
+        // do nothing
     }
 
     get interactiveObjects() {

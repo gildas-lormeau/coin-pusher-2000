@@ -14,4 +14,12 @@ export default class {
             Digits.initialize({ scene })
         ]);
     }
+
+    static update(time) {
+        Cards.update();
+        Coins.update(time);
+        Tokens.update();
+        DropButtons.update(time);
+        Digits.update();
+    }
 }

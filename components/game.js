@@ -64,7 +64,8 @@ export default class {
         await Debug.initialize({
             scene: this.#scene,
             camera,
-            containerElement: this.#containerElement
+            containerElement: this.#containerElement,
+            joints: this.#cabinet.joints
         });
         onkeydown = async (event) => {
             if ((event.key === "s" || event.key === "S") && event.ctrlKey) {
@@ -90,9 +91,9 @@ export default class {
         if (!this.#stopped) {
             this.#cabinet.update(this.#state.time);
             this.#pointer.update();
+            Debug.update();
             this.#scene.step();
             this.#scene.render();
-            Debug.update();
             this.#state.time += STEP_DELAY;
         }
         if (this.DEBUG_MAX_SPEED) {

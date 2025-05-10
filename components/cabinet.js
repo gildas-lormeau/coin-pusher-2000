@@ -9,6 +9,7 @@ import CollisionsDetector from "./collisions-detector.js";
 import ScoreBoard from "./scoreboard.js";
 import SensorGate from "./sensor-gate.js";
 import ReelsBox from "./reels-box.js";
+import Excavator from "./excavator.js";
 
 const RESTITUTION = 0;
 const MIN_POSITION_Y_OBJECTS = 0.05;
@@ -64,6 +65,7 @@ export default class {
     #sensorGate;
     #collisionsDetector;
     #reelsBox;
+    #excavator;
 
     async initialize() {
         const mesh = await initializeModel({
@@ -116,18 +118,21 @@ export default class {
             }
         });
         await this.#reelsBox.initialize();
+        this.#excavator = new Excavator({
+            scene: this.#scene
+        });
+        await this.#excavator.initialize();
     }
 
     update(time) {
+        this.#pusher.update(time);
+        InstancedMeshes.update(time);
         this.#collisionsDetector.update();
         this.#scoreboard.update(time);
-        this.#pusher.update(time);
         this.#controlPanel.update(time);
-        Coins.update(time);
-        Tokens.update();
-        Cards.update();
         this.#sensorGate.update(time);
         this.#reelsBox.update(time);
+        this.#excavator.update();
         this.dynamicBodies.forEach(({ object, objects }) => {
             if (object.position.y < MIN_POSITION_Y_OBJECTS) {
                 console.warn("object recycled", object, structuredClone(object.position), structuredClone(object.rotation));
@@ -141,6 +146,10 @@ export default class {
 
     get interactiveObjects() {
         return this.#controlPanel.interactiveObjects;
+    }
+
+    get joints() {
+        return this.#excavator.joints;
     }
 
     get coinCount() {

@@ -173,6 +173,11 @@ export default class {
         return this.#world.createImpulseJoint(jointData, body1, body2);
     }
 
+    connectBodiesWithFixedJoint({ body1, body2, anchor1, anchor2, frame1, frame2 }) {
+        const jointData = JointData.fixed(anchor1, frame1, anchor2, frame2);
+        return this.#world.createImpulseJoint(jointData, body1, body2);
+    }
+
     addObject(object) {
         this.#scene.add(object);
     }
