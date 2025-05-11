@@ -81,10 +81,6 @@ export default class {
         this.#jawsJoint.joint.configureMotor(0, 0, 1, 0);
         this.#jawsJoint.joint.setLimits(...this.#jawsJoint.limits);
         parts.get(PLATFORM).body.setEnabledRotations(false, false, false);
-
-        setTimeout(() => {
-            this.pick();
-        }, 1000);
     }
 
     update(time) {
