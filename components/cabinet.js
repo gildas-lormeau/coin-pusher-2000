@@ -132,7 +132,7 @@ export default class {
         this.#controlPanel.update(time);
         this.#sensorGate.update(time);
         this.#reelsBox.update(time);
-        this.#excavator.update();
+        this.#excavator.update(time);
         this.dynamicBodies.forEach(({ object, objects }) => {
             if (object.position.y < MIN_POSITION_Y_OBJECTS) {
                 console.warn("object recycled", object, structuredClone(object.position), structuredClone(object.rotation));
