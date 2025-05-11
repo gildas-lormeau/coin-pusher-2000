@@ -126,8 +126,8 @@ function updateReelsBoxState({ reelsBox, time }) {
         case REELS_BOX_STATES.STOPPING:
             if (time - reelsBox.timeActive > REEL_ON_WON_DELAY) {
                 reelsBox.timeActive = -1;
-                reelsBox.state = REELS_BOX_STATES.SETTLED;
                 reelsBox.pendingSpins--;
+                reelsBox.state = REELS_BOX_STATES.SETTLED;
             }
             break;
         case REELS_BOX_STATES.SETTLED:
