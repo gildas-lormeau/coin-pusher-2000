@@ -26,7 +26,7 @@ const EXCAVATOR_STATES = {
     MOVING_DOWN: Symbol.for("excavator-moving-down"),
     PICKING: Symbol.for("excavator-picking"),
     MOVING_UP: Symbol.for("excavator-moving-up"),
-    MOVING_LEFT: Symbol.for("excavator-moving-left"),
+    MOVING_TO_DROP_ZONE: Symbol.for("excavator-moving-to-drop-zone"),
     EXTENDING_ARMS: Symbol.for("excavator-extending-arms"),
     DROPPING: Symbol.for("excavator-dropping"),
     CLOSING_JAWS: Symbol.for("excavator-closing-jaws"),
@@ -251,10 +251,10 @@ function updateExcavatorState({ excavator, joints, platform, time }) {
             if (getAngle(platformArmJoint) < -.5 && getAngle(armsJoint) > .3) {
                 platform.body.setEnabledRotations(false, true, false);
                 platformJoint.joint.configureMotor(-2, .2, MOTOR_STIFFNESS, MOTOR_STIFFNESS);
-                excavator.state = EXCAVATOR_STATES.MOVING_LEFT;
+                excavator.state = EXCAVATOR_STATES.MOVING_TO_DROP_ZONE;
             }
             break;
-        case EXCAVATOR_STATES.MOVING_LEFT:
+        case EXCAVATOR_STATES.MOVING_TO_DROP_ZONE:
             // console.log(getAngle(platform));
             if (getAngle(platformJoint) < -2) {
                 platform.body.setEnabledRotations(false, false, false);
