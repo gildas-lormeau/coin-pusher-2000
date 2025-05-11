@@ -21,7 +21,7 @@ const MOTOR_DAMPING = 20000;
 
 const EXCAVATOR_STATES = {
     IDLE: Symbol.for("excavator-idle"),
-    OPEN_JAWS: Symbol.for("excavator-open-jaws"),
+    ACTIVATING: Symbol.for("excavator-activating"),
     OPENING_JAWS: Symbol.for("excavator-opening-jaws"),
     MOVING_DOWN: Symbol.for("excavator-moving-down"),
     PICKING: Symbol.for("excavator-picking"),
@@ -154,7 +154,7 @@ export default class {
     pick() {
         this.#excavator.pendingPicks++;
         if (this.#excavator.state === EXCAVATOR_STATES.IDLE) {
-            this.#excavator.state = EXCAVATOR_STATES.OPEN_JAWS;
+            this.#excavator.state = EXCAVATOR_STATES.ACTIVATING;
         }
     }
 
@@ -209,7 +209,7 @@ function updateExcavatorState({ excavator, joints, platform, time }) {
     switch (excavator.state) {
         case EXCAVATOR_STATES.IDLE:
             break;
-        case EXCAVATOR_STATES.OPEN_JAWS:
+        case EXCAVATOR_STATES.ACTIVATING:
             platformJoint.joint.setLimits(...platformJoint.limits);
             platformArmJoint.joint.setLimits(...platformArmJoint.limits);
             armsJoint.joint.setLimits(...armsJoint.limits);
