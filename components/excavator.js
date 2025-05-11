@@ -37,6 +37,9 @@ const EXCAVATOR_STATES = {
 
 export default class {
 
+    static POSITION = POSITION;
+    static ROTATION_Y = ROTATION_Y;
+
     #scene;
     #excavator = {
         state: EXCAVATOR_STATES.IDLE,
