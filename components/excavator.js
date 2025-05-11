@@ -56,17 +56,16 @@ export default class {
         const position = new Vector3().fromArray(POSITION);
         const rotationY = ROTATION_Y;
         const { parts, joints } = await initializeModel({ scene });
+        const rotation = new Quaternion().setFromAxisAngle(new Vector3(0, 1, 0), rotationY);
         initializeColliders({
             scene,
             parts,
             joints,
             position,
-            rotation: new Quaternion().setFromAxisAngle(new Vector3(0, 1, 0), rotationY)
+            rotation
         });
         parts.forEach(({ body, meshes }) => {
-            meshes.forEach(({ data }) => {
-                this.#scene.addObject(data);
-            });
+            meshes.forEach(({ data }) => this.#scene.addObject(data));
             body.setEnabled(true);
         });
         parts.get(PLATFORM).body.setEnabledRotations(false, false, false);
