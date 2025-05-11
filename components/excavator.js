@@ -23,10 +23,10 @@ const EXCAVATOR_STATES = {
     IDLE: Symbol.for("excavator-idle"),
     OPEN_JAWS: Symbol.for("excavator-opening-jaws"),
     OPENING_JAWS: Symbol.for("excavator-open-jaws"),
-    MOVING_DOWN_JAWS: Symbol.for("excavator-moving-down-jaws"),
+    MOVING_DOWN: Symbol.for("excavator-moving-down-jaws"),
     PICKING: Symbol.for("excavator-picking"),
-    MOVING_UP_JAWS: Symbol.for("excavator-moving-up-jaws"),
-    MOVING_LEFT_JAWS: Symbol.for("excavator-moving-left-jaws"),
+    MOVING_UP: Symbol.for("excavator-moving-up-jaws"),
+    MOVING_LEFT: Symbol.for("excavator-moving-left-jaws"),
     EXTENDING_ARMS: Symbol.for("excavator-extending-arms"),
     DROPPING: Symbol.for("excavator-dropping"),
     CLOSING_JAWS: Symbol.for("excavator-closing-jaws"),
@@ -182,10 +182,10 @@ function updateExcavatorState({ excavator, joints, platform, time }) {
                 excavator.timePick = time;
                 platformArmJoint.joint.configureMotor(0.7, -1.2, MOTOR_STIFFNESS, MOTOR_DAMPING);
                 armsJoint.joint.configureMotor(-.5, -2.1, MOTOR_STIFFNESS, MOTOR_DAMPING);
-                excavator.state = EXCAVATOR_STATES.MOVING_DOWN_JAWS;
+                excavator.state = EXCAVATOR_STATES.MOVING_DOWN;
             }
             break;
-        case EXCAVATOR_STATES.MOVING_DOWN_JAWS:
+        case EXCAVATOR_STATES.MOVING_DOWN:
             // console.log(getAngle(platformArm), getAngle(arms));
             if (getAngle(platformArmJoint) > 0.7 && getAngle(armsJoint) < -0.5 && time - excavator.timePick > DELAY_PICK_WAIT) {
                 excavator.timePick = -1;
@@ -201,18 +201,18 @@ function updateExcavatorState({ excavator, joints, platform, time }) {
             if (getAngle(jaw1Joint) < .01 && getAngle(jaw2Joint) > -.01 && getAngle(jaw3Joint) < .01 && getAngle(jaw4Joint) > -.01) {
                 platformArmJoint.joint.configureMotor(-.5, -.6, MOTOR_STIFFNESS, MOTOR_DAMPING);
                 armsJoint.joint.configureMotor(.3, -3.3, MOTOR_STIFFNESS, MOTOR_DAMPING);
-                excavator.state = EXCAVATOR_STATES.MOVING_UP_JAWS;
+                excavator.state = EXCAVATOR_STATES.MOVING_UP;
             }
             break;
-        case EXCAVATOR_STATES.MOVING_UP_JAWS:
+        case EXCAVATOR_STATES.MOVING_UP:
             //console.log(getAngle(platformArm), getAngle(arms));
             if (getAngle(platformArmJoint) < -.5 && getAngle(armsJoint) > .3) {
                 platform.body.setEnabledRotations(false, true, false);
                 platformJoint.joint.configureMotor(-2, .2, MOTOR_STIFFNESS, MOTOR_STIFFNESS);
-                excavator.state = EXCAVATOR_STATES.MOVING_LEFT_JAWS;
+                excavator.state = EXCAVATOR_STATES.MOVING_LEFT;
             }
             break;
-        case EXCAVATOR_STATES.MOVING_LEFT_JAWS:
+        case EXCAVATOR_STATES.MOVING_LEFT:
             // console.log(getAngle(platform));
             if (getAngle(platformJoint) < -2) {
                 platform.body.setEnabledRotations(false, false, false);
