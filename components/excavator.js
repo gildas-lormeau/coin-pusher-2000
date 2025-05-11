@@ -40,22 +40,18 @@ export default class {
     #scene;
     #excavator = {
         state: EXCAVATOR_STATES.IDLE,
-        position: new Vector3(0, 0, 0),
-        rotationY: 0,
         timePick: -1,
         timeDrop: -1
     };
 
     constructor({ scene }) {
         this.#scene = scene;
-        this.#excavator.position.fromArray(POSITION);
-        this.#excavator.rotationY = ROTATION_Y;
     }
 
     async initialize() {
         const scene = this.#scene;
-        const position = this.#excavator.position;
-        const rotationY = this.#excavator.rotationY;
+        const position = new Vector3().fromArray(POSITION);
+        const rotationY = ROTATION_Y;
         const { parts, joints } = await initializeModel({ scene });
         initializeColliders({
             scene,
@@ -104,6 +100,12 @@ export default class {
                 data.quaternion.copy(body.rotation());
             })
         );
+    }
+
+    save() {
+        return {
+            state: this.#excavator.state,
+        };
     }
 
     pick() {
