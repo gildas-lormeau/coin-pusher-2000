@@ -103,9 +103,46 @@ export default class {
     }
 
     save() {
+        const joints = {};
+        const parts = {};
+        this.#excavator.joints.forEach((jointData, name) => {
+            joints[name] = {
+                jointHandle: jointData.joint.handle
+            };
+        });
+        this.#excavator.parts.forEach((partData, name) => {
+            const { body } = partData;
+            parts[name] = {
+                bodyHandle: body.handle
+            };
+        });
         return {
-            state: this.#excavator.state,
+            state: this.#excavator.state.description,
+            timePick: this.#excavator.timePick,
+            timeDrop: this.#excavator.timeDrop,
+            joints,
+            parts
         };
+    }
+
+    load(excavator) {
+        this.#excavator.state = Symbol.for(excavator.state);
+        this.#excavator.timePick = excavator.timePick;
+        this.#excavator.timeDrop = excavator.timeDrop;
+        this.#excavator.joints.forEach((jointData, name) => {
+            const loadedJoint = excavator.joints[name];
+            if (loadedJoint) {
+                jointData.joint = this.#scene.worldJoints.get(loadedJoint.jointHandle);
+                jointData.params.body1 = jointData.joint.body1();
+                jointData.params.body2 = jointData.joint.body2();
+            }
+        });
+        this.#excavator.parts.forEach((partData, name) => {
+            const loadedPart = excavator.parts[name];
+            if (loadedPart) {
+                partData.body = this.#scene.worldBodies.get(loadedPart.bodyHandle);
+            }
+        });
     }
 
     pick() {

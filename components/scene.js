@@ -253,6 +253,10 @@ export default class {
         return this.#world.colliders;
     }
 
+    get worldJoints() {
+        return this.#world.impulseJoints;
+    }
+
     removeWorldBody(body) {
         this.#world.removeRigidBody(body);
     }
