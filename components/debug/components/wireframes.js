@@ -11,6 +11,7 @@ export default class {
     #scene;
     #joints;
     #collidersData = new Map();
+    #jointsData = new WeakMap();
     #bodiesColors = new WeakMap();
 
     initialize() {
@@ -80,8 +81,6 @@ export default class {
             anchor2Mesh.position.copy(worldAnchor2);
             this.#scene.addObject(anchor1Mesh);
             this.#scene.addObject(anchor2Mesh);
-            jointData.anchor1Mesh = anchor1Mesh;
-            jointData.anchor2Mesh = anchor2Mesh;
             if (jointData.axis !== undefined) {
                 const startPoint = localToWorld(joint.body1(), joint.anchor1());
                 const worldAxis = jointData.axis.clone().applyQuaternion(joint.body1().rotation());
@@ -90,9 +89,14 @@ export default class {
                 const axisMaterial = new LineBasicMaterial({ color: 0xffff00, depthTest: false });
                 const axisLine = new Line(axisGeometry, axisMaterial);
                 this.#scene.addObject(axisLine);
-                jointData.axisLine = axisLine;
-                jointData.axis = jointData.axis;
             }
+            const debuData = {
+                anchor1Mesh,
+                anchor2Mesh,
+                axisLine: jointData.axisLine,
+                axis: jointData.axis,
+            };
+            this.#jointsData.set(joint, debuData);
         });
     }
 
@@ -113,8 +117,8 @@ export default class {
                 normalsHelper.update();
             }
         });
-        this.#joints.forEach(({ joint, jointData }) => {
-            const { anchor1Mesh, anchor2Mesh, axisLine, axis } = jointData;
+        this.#joints.forEach(({ joint }) => {
+            const { anchor1Mesh, anchor2Mesh, axisLine, axis } = this.#jointsData.get(joint);
             const worldAnchor1 = localToWorld(joint.body1(), joint.anchor1());
             const worldAnchor2 = localToWorld(joint.body2(), joint.anchor2());
             anchor1Mesh.position.copy(worldAnchor1);
