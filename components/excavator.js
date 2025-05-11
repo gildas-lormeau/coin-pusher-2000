@@ -21,12 +21,12 @@ const MOTOR_DAMPING = 20000;
 
 const EXCAVATOR_STATES = {
     IDLE: Symbol.for("excavator-idle"),
-    OPEN_JAWS: Symbol.for("excavator-opening-jaws"),
-    OPENING_JAWS: Symbol.for("excavator-open-jaws"),
-    MOVING_DOWN: Symbol.for("excavator-moving-down-jaws"),
+    OPEN_JAWS: Symbol.for("excavator-open-jaws"),
+    OPENING_JAWS: Symbol.for("excavator-opening-jaws"),
+    MOVING_DOWN: Symbol.for("excavator-moving-down"),
     PICKING: Symbol.for("excavator-picking"),
-    MOVING_UP: Symbol.for("excavator-moving-up-jaws"),
-    MOVING_LEFT: Symbol.for("excavator-moving-left-jaws"),
+    MOVING_UP: Symbol.for("excavator-moving-up"),
+    MOVING_LEFT: Symbol.for("excavator-moving-left"),
     EXTENDING_ARMS: Symbol.for("excavator-extending-arms"),
     DROPPING: Symbol.for("excavator-dropping"),
     CLOSING_JAWS: Symbol.for("excavator-closing-jaws"),
