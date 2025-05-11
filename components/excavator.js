@@ -76,9 +76,10 @@ export default class {
                 joint.setLimits(0, 0);
             }
         });
+        const jawsJoint = joints.get(JOINT_JAWS);
+        jawsJoint.joint.configureMotor(0, 0, 1, 0);
+        jawsJoint.joint.setLimits(...jawsJoint.limits);
         Object.assign(this.#excavator, { parts, joints });
-        this.#jawsJoint.joint.configureMotor(0, 0, 1, 0);
-        this.#jawsJoint.joint.setLimits(...this.#jawsJoint.limits);
     }
 
     update(time) {
