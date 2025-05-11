@@ -20130,6 +20130,7 @@
         },
         "excavator": {
             "state": "excavator-idle",
+            "pendingPicks": 0,
             "timePick": -1,
             "timeDrop": -1,
             "joints": {

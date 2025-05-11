@@ -43,6 +43,7 @@ export default class {
     #scene;
     #excavator = {
         state: EXCAVATOR_STATES.IDLE,
+        pendingPicks: 0,
         timePick: -1,
         timeDrop: -1
     };
@@ -121,6 +122,7 @@ export default class {
         });
         return {
             state: this.#excavator.state.description,
+            pendingPicks: this.#excavator.pendingPicks,
             timePick: this.#excavator.timePick,
             timeDrop: this.#excavator.timeDrop,
             joints,
@@ -130,6 +132,7 @@ export default class {
 
     load(excavator) {
         this.#excavator.state = Symbol.for(excavator.state);
+        this.#excavator.pendingPicks = excavator.pendingPicks;
         this.#excavator.timePick = excavator.timePick;
         this.#excavator.timeDrop = excavator.timeDrop;
         this.#excavator.joints.forEach((jointData, name) => {
@@ -149,7 +152,10 @@ export default class {
     }
 
     pick() {
-        this.#excavator.state = EXCAVATOR_STATES.OPEN_JAWS;
+        this.#excavator.pendingPicks++;
+        if (this.#excavator.state === EXCAVATOR_STATES.IDLE) {
+            this.#excavator.state = EXCAVATOR_STATES.OPEN_JAWS;
+        }
     }
 
     get joints() {
@@ -308,6 +314,7 @@ function updateExcavatorState({ excavator, joints, platform, time }) {
                 platformArmJoint.joint.configureMotor(0, -1.1, MOTOR_STIFFNESS, MOTOR_DAMPING);
                 armsJoint.joint.configureMotor(0, -3, MOTOR_STIFFNESS, MOTOR_DAMPING);
                 excavator.state = EXCAVATOR_STATES.PREPARING_IDLE;
+                excavator.pendingPicks--;
             }
             break;
         case EXCAVATOR_STATES.PREPARING_IDLE:
@@ -321,7 +328,11 @@ function updateExcavatorState({ excavator, joints, platform, time }) {
                 jaw2Joint.joint.setLimits(0, 0);
                 jaw3Joint.joint.setLimits(0, 0);
                 jaw4Joint.joint.setLimits(0, 0);
-                excavator.state = EXCAVATOR_STATES.IDLE;
+                if (reelsBox.pendingPicks > 0) {
+                    excavator.state = REELS_BOX_STATES.OPEN_JAWS;
+                } else {
+                    excavator.state = REELS_BOX_STATES.IDLE;
+                }
             }
             break;
         default:
