@@ -175,7 +175,8 @@ export default class {
             cards: Cards.save(),
             pusher: this.#pusher.save(),
             sensorGate: this.#sensorGate.save(),
-            reelsBox: this.#reelsBox.save()
+            reelsBox: this.#reelsBox.save(),
+            excavator: this.#excavator.save()
         };
     }
 
@@ -202,6 +203,7 @@ export default class {
         await this.#pusher.load(cabinet.pusher);
         this.#sensorGate.load(cabinet.sensorGate);
         this.#reelsBox.load(cabinet.reelsBox);
+        this.#excavator.load(cabinet.excavator);
     }
 
     #getObject(userData) {
