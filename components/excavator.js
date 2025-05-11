@@ -71,16 +71,16 @@ export default class {
             });
             body.setEnabled(true);
         });
-        Object.assign(this.#excavator, { parts, joints });
-        this.#excavator.joints.forEach(({ joint }) => {
+        parts.get(PLATFORM).body.setEnabledRotations(false, false, false);
+        joints.forEach(({ joint }) => {
             if (joint.configureMotor !== undefined) {
                 joint.configureMotor(0, 0, MOTOR_STIFFNESS, MOTOR_DAMPING);
                 joint.setLimits(0, 0);
             }
         });
+        Object.assign(this.#excavator, { parts, joints });
         this.#jawsJoint.joint.configureMotor(0, 0, 1, 0);
         this.#jawsJoint.joint.setLimits(...this.#jawsJoint.limits);
-        parts.get(PLATFORM).body.setEnabledRotations(false, false, false);
     }
 
     update(time) {
