@@ -14,8 +14,8 @@ const JOINT_JAW_1 = "joint-jaw-1";
 const JOINT_JAW_2 = "joint-jaw-2";
 const JOINT_JAW_3 = "joint-jaw-3";
 const JOINT_JAW_4 = "joint-jaw-4";
-const DELAY_PICK_WAIT = 2000;
-const DELAY_DROP_WAIT = 2000;
+const DELAY_PICK_WAIT = 1000;
+const DELAY_DROP_WAIT = 500;
 const MOTOR_STIFFNESS = 50000;
 const MOTOR_DAMPING = 20000;
 
