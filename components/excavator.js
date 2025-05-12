@@ -302,15 +302,15 @@ function updateExcavatorState({ excavator, joints, platform, time, onReadyToPick
             // console.log("=> moving to drop zone", getAngle(platformJoint));
             if (getAngle(platformJoint) < -2) {
                 platform.body.setEnabledRotations(false, false, false);
-                platformArmJoint.joint.configureMotor(.3, -1.6, MOTOR_STIFFNESS, MOTOR_DAMPING);
-                armsJoint.joint.configureMotor(-.9, -5.5, MOTOR_STIFFNESS, MOTOR_DAMPING);
+                platformArmJoint.joint.configureMotor(.3, -1.5, MOTOR_STIFFNESS, MOTOR_DAMPING);
+                armsJoint.joint.configureMotor(-.9, -8.5, MOTOR_STIFFNESS, MOTOR_DAMPING);
                 excavator.state = EXCAVATOR_STATES.EXTENDING_ARMS;
             }
             break;
         case EXCAVATOR_STATES.EXTENDING_ARMS:
             // FIXME
             // console.log("=> extending arms", getAngle(platformArmJoint), getAngle(armsJoint));
-            if (/*getAngle(platformArmJoint) > 0.3 &&*/ getAngle(armsJoint) < -.7) {
+            if (getAngle(platformArmJoint) > .1 && getAngle(armsJoint) < -.9) {
                 excavator.timeDrop = time;
                 jaw1Joint.joint.configureMotor(.5, 2.5, MOTOR_STIFFNESS, MOTOR_DAMPING);
                 jaw2Joint.joint.configureMotor(-.5, -2.5, MOTOR_STIFFNESS, MOTOR_DAMPING);
