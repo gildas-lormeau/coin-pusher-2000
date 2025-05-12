@@ -24,7 +24,7 @@ export default class {
                         wasColliding = true;
                     }
                 }
-                if (!wasColliding) {
+                if (!wasColliding && userData.onIntersect !== undefined) {
                     userData.onIntersect(otherUserData);
                 }
             }
