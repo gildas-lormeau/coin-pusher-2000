@@ -41,7 +41,6 @@ export default class {
     static ROTATION_Y = ROTATION_Y;
 
     #scene;
-    #mesh;
     #onReadyToPick;
     #onRecycleObject;
     #sensorColliders = new Map();
@@ -66,7 +65,6 @@ export default class {
             scene,
             sensorColliders: this.#sensorColliders
         });
-        this.#mesh = mesh;
         const rotation = new Quaternion().setFromAxisAngle(new Vector3(0, 1, 0), rotationY);
         const rotatedDropPosition = dropPosition.clone().applyQuaternion(rotation);
         this.dropPosition = rotatedDropPosition.add(position);
@@ -390,7 +388,7 @@ function getAngle(jointData) {
     );
 }
 
-async function initializeModel({ scene, sensorColliders }) {
+async function initializeModel({ scene }) {
     const cabinetModel = await scene.loadModel(MODEL_PATH);
     const mesh = cabinetModel.scene;
     const parts = new Map();
