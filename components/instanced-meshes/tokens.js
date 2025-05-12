@@ -85,6 +85,13 @@ export default class {
         }
     }
 
+    static depositToken({ position, rotation }) {
+        const instance = this.#instances[Math.floor(Math.random() * (TYPES - 1))].find(instance => !instance.used);
+        instance.used = true;
+        initializePosition({ instance, position, rotation });
+        instance.body.setEnabled(true);
+    }
+
     static recycle(instance) {
         instance.used = false;
         instance.body.setEnabled(false);

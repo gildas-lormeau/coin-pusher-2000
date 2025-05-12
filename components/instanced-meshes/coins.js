@@ -89,6 +89,14 @@ export default class {
         }
     }
 
+    static depositCoin({ position }) {
+        const instance = this.#instances.find(instance => !instance.used);
+        instance.used = true;
+        const rotation = new Vector3(0, 0, 0);
+        initializePosition({ instance, position, rotation });
+        instance.body.setEnabled(true);
+    }
+
     static depositCoins({ position, count }) {
         position.x = -0.3;
         for (let indexCoin = 0; indexCoin < count; indexCoin++) {

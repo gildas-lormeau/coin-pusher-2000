@@ -12,7 +12,7 @@ import ReelsBox from "./reels-box.js";
 import Excavator from "./excavator.js";
 
 const RESTITUTION = 0;
-const MIN_POSITION_Y_OBJECTS = 0.05;
+const MIN_POSITION_Y_OBJECTS = 0;
 const MODEL_PATH = "./../assets/cabinet.glb";
 
 export default class {
@@ -28,7 +28,7 @@ export default class {
     #scene;
     #state;
     #mesh;
-    #colliders = new Map();
+    #sensorColliders = new Map();
     #sensorListeners = {
         "left-trap-sensor": (userData) => {
             const object = this.#getObject(userData);
@@ -71,7 +71,7 @@ export default class {
         const mesh = await initializeModel({
             scene: this.#scene,
             sensorListeners: this.#sensorListeners,
-            colliders: this.#colliders,
+            sensorColliders: this.#sensorColliders,
             DEBUG_HIDE_CABINET: this.DEBUG_HIDE_CABINET
         });
         this.#mesh = mesh;
@@ -119,7 +119,20 @@ export default class {
         });
         await this.#reelsBox.initialize();
         this.#excavator = new Excavator({
-            scene: this.#scene
+            scene: this.#scene,
+            onReadyToPick: () => {
+                for (let i = 0; i < 25; i++) {
+                    Coins.depositCoin({
+                        position: this.#excavator.dropPosition
+                    });
+                }
+            },
+            onRecycleObject: userData => {
+                const object = this.#getObject(userData);
+                if (object) {
+                    recycleObject(object);
+                }
+            }
         });
         await this.#excavator.initialize();
     }
@@ -165,10 +178,10 @@ export default class {
     }
 
     async save() {
-        const collidersHandles = {};
-        this.#colliders.forEach((collider, key) => collidersHandles[key] = collider.handle);
+        const sensorCollidersHandles = {};
+        this.#sensorColliders.forEach((collider, key) => sensorCollidersHandles[key] = collider.handle);
         return {
-            collidersHandles,
+            sensorCollidersHandles,
             scene: await this.#scene.save(),
             coins: Coins.save(),
             tokens: Tokens.save(),
@@ -187,13 +200,13 @@ export default class {
                 const userData = child.material.userData;
                 const objectType = child.material.name;
                 if (userData.sensor) {
-                    const colliderHandle = cabinet.collidersHandles[objectType];
+                    const colliderHandle = cabinet.sensorCollidersHandles[objectType];
                     const collider = this.#scene.worldColliders.get(colliderHandle);
                     collider.userData = {
                         objectType: objectType,
                         onIntersect: this.#sensorListeners[objectType]
                     };
-                    this.#colliders.set(objectType, collider);
+                    this.#sensorColliders.set(objectType, collider);
                 }
             }
         });
@@ -236,7 +249,7 @@ function recycleObject(object) {
     }
 }
 
-async function initializeModel({ scene, sensorListeners, colliders, DEBUG_HIDE_CABINET }) {
+async function initializeModel({ scene, sensorListeners, sensorColliders, DEBUG_HIDE_CABINET }) {
     const cabinetModel = await scene.loadModel(MODEL_PATH);
     const mesh = cabinetModel.scene.children[0];
     const body = scene.createFixedBody();
@@ -281,7 +294,7 @@ async function initializeModel({ scene, sensorListeners, colliders, DEBUG_HIDE_C
                 }, body);
                 collider.setFrictionCombineRule(1);
                 if (userData.sensor) {
-                    colliders.set(name, collider);
+                    sensorColliders.set(name, collider);
                 }
             }
         }
