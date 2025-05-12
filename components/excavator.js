@@ -149,20 +149,24 @@ export default class {
     }
 
     load(excavator) {
-        this.#mesh.traverse((child) => {
-            if (child.isMesh) {
-                const userData = child.material.userData;
-                const objectType = child.material.name;
-                if (userData.sensor) {
-                    const colliderHandle = excavator.sensorCollidersHandles[objectType];
-                    const collider = this.#scene.worldColliders.get(colliderHandle);
-                    collider.userData = {
-                        objectType: objectType,
-                        onIntersect: this.#onRecycleObject
-                    };
-                    this.#sensorColliders.set(objectType, collider);
-                }
-            }
+        this.#excavator.parts.forEach((partData, name) => {
+            partData.meshes.forEach(({ data }) => {
+                data.traverse((child) => {
+                    if (child.isMesh) {
+                        const userData = child.material.userData;
+                        const objectType = child.material.name;
+                        if (userData.sensor) {
+                            const colliderHandle = excavator.sensorCollidersHandles[objectType];
+                            const collider = this.#scene.worldColliders.get(colliderHandle);
+                            collider.userData = {
+                                objectType: objectType,
+                                onIntersect: this.#onRecycleObject
+                            };
+                            this.#sensorColliders.set(objectType, collider);
+                        }
+                    }
+                });
+            });
         });
         this.#excavator.state = Symbol.for(excavator.state);
         this.#excavator.pendingPicks = excavator.pendingPicks;
