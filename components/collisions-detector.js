@@ -14,7 +14,7 @@ export default class {
     update() {
         const currentCollisions = new WeakMap();
         this.#scene.forEachCollision((userData, otherUserData) => {
-            if (userData.objectType !== undefined && otherUserData.objectType !== undefined) {
+            if (userData.objectType !== undefined && otherUserData.objectType !== undefined && (userData.onIntersect !== undefined || otherUserData.onIntersect !== undefined)) {
                 addCollision(currentCollisions, userData, otherUserData);
                 addCollision(currentCollisions, otherUserData, userData);
                 let wasColliding = false;
@@ -25,7 +25,7 @@ export default class {
                     }
                 }
                 if (!wasColliding) {
-                    userData.onIntersect?.(otherUserData);
+                    userData.onIntersect(otherUserData);
                 }
             }
         });
