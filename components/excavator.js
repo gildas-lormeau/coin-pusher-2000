@@ -420,11 +420,11 @@ async function initializeModel({ scene, sensorColliders }) {
                     indices.push(indexVertex, indexVertex + 1, indexVertex + 2);
                 }
                 const partData = getPart(parts, name);
+                partData.sensor = userData.sensor;
                 partData.meshes.push({
                     data: child,
                     vertices,
-                    indices,
-                    sensor: userData.sensor
+                    indices
                 });
             } else {
                 const name = child.userData.name;
@@ -466,13 +466,13 @@ function getPart(parts, name) {
 
 function initializeColliders({ scene, parts, joints, position, rotation, sensorColliders, onRecycleObject }) {
     parts.forEach((partData, name) => {
-        const { meshes, friction } = partData;
-        const body = partData.body = name === BASE_PART_NAME ? scene.createFixedBody() : scene.createDynamicBody();
+        const { meshes, friction, sensor } = partData;
+        const body = partData.body = name === BASE_PART_NAME || sensor ? scene.createFixedBody() : scene.createDynamicBody();
         body.setTranslation(position);
         body.setRotation(rotation);
         body.setEnabled(false);
         meshes.forEach(meshData => {
-            const { vertices, indices, sensor } = meshData;
+            const { vertices, indices } = meshData;
             if (vertices && indices) {
                 meshData.collider = scene.createTrimeshCollider({
                     vertices,
