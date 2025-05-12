@@ -81,6 +81,10 @@ export default class {
             anchor2Mesh.position.copy(worldAnchor2);
             this.#scene.addObject(anchor1Mesh);
             this.#scene.addObject(anchor2Mesh);
+            const debugData = {
+                anchor1Mesh,
+                anchor2Mesh
+            };
             if (jointData.axis !== undefined) {
                 const startPoint = localToWorld(joint.body1(), joint.anchor1());
                 const worldAxis = jointData.axis.clone().applyQuaternion(joint.body1().rotation());
@@ -89,14 +93,10 @@ export default class {
                 const axisMaterial = new LineBasicMaterial({ color: 0xffff00, depthTest: false });
                 const axisLine = new Line(axisGeometry, axisMaterial);
                 this.#scene.addObject(axisLine);
+                debugData.axisLine = axisLine;
+                debugData.axis = jointData.axis;
             }
-            const debuData = {
-                anchor1Mesh,
-                anchor2Mesh,
-                axisLine: jointData.axisLine,
-                axis: jointData.axis,
-            };
-            this.#jointsData.set(joint, debuData);
+            this.#jointsData.set(joint, debugData);
         });
     }
 
@@ -136,6 +136,7 @@ export default class {
 }
 
 function localToWorld(body, localAnchor) {
+    console.log(body.translation());
     const worldPoint = new Vector3().copy(body.translation());
     worldPoint.add(new Vector3().copy(localAnchor).applyQuaternion(body.rotation()));
     return worldPoint;
