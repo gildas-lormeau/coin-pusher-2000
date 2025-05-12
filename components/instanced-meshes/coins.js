@@ -256,7 +256,7 @@ function initializePosition({ instance, hidden, position, rotation, slot = 1 }) 
             ]);
         }
         if (rotation) {
-            instance.rotation.setFromEuler(new Euler().fromArray(rotation));
+            instance.rotation.setFromEuler(new Euler(rotation.x, rotation.y, rotation.z));
         } else {
             const rotation = EULER_ROTATION.clone();
             rotation.x += Math.random() <= 0.5 ? Math.PI : 0;
