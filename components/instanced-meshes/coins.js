@@ -89,10 +89,9 @@ export default class {
         }
     }
 
-    static depositCoin({ position }) {
+    static depositCoin({ position, rotation = new Vector3(0, 0, 0) }) {
         const instance = this.#instances.find(instance => !instance.used);
         instance.used = true;
-        const rotation = new Vector3(0, 0, 0);
         initializePosition({ instance, position, rotation });
         instance.body.setEnabled(true);
     }
@@ -257,7 +256,7 @@ function initializePosition({ instance, hidden, position, rotation, slot = 1 }) 
             ]);
         }
         if (rotation) {
-            instance.rotation.copy(rotation);
+            instance.rotation.setFromEuler(new Euler().fromArray(rotation));
         } else {
             const rotation = EULER_ROTATION.clone();
             rotation.x += Math.random() <= 0.5 ? Math.PI : 0;

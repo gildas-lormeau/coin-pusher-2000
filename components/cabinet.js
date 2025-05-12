@@ -106,7 +106,7 @@ export default class {
         this.#sensorGate = new SensorGate({
             scene: this.#scene,
             onBonusWon: () => {
-                if (Math.random() < .5) {
+                if (Math.random() < .25) {
                     this.#state.score += 10;
                     this.#reelsBox.spinReels();
                 } else {
@@ -125,9 +125,20 @@ export default class {
         this.#excavator = new Excavator({
             scene: this.#scene,
             onReadyToPick: () => {
-                for (let i = 0; i < 25; i++) {
+                for (let i = 0; i < 20; i++) {
+                    const rotation = {
+                        x: (Math.random() - 0.5) * Math.PI / 4, 
+                        y: (Math.random() - 0.5) * Math.PI / 4, 
+                        z: (Math.random() - 0.5) * Math.PI / 4
+                    };
+                    const position = {
+                        x: this.#excavator.dropPosition.x + (Math.random() - 0.5) * 0.02,
+                        y: this.#excavator.dropPosition.y,
+                        z: this.#excavator.dropPosition.z + (Math.random() - 0.5) * 0.02
+                    };
                     Coins.depositCoin({
-                        position: this.#excavator.dropPosition
+                        position,
+                        rotation
                     });
                 }
             },

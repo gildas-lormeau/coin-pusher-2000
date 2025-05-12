@@ -303,7 +303,7 @@ function updateExcavatorState({ excavator, joints, platform, time, onReadyToPick
             if (getAngle(platformJoint) < -2) {
                 platform.body.setEnabledRotations(false, false, false);
                 platformArmJoint.joint.configureMotor(.3, -1.5, MOTOR_STIFFNESS, MOTOR_DAMPING);
-                armsJoint.joint.configureMotor(-.9, -8.5, MOTOR_STIFFNESS, MOTOR_DAMPING);
+                armsJoint.joint.configureMotor(-.9, -7.5, MOTOR_STIFFNESS, MOTOR_DAMPING);
                 excavator.state = EXCAVATOR_STATES.EXTENDING_ARMS;
             }
             break;
