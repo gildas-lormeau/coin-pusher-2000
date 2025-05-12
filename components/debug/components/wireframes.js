@@ -136,7 +136,6 @@ export default class {
 }
 
 function localToWorld(body, localAnchor) {
-    console.log(body.translation());
     const worldPoint = new Vector3().copy(body.translation());
     worldPoint.add(new Vector3().copy(localAnchor).applyQuaternion(body.rotation()));
     return worldPoint;
