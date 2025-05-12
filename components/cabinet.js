@@ -106,8 +106,12 @@ export default class {
         this.#sensorGate = new SensorGate({
             scene: this.#scene,
             onBonusWon: () => {
-                this.#state.score += 10;
-                this.#reelsBox.spinReels();
+                if (Math.random() < .5) {
+                    this.#state.score += 10;
+                    this.#reelsBox.spinReels();
+                } else {
+                    this.#excavator.pick();
+                }
             }
         });
         await this.#sensorGate.initialize();
