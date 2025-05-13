@@ -301,7 +301,7 @@ function updateExcavatorState({ excavator, joints, platform, time, onReadyToPick
             // console.log("=> moving up", getAngle(platformArmJoint), getAngle(armsJoint));
             if (getAngle(platformArmJoint) < -.5 && getAngle(armsJoint) > .3) {
                 platform.body.setEnabledRotations(false, true, false);
-                platformJoint.joint.configureMotor(-2, -.1, MOTOR_STIFFNESS, MOTOR_STIFFNESS);
+                platformJoint.joint.configureMotor(-2, -.5, MOTOR_STIFFNESS, MOTOR_STIFFNESS);
                 excavator.state = EXCAVATOR_STATES.MOVING_TO_DROP_ZONE;
                 excavator.delayMovingUp = time - excavator.timeMovingUp;
                 excavator.timeMovingUp = -1;
@@ -361,8 +361,8 @@ function updateExcavatorState({ excavator, joints, platform, time, onReadyToPick
             // console.log("=> moving to base", getAngle(platformJoint));
             if (getAngle(platformJoint) > -.01) {
                 platform.body.setEnabledRotations(false, false, false);
-                platformArmJoint.joint.configureMotor(0, -1.1, MOTOR_STIFFNESS, MOTOR_DAMPING);
-                armsJoint.joint.configureMotor(0, -3, MOTOR_STIFFNESS, MOTOR_DAMPING);
+                platformArmJoint.joint.configureMotor(0, -.9, MOTOR_STIFFNESS, MOTOR_DAMPING);
+                armsJoint.joint.configureMotor(0, -2.2, MOTOR_STIFFNESS, MOTOR_DAMPING);
                 excavator.state = EXCAVATOR_STATES.PREPARING_IDLE;
                 excavator.pendingPicks--;
             }
