@@ -15,9 +15,11 @@ const JOINT_JAW_2 = "joint-jaw-2";
 const JOINT_JAW_3 = "joint-jaw-3";
 const JOINT_JAW_4 = "joint-jaw-4";
 const DELAY_PICK_WAIT = 1000;
-const DELAY_DROP_WAIT = 500;
+const DELAY_DROP_WAIT = 750;
 const MOTOR_STIFFNESS = 50000;
 const MOTOR_DAMPING = 20000;
+const MAX_DELAY_MOVING_UP = 3400;
+const MIN_DELAY_MOVING_UP = 1800;
 
 const EXCAVATOR_STATES = {
     IDLE: Symbol.for("excavator-idle"),
@@ -48,7 +50,9 @@ export default class {
         state: EXCAVATOR_STATES.IDLE,
         pendingPicks: 0,
         timePick: -1,
-        timeDrop: -1
+        timeDrop: -1,
+        timeMovingUp: -1,
+        delayMovingUp: -1
     };
 
     constructor({ scene, onReadyToPick, onRecycleObject }) {
@@ -141,6 +145,8 @@ export default class {
             pendingPicks: this.#excavator.pendingPicks,
             timePick: this.#excavator.timePick,
             timeDrop: this.#excavator.timeDrop,
+            timeMovingUp: this.#excavator.timeMovingUp,
+            delayMovingUp: this.#excavator.delayMovingUp,
             joints,
             parts
         };
@@ -170,6 +176,8 @@ export default class {
         this.#excavator.pendingPicks = excavator.pendingPicks;
         this.#excavator.timePick = excavator.timePick;
         this.#excavator.timeDrop = excavator.timeDrop;
+        this.#excavator.timeMovingUp = excavator.timeMovingUp;
+        this.#excavator.delayMovingUp = excavator.delayMovingUp;
         this.#excavator.joints.forEach((jointData, name) => {
             const loadedJoint = excavator.joints[name];
             if (loadedJoint) {
@@ -286,6 +294,7 @@ function updateExcavatorState({ excavator, joints, platform, time, onReadyToPick
                 platformArmJoint.joint.configureMotor(-.5, -1, MOTOR_STIFFNESS, MOTOR_DAMPING);
                 armsJoint.joint.configureMotor(.3, -3.3, MOTOR_STIFFNESS, MOTOR_DAMPING);
                 excavator.state = EXCAVATOR_STATES.MOVING_UP;
+                excavator.timeMovingUp = time;
             }
             break;
         case EXCAVATOR_STATES.MOVING_UP:
@@ -294,21 +303,25 @@ function updateExcavatorState({ excavator, joints, platform, time, onReadyToPick
                 platform.body.setEnabledRotations(false, true, false);
                 platformJoint.joint.configureMotor(-2, -.1, MOTOR_STIFFNESS, MOTOR_STIFFNESS);
                 excavator.state = EXCAVATOR_STATES.MOVING_TO_DROP_ZONE;
+                excavator.delayMovingUp = time - excavator.timeMovingUp;
+                excavator.timeMovingUp = -1;
             }
             break;
         case EXCAVATOR_STATES.MOVING_TO_DROP_ZONE:
             // console.log("=> moving to drop zone", getAngle(platformJoint));
             if (getAngle(platformJoint) < -2) {
                 platform.body.setEnabledRotations(false, false, false);
-                platformArmJoint.joint.configureMotor(.3, -1.5, MOTOR_STIFFNESS, MOTOR_DAMPING);
-                armsJoint.joint.configureMotor(-.9, -7.5, MOTOR_STIFFNESS, MOTOR_DAMPING);
+                const additionalPlatformVelocity = Math.min(Math.max(excavator.delayMovingUp - MIN_DELAY_MOVING_UP, 0) / (MAX_DELAY_MOVING_UP - MIN_DELAY_MOVING_UP), 1) * .5;
+                platformArmJoint.joint.configureMotor(.3, -1.5 - additionalPlatformVelocity, MOTOR_STIFFNESS, MOTOR_DAMPING);
+                const additionalArmsVelocity = Math.min(Math.max(excavator.delayMovingUp - MIN_DELAY_MOVING_UP, 0) / (MAX_DELAY_MOVING_UP - MIN_DELAY_MOVING_UP), 1) * 2.5;
+                excavator.delayMovingUp = -1;
+                armsJoint.joint.configureMotor(-.9, -6.5 - additionalArmsVelocity, MOTOR_STIFFNESS, MOTOR_DAMPING);
                 excavator.state = EXCAVATOR_STATES.EXTENDING_ARMS;
             }
             break;
         case EXCAVATOR_STATES.EXTENDING_ARMS:
-            // FIXME
-            // console.log("=> extending arms", getAngle(platformArmJoint), getAngle(armsJoint));
-            if (getAngle(platformArmJoint) > .1 && getAngle(armsJoint) < -.9) {
+            // console.log("=> extending arms", getAngle(armsJoint));
+            if (getAngle(armsJoint) < -.9) {
                 excavator.timeDrop = time;
                 jaw1Joint.joint.configureMotor(.5, 2.5, MOTOR_STIFFNESS, MOTOR_DAMPING);
                 jaw2Joint.joint.configureMotor(-.5, -2.5, MOTOR_STIFFNESS, MOTOR_DAMPING);
