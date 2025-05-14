@@ -86,7 +86,6 @@ export default class {
             body.setEnabled(true);
         });
         parts.get(PLATFORM).body.setEnabledRotations(false, false, false);
-        const jawsJoint = joints.get(JOINT_JAWS);
         Object.assign(this.#excavator, { parts, joints });
         this.#platformArmJoint.joint.configureMotor(0, -1.2, MOTOR_STIFFNESS, MOTOR_DAMPING);
         this.#armsJoint.joint.configureMotor(0, -3.8, MOTOR_STIFFNESS, MOTOR_DAMPING);
@@ -100,7 +99,6 @@ export default class {
                 platformJoint: this.#platformJoint,
                 platformArmJoint: this.#platformArmJoint,
                 armsJoint: this.#armsJoint,
-                jawsJoint: this.#jawsJoint,
                 jaw1Joint: this.#jaw1Joint,
                 jaw2Joint: this.#jaw2Joint,
                 jaw3Joint: this.#jaw3Joint,
@@ -243,7 +241,7 @@ export default class {
 }
 
 function updateExcavatorState({ excavator, joints, platform, time, onReadyToPick }) {
-    const { platformJoint, platformArmJoint, armsJoint, jawsJoint, jaw1Joint, jaw2Joint, jaw3Joint, jaw4Joint } = joints;
+    const { platformJoint, platformArmJoint, armsJoint, jaw1Joint, jaw2Joint, jaw3Joint, jaw4Joint } = joints;
     switch (excavator.state) {
         case EXCAVATOR_STATES.IDLE:
             break;
@@ -378,12 +376,6 @@ function getAngle(jointData) {
         axisWorld.x * relativeRotation.x + axisWorld.y * relativeRotation.y + axisWorld.z * relativeRotation.z,
         relativeRotation.w
     );
-}
-
-function setEnabled({ parts }, enabled) {
-    parts.forEach(({ body }) => {
-        body.setEnabled(enabled);
-    });
 }
 
 async function initializeModel({ scene }) {
