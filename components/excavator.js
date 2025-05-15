@@ -306,7 +306,7 @@ function updateExcavatorState({ excavator, joints, platform, time, onReadyToPick
             break;
         case EXCAVATOR_STATES.EXTENDING_ARMS:
             // console.log("=> extending arms", getAngle(armsJoint));
-            if (getAngle(armsJoint) < -.9) {
+            if (getAngle(armsJoint) < -.8) {
                 excavator.timeDrop = time;
                 jaw1Joint.joint.configureMotor(.5, 2.5, MOTOR_STIFFNESS, MOTOR_DAMPING);
                 jaw2Joint.joint.configureMotor(-.5, -2.5, MOTOR_STIFFNESS, MOTOR_DAMPING);
