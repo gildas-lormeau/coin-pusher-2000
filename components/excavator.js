@@ -65,7 +65,7 @@ export default class {
         const scene = this.#scene;
         const position = new Vector3().fromArray(POSITION);
         const rotationY = ROTATION_Y;
-        const { mesh, parts, joints, dropPosition } = await initializeModel({
+        const { parts, joints, dropPosition } = await initializeModel({
             scene,
             sensorColliders: this.#sensorColliders
         });
@@ -434,7 +434,6 @@ async function initializeModel({ scene }) {
         }
     });
     return {
-        mesh,
         parts,
         joints,
         dropPosition
