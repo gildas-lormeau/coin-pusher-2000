@@ -64,6 +64,10 @@ export default class {
         }
         for (const instance of this.#instances) {
             if (instance.used) {
+                if (instance.pendingImpulse && instance.body.mass() > 0) {
+                    instance.body.applyImpulse(instance.pendingImpulse, true);
+                    instance.pendingImpulse = null;
+                }
                 update({
                     instance,
                     meshes: this.#meshes
@@ -89,11 +93,15 @@ export default class {
         }
     }
 
-    static depositCoin({ position, rotation = new Vector3(0, 0, 0) }) {
+    static depositCoin({ position, rotation = new Vector3(0, 0, 0), impulse }) {
         const instance = this.#instances.find(instance => !instance.used);
         instance.used = true;
         initializePosition({ instance, position, rotation });
         instance.body.setEnabled(true);
+        if (impulse) {
+            instance.pendingImpulse = impulse.clone();
+        }
+        return instance;
     }
 
     static depositCoins({ position, count }) {

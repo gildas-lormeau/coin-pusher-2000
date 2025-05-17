@@ -10,6 +10,7 @@ import ScoreBoard from "./scoreboard.js";
 import SensorGate from "./sensor-gate.js";
 import ReelsBox from "./reels-box.js";
 import Excavator from "./excavator.js";
+import Tower from "./tower.js";
 
 const RESTITUTION = 0;
 const MIN_POSITION_Y_OBJECTS = 0;
@@ -66,6 +67,7 @@ export default class {
     #collisionsDetector;
     #reelsBox;
     #excavator;
+    #tower;
 
     async initialize() {
         const mesh = await initializeModel({
@@ -164,6 +166,14 @@ export default class {
             }
         });
         await this.#excavator.initialize();
+        this.#tower = new Tower({
+            scene: this.#scene,
+            onShootCoin: ({ position, impulse }) => {
+                Coins.depositCoin({ position: position, impulse });
+                this.#state.coinsInPool++;
+            }
+        });
+        await this.#tower.initialize();
     }
 
     update(time) {
@@ -175,6 +185,7 @@ export default class {
         this.#sensorGate.update(time);
         this.#reelsBox.update(time);
         this.#excavator.update(time);
+        this.#tower.update(time);
         this.dynamicBodies.forEach(({ object, objects }) => {
             if (object.position.y < MIN_POSITION_Y_OBJECTS) {
                 console.warn("object recycled", object, structuredClone(object.position), structuredClone(object.rotation));
@@ -218,7 +229,8 @@ export default class {
             pusher: this.#pusher.save(),
             sensorGate: this.#sensorGate.save(),
             reelsBox: this.#reelsBox.save(),
-            excavator: this.#excavator.save()
+            excavator: this.#excavator.save(),
+            tower: this.#tower.save()
         };
     }
 
@@ -246,6 +258,7 @@ export default class {
         this.#sensorGate.load(cabinet.sensorGate);
         this.#reelsBox.load(cabinet.reelsBox);
         this.#excavator.load(cabinet.excavator);
+        this.#tower.load(cabinet.tower);
     }
 
     #getObject(userData) {
