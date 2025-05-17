@@ -64,7 +64,7 @@ export default class {
 
     update(time) {
         updateReelsBoxState({ reelsBox: this.#reelsBox, time });
-        this.#reelsBox.reels.forEach((reel, indexReel) => updateReelState({ reel, indexReel }));
+        this.#reelsBox.reels.forEach(reel => updateReelState({ reel }));
         if (this.#reelsBox.state === REELS_BOX_STATES.SETTLED) {
             this.#onBonusWon(this.#reelsBox.reels.map(reel => reel.index));
         }
@@ -140,7 +140,7 @@ function updateReelsBoxState({ reelsBox, time }) {
     }
 }
 
-function updateReelState({ reel, indexReel }) {
+function updateReelState({ reel }) {
     switch (reel.state) {
         case REEL_STATES.IDLE:
             break;
