@@ -6,6 +6,8 @@ const BASE_PART_NAME = "base";
 const INIT_POSITION_PART_NAME = "init-position";
 const POSITION_UP_Y = 0.1;
 const POSITION_DOWN_Y = 0;
+const ANGLE_IDLE = 0;
+const ANGLE_AMPLITUDE = Math.PI / 4;
 const DELTA_POSITION_STEP = 0.001;
 const DELAY_SHOOT = 200;
 const IMPULSE_STRENGTH = 0.0001;
@@ -14,9 +16,10 @@ const Y_AXIS = new Vector3(0, 1, 0);
 
 const TOWER_STATES = {
     IDLE: Symbol.for("tower-idle"),
-    ACTIVATING: Symbol.for("excavator-activating"),
-    SHOOTING: Symbol.for("excavator-shooting"),
-    MOVING_DOWN: Symbol.for("excavator-moving-down")
+    ACTIVATING: Symbol.for("tower-activating"),
+    SHOOTING_COINS: Symbol.for("tower-shooting-coins"),
+    SHOOTING_COIN: Symbol.for("tower-shooting-coin"),
+    MOVING_DOWN: Symbol.for("tower-moving-down")
 };
 
 export default class {
@@ -27,6 +30,8 @@ export default class {
     #tower = {
         state: TOWER_STATES.IDLE,
         parts: new Map(),
+        position: POSITION_DOWN_Y,
+        angle: ANGLE_IDLE,
         oscillationCount: 0,
         timeActive: -1,
         timeLastShot: -1
@@ -44,28 +49,27 @@ export default class {
         this.#initPosition = initPosition;
         parts.forEach(({ meshes }) => meshes.forEach(({ data }) => this.#scene.addObject(data)));
         Object.assign(this.#tower, { parts });
+
+        // setTimeout(() => this.shootCoins(), 1000);
     }
 
     update(time) {
-        updateTowerState({
-            tower: this.#tower,
-            initPosition: this.#initPosition,
-            onShootCoin: this.#onShootCoin,
-            time
-        });
-        this.#tower.parts.forEach(({ meshes, body, position, rotation, nextKinematicTranslation, nextKinematicRotation }) => {
-            position.copy(body.translation());
-            rotation.copy(body.rotation());
+        updateTowerState({ tower: this.#tower, time });
+        const rotation = new Quaternion().setFromAxisAngle(Y_AXIS, this.#tower.angle);
+        if (this.#tower.state === TOWER_STATES.SHOOTING_COIN) {
+            const position = this.#initPosition.clone().setY(this.#initPosition.y + POSITION_UP_Y);
+            const impulse = IMPULSE_DIRECTION.clone().applyQuaternion(rotation).normalize().multiplyScalar(IMPULSE_STRENGTH);
+            this.#onShootCoin({ position, impulse });
+        }
+        this.#tower.parts.forEach(({ meshes, body }) => {
             meshes.forEach(({ data }) => {
-                data.position.copy(position);
-                data.quaternion.copy(rotation);
+                data.position.copy(body.translation());
+                data.quaternion.copy(body.rotation());
             });
-            if (nextKinematicTranslation) {
-                body.setNextKinematicTranslation(nextKinematicTranslation);
-            }
-            if (nextKinematicRotation) {
-                body.setNextKinematicRotation(nextKinematicRotation);
-            }
+            const position = new Vector3().sub(this.#initPosition).applyQuaternion(rotation).add(this.#initPosition);
+            position.y = this.#tower.position;
+            body.setNextKinematicTranslation(position);
+            body.setNextKinematicRotation(rotation);
         });
     }
 
@@ -79,22 +83,16 @@ export default class {
 
     save() {
         const parts = {};
-        this.#tower.parts.forEach(({ body, position, rotation, nextKinematicTranslation, nextKinematicRotation }, name) => {
+        this.#tower.parts.forEach(({ body }, name) => {
             parts[name] = {
-                bodyHandle: body.handle,
-                position: position.toArray(),
-                rotation: rotation.toArray()
+                bodyHandle: body.handle
             };
-            if (nextKinematicTranslation) {
-                parts[name].nextKinematicTranslation = nextKinematicTranslation.toArray();
-            }
-            if (nextKinematicRotation) {
-                parts[name].nextKinematicRotation = nextKinematicRotation.toArray();
-            }
         });
         return {
-            state: this.#tower.state,
+            state: this.#tower.state.description,
             parts,
+            position: this.#tower.position,
+            angle: this.#tower.angle,
             oscillationCount: this.#tower.oscillationCount,
             timeActive: this.#tower.timeActive,
             timeLastShot: this.#tower.timeLastShot
@@ -102,82 +100,58 @@ export default class {
     }
 
     load(tower) {
-        this.#tower.state = tower.state;
+        this.#tower.state = Symbol.for(tower.state);
         this.#tower.oscillationCount = tower.oscillationCount;
         this.#tower.timeActive = tower.timeActive;
         this.#tower.timeLastShot = tower.timeLastShot;
+        this.#tower.position = tower.position;
+        this.#tower.angle = tower.angle;
         this.#tower.parts.forEach((partData, name) => {
             const loadedPart = tower.parts[name];
             if (loadedPart) {
                 partData.body = this.#scene.worldBodies.get(loadedPart.bodyHandle);
-                partData.position.fromArray(loadedPart.position);
-                partData.rotation.fromArray(loadedPart.rotation);
-                if (loadedPart.nextKinematicTranslation) {
-                    partData.nextKinematicTranslation = new Vector3().fromArray(loadedPart.nextKinematicTranslation);
-                }
-                if (loadedPart.nextKinematicRotation) {
-                    partData.nextKinematicRotation = new Quaternion().fromArray(loadedPart.nextKinematicRotation);
-                }
             }
         });
     }
 }
 
-function updateTowerState({ tower, initPosition, time, onShootCoin }) {
-    const base = tower.parts.get("base");
-    const turret = tower.parts.get("turret");
-    const dynamicParts = [base, turret];
+function updateTowerState({ tower, time }) {
     switch (tower.state) {
         case TOWER_STATES.IDLE:
             break;
         case TOWER_STATES.ACTIVATING:
-            if (turret.position.y < POSITION_UP_Y) {
-                dynamicParts.forEach(part => {
-                    const position = part.position.clone();
-                    position.y += DELTA_POSITION_STEP;
-                    part.nextKinematicTranslation = new Vector3(part.position.x, position.y, part.position.z);
-                });
+            if (tower.position < POSITION_UP_Y) {
+                tower.position += DELTA_POSITION_STEP;
             } else {
                 tower.timeActive = time;
                 tower.timeLastShot = time;
-                turret.position.y = POSITION_UP_Y;
-                tower.state = TOWER_STATES.SHOOTING;
+                tower.position = POSITION_UP_Y;
+                tower.state = TOWER_STATES.SHOOTING_COINS;
             }
             break;
-        case TOWER_STATES.SHOOTING:
+        case TOWER_STATES.SHOOTING_COINS:
             if (tower.oscillationCount < 1) {
                 const phase = (time - tower.timeActive) * DELTA_POSITION_STEP;
-                const angle = Math.sin(phase) * Math.PI / 4;
-                const rotation = new Quaternion().setFromAxisAngle(Y_AXIS, angle);
-                const position = new Vector3().sub(initPosition).applyQuaternion(rotation).add(initPosition);
-                position.y = turret.position.y;
+                tower.angle = Math.sin(phase) * ANGLE_AMPLITUDE;
                 tower.oscillationCount = Math.floor(phase / (2 * Math.PI));
-                dynamicParts.forEach(part => {
-                    part.nextKinematicTranslation = position;
-                    part.nextKinematicRotation = rotation;
-                });
                 if (time - tower.timeLastShot > DELAY_SHOOT) {
-                    tower.timeLastShot = time;
-                    const position = initPosition.clone().setY(initPosition.y + turret.position.y);
-                    const impulse = IMPULSE_DIRECTION.clone().applyQuaternion(rotation).normalize().multiplyScalar(IMPULSE_STRENGTH);
-                    onShootCoin({ position, impulse });
+                    tower.state = TOWER_STATES.SHOOTING_COIN;
                 }
             } else {
                 tower.timeActive = -1;
-                turret.rotation.set(0, 0, 0, 1);
+                tower.angle = ANGLE_IDLE;
                 tower.state = TOWER_STATES.MOVING_DOWN;
             }
             break;
+        case TOWER_STATES.SHOOTING_COIN:
+            tower.timeLastShot = time;
+            tower.state = TOWER_STATES.SHOOTING_COINS;
+            break;
         case TOWER_STATES.MOVING_DOWN:
-            if (turret.position.y > 0) {
-                dynamicParts.forEach(part => {
-                    const position = part.position.clone();
-                    position.y -= DELTA_POSITION_STEP;
-                    part.nextKinematicTranslation = new Vector3(part.position.x, position.y, part.position.z);
-                    part.nextKinematicRotation = null;
-                });
+            if (tower.position > 0) {
+                tower.position -= DELTA_POSITION_STEP;
             } else {
-                turret.position.y = POSITION_DOWN_Y;
+                tower.position = POSITION_DOWN_Y;
                 tower.state = TOWER_STATES.IDLE;
             }
             break;
@@ -241,9 +215,7 @@ function getPart(parts, name) {
     let partData;
     if (!parts.has(name)) {
         partData = {
-            meshes: [],
-            position: new Vector3(),
-            rotation: new Quaternion()
+            meshes: []
         };
         parts.set(name, partData);
     } else {
