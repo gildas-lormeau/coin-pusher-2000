@@ -6,6 +6,7 @@ const ROTATION_Y = Math.PI;
 const RESTITUTION = 0;
 const BASE_PART_NAME = "base";
 const PLATFORM = "rotating-platform";
+const DROP_POSITION = "drop-position";
 const JOINT_PLATFORM = "joint-rotating-platform";
 const JOINT_ARM_PLATFORM = "joint-arm-rotating-platform";
 const JOINT_ARMS = "joint-arms";
@@ -43,8 +44,9 @@ export default class {
     static ROTATION_Y = ROTATION_Y;
 
     #scene;
-    #onReadyToPick;
+    #onPick;
     #onRecycleObject;
+    #dropPosition;
     #sensorColliders = new Map();
     #excavator = {
         state: EXCAVATOR_STATES.IDLE,
@@ -55,9 +57,9 @@ export default class {
         delayMovingUp: -1
     };
 
-    constructor({ scene, onReadyToPick, onRecycleObject }) {
+    constructor({ scene, onPick, onRecycleObject }) {
         this.#scene = scene;
-        this.#onReadyToPick = onReadyToPick;
+        this.#onPick = onPick;
         this.#onRecycleObject = onRecycleObject;
     }
 
@@ -71,7 +73,7 @@ export default class {
         });
         const rotation = new Quaternion().setFromAxisAngle(new Vector3(0, 1, 0), rotationY);
         const rotatedDropPosition = dropPosition.clone().applyQuaternion(rotation);
-        this.dropPosition = rotatedDropPosition.add(position);
+        this.#dropPosition = rotatedDropPosition.add(position);
         initializeColliders({
             scene,
             parts,
@@ -105,8 +107,9 @@ export default class {
                 jaw4Joint: this.#jaw4Joint
             },
             platform: this.#platform,
+            dropPosition: this.#dropPosition,
             time,
-            onReadyToPick: this.#onReadyToPick
+            onPick: this.#onPick
         });
         this.#excavator.parts.forEach(({ meshes, body }) =>
             meshes.forEach(({ data }) => {
@@ -240,7 +243,7 @@ export default class {
     }
 }
 
-function updateExcavatorState({ excavator, joints, platform, time, onReadyToPick }) {
+function updateExcavatorState({ excavator, joints, platform, time, dropPosition, onPick }) {
     const { platformJoint, platformArmJoint, armsJoint, jaw1Joint, jaw2Joint, jaw3Joint, jaw4Joint } = joints;
     switch (excavator.state) {
         case EXCAVATOR_STATES.IDLE:
@@ -275,7 +278,7 @@ function updateExcavatorState({ excavator, joints, platform, time, onReadyToPick
         case EXCAVATOR_STATES.PICKING:
             // console.log("=> picking", getAngle(jaw1Joint), getAngle(jaw2Joint), getAngle(jaw3Joint), getAngle(jaw4Joint));
             if (getAngle(jaw1Joint) < .01 && getAngle(jaw2Joint) > -.01 && getAngle(jaw3Joint) < .01 && getAngle(jaw4Joint) > -.01) {
-                onReadyToPick();
+                onPick(dropPosition);
                 platformArmJoint.joint.configureMotor(-.5, -1, MOTOR_STIFFNESS, MOTOR_DAMPING);
                 armsJoint.joint.configureMotor(.2, -4, MOTOR_STIFFNESS, MOTOR_DAMPING);
                 excavator.state = EXCAVATOR_STATES.MOVING_UP;
@@ -429,7 +432,7 @@ async function initializeModel({ scene }) {
                 pair: [userData["name-1"], userData["name-2"]],
                 limits: userData.limits
             });
-        } else if (child.name == "drop-position") {
+        } else if (child.name == DROP_POSITION) {
             dropPosition.copy(child.position);
         }
     });
