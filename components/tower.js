@@ -49,8 +49,6 @@ export default class {
         this.#initPosition = initPosition;
         parts.forEach(({ meshes }) => meshes.forEach(({ data }) => this.#scene.addObject(data)));
         Object.assign(this.#tower, { parts });
-
-        // setTimeout(() => this.shootCoins(), 1000);
     }
 
     update(time) {
