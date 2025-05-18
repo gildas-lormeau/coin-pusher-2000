@@ -112,7 +112,7 @@ export default class {
                 if (random < .25) {
                     this.#state.score += 10;
                     this.#reelsBox.spinReels();
-                } if (random < .5) {
+                } else if (random < .5) {
                     this.#excavator.pick();
                 } else {
                     this.#tower.shootCoins();
