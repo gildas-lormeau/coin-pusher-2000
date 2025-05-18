@@ -167,7 +167,7 @@ function updatePusherState({ pusher, time }) {
             if (pusher.door.position > BLOCKING_PLATFORM_POSITION_PRECISION) {
                 pusher.door.position = pusher.door.position - DOOR_SPEED;
             } else {
-                pusher.timeOffset = time - pusher.timePlatformStopped;
+                pusher.timeOffset += time - pusher.timePlatformStopped;
                 pusher.timePlatformStopped = -1;
                 pusher.door.position = 0;
                 pusher.pendingRewards.shift();
