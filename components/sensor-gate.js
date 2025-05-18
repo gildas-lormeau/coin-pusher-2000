@@ -11,7 +11,6 @@ const BONUS_FLASHING_DELAY = 150;
 const LETTER_FLASHING_DELAY = 100;
 const LETTERS_COUNT = 6;
 const POSITION = [0, 0.33, -0.27];
-const ROTATION = [0, 0, 0];
 const WIDTH = 0.6;
 const HEIGHT = 0.03;
 const DEPTH = 0.04;
@@ -89,7 +88,6 @@ export default class {
             height: HEIGHT,
             depth: DEPTH,
             position: [POSITION[0], POSITION[1], POSITION[2] - DEPTH],
-            rotation: ROTATION,
             sensor: true,
             userData: {
                 objectType: TYPE,
@@ -264,7 +262,6 @@ async function initializeModel({ scene }) {
         mesh.children[indexLetter].material = letterMaterial;
         materials.push(letterMaterial);
     }
-    mesh.position.set(...POSITION);
     scene.addObject(mesh);
     return materials;
 }
