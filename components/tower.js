@@ -12,7 +12,7 @@ const ANGLE_IDLE = 0;
 const ANGLE_AMPLITUDE = Math.PI / 4;
 const DELTA_POSITION_STEP = 0.002;
 const DELAY_SHOOT = 200;
-const IMPULSE_STRENGTH = 0.00005;
+const IMPULSE_STRENGTH = 0.000075;
 const IMPULSE_DIRECTION = new Vector3(0, 0, -1);
 const Y_AXIS = new Vector3(0, 1, 0);
 

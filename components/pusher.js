@@ -24,6 +24,7 @@ const FLOOR_RESTITUTION = 0;
 const PUSHER_WALL_WIDTH = 0.005;
 const BLOCKING_PLATFORM_POSITION_PRECISION = 0.0001;
 const DOOR_SPEED = 0.003;
+const DOOR_SOFT_CCD_PREDICTION = 0.001;
 const DELIVERY_POSITION = [0, 0.215, -0.25];
 const EDGE_HEIGHT = 0.01;
 const EDGE_DEPTH = 0.01;
@@ -253,6 +254,7 @@ function initializeColliders({ scene, parts }) {
         restitution: RESTITUTION,
         position: [0, -PUSHER_WALL_WIDTH / 2, (DEPTH - PUSHER_WALL_WIDTH) / 2 - door.position]
     }, door.body);
+    door.body.setSoftCcdPrediction(DOOR_SOFT_CCD_PREDICTION);
     scene.createCuboidCollider({
         width: FLOOR_WIDTH,
         height: FLOOR_HEIGHT,
