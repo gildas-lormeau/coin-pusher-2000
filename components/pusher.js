@@ -23,8 +23,7 @@ const FLOOR_FRICTION = 0.05;
 const FLOOR_RESTITUTION = 0;
 const PUSHER_WALL_WIDTH = 0.005;
 const BLOCKING_PLATFORM_POSITION_PRECISION = 0.00001;
-const DELIVERY_DELAY = 800;
-const DOOR_SPEED = 0.002;
+const DOOR_SPEED = 0.003;
 const DELIVERY_POSITION = [0, 0.215, -0.25];
 const EDGE_HEIGHT = 0.01;
 const EDGE_DEPTH = 0.01;
@@ -50,8 +49,8 @@ export default class {
     #pusher = {
         state: PUSHER_STATES.MOVING,
         pendingRewards: [],
-        timeDelivery: -1,
-        initialDeltaZ: -1,
+        timeOffset: 0,
+        timePlatformStopped: -1,
         reward: {
             coinCount: 0,
             cardCount: 0,
@@ -69,83 +68,12 @@ export default class {
     async initialize() {
         await initializeModel({ scene: this.#scene, pusher: this.#pusher });
         this.#pusher.platform.mesh.material.color.setHex(COLOR);
-        this.#pusher.platform.bodies = [
-            this.#scene.createKinematicBody(),
-            this.#scene.createKinematicBody(),
-            this.#scene.createKinematicBody(),
-            this.#scene.createKinematicBody()
-        ];
-        this.#scene.createCuboidCollider({
-            width: WIDTH,
-            height: PUSHER_WALL_WIDTH,
-            depth: DEPTH,
-            friction: FRICTION,
-            restitution: RESTITUTION,
-            position: [0, (HEIGHT - PUSHER_WALL_WIDTH) / 2, 0]
-        }, this.#pusher.platform.bodies[0]);
-        this.#scene.createCuboidCollider({
-            width: PUSHER_WALL_WIDTH,
-            height: HEIGHT - PUSHER_WALL_WIDTH,
-            depth: DEPTH,
-            friction: FRICTION,
-            restitution: RESTITUTION,
-            position: [-(WIDTH - PUSHER_WALL_WIDTH) / 2, -PUSHER_WALL_WIDTH / 2, 0]
-        }, this.#pusher.platform.bodies[1]);
-        this.#scene.createCuboidCollider({
-            width: PUSHER_WALL_WIDTH,
-            height: HEIGHT - PUSHER_WALL_WIDTH,
-            depth: DEPTH,
-            friction: FRICTION,
-            restitution: RESTITUTION,
-            position: [(WIDTH - PUSHER_WALL_WIDTH) / 2, -PUSHER_WALL_WIDTH / 2, 0]
-        }, this.#pusher.platform.bodies[2]);
-        this.#scene.createCuboidCollider({
-            width: WIDTH,
-            height: EDGE_HEIGHT,
-            depth: EDGE_DEPTH,
-            friction: FRICTION,
-            restitution: RESTITUTION,
-            position: [0, HEIGHT / 2 - PUSHER_WALL_WIDTH, DEPTH / 2],
-            rotation: [Math.PI / 4, 0, 0]
-        }, this.#pusher.platform.bodies[3]);
-        this.#pusher.door.body = this.#scene.createKinematicBody();
-        this.#scene.createCuboidCollider({
-            width: WIDTH - PUSHER_WALL_WIDTH * 2,
-            height: HEIGHT - PUSHER_WALL_WIDTH,
-            depth: PUSHER_WALL_WIDTH,
-            friction: FRICTION,
-            restitution: RESTITUTION,
-            position: [0, -PUSHER_WALL_WIDTH / 2, (DEPTH - PUSHER_WALL_WIDTH) / 2 - this.#pusher.door.position]
-        }, this.#pusher.door.body);
-        this.#scene.createCuboidCollider({
-            width: FLOOR_WIDTH,
-            height: FLOOR_HEIGHT,
-            depth: FLOOR_DEPTH,
-            friction: FLOOR_FRICTION,
-            restitution: FLOOR_RESTITUTION,
-            position: FLOOR_POSITION
-        });
-        this.#scene.createCuboidCollider({
-            width: WALL_WIDTH,
-            height: WALL_HEIGHT,
-            depth: WALL_DEPTH,
-            friction: FRICTION,
-            restitution: RESTITUTION,
-            position: LEFT_WALL_POSITION
-        });
-        this.#scene.createCuboidCollider({
-            width: WALL_WIDTH,
-            height: WALL_HEIGHT,
-            depth: WALL_DEPTH,
-            friction: FRICTION,
-            restitution: RESTITUTION,
-            position: RIGHT_WALL_POSITION
-        });
+        initializeColliders({ scene: this.#scene, parts: this.#pusher });
     }
 
     update(time) {
-        updatePusherState({ pusher: this.#pusher, time });
-        if (this.#pusher.state === PUSHER_STATES.DELIVER_BONUS) {
+        updatePusherState({ pusher: this.#pusher, time: time - this.#pusher.timeOffset });
+        if (this.#pusher.state === PUSHER_STATES.DELIVERING_BONUS) {
             this.#depositBonus({
                 reward: this.#pusher.reward,
                 position: new Vector3(...DELIVERY_POSITION)
@@ -176,8 +104,8 @@ export default class {
         return {
             state: this.#pusher.state.description,
             pendingRewards: this.#pusher.pendingRewards,
-            timeDelivery: this.#pusher.timeDelivery,
-            initialDeltaZ: this.#pusher.initialDeltaZ,
+            timeOffset: this.#pusher.timeOffset,
+            timePlatformStopped: this.#pusher.timePlatformStopped,
             reward: {
                 coinCount: this.#pusher.reward.coinCount,
                 cardCount: this.#pusher.reward.cardCount,
@@ -197,8 +125,8 @@ export default class {
     load(pusher) {
         this.#pusher.state = Symbol.for(pusher.state);
         this.#pusher.pendingRewards = pusher.pendingRewards;
-        this.#pusher.timeDelivery = pusher.timeDelivery;
-        this.#pusher.initialDeltaZ = pusher.initialDeltaZ;
+        this.#pusher.timeOffset = pusher.timeOffset;
+        this.#pusher.timePlatformStopped = pusher.timePlatformStopped;
         this.#pusher.reward = {
             coinCount: pusher.reward.coinCount,
             cardCount: pusher.reward.cardCount,
@@ -216,36 +144,31 @@ export default class {
 function updatePusherState({ pusher, time }) {
     switch (pusher.state) {
         case PUSHER_STATES.MOVING:
-            updatePlatformPosition({ platform: pusher.platform, time });
+            updatePusherPosition({ pusher, time });
             break;
         case PUSHER_STATES.PREPARING_DELIVERY:
-            const deltaZ = updatePlatformPosition({ platform: pusher.platform, time });
+            updatePusherPosition({ pusher, time });
             if (pusher.platform.position.z < POSITION[2] - DISTANCE + BLOCKING_PLATFORM_POSITION_PRECISION) {
                 pusher.platform.position.z = POSITION[2] - DISTANCE;
                 pusher.state = PUSHER_STATES.OPENING_DOOR;
-                pusher.initialDeltaZ = deltaZ;
+                pusher.timePlatformStopped = time;
             }
             break;
         case PUSHER_STATES.OPENING_DOOR:
             pusher.door.position = pusher.door.position + DOOR_SPEED;
             if (pusher.door.position > POSITION[2] + DEPTH) {
-                pusher.timeDelivery = time;
                 pusher.state = PUSHER_STATES.DELIVERING_BONUS;
             }
             break;
         case PUSHER_STATES.DELIVERING_BONUS:
-            if (time - pusher.timeDelivery > DELIVERY_DELAY) {
-                pusher.state = PUSHER_STATES.DELIVER_BONUS;
-            }
-            break;
-        case PUSHER_STATES.DELIVER_BONUS:
             pusher.state = PUSHER_STATES.CLOSING_DOOR;
             break;
         case PUSHER_STATES.CLOSING_DOOR:
             if (pusher.door.position > BLOCKING_PLATFORM_POSITION_PRECISION) {
                 pusher.door.position = pusher.door.position - DOOR_SPEED;
-            } else if (getDeltaZ(time) - pusher.initialDeltaZ < BLOCKING_PLATFORM_POSITION_PRECISION) {
-                pusher.initialDeltaZ = -1;
+            } else {
+                pusher.timeOffset = time - pusher.timePlatformStopped;
+                pusher.timePlatformStopped = -1;
                 pusher.door.position = 0;
                 pusher.pendingRewards.shift();
                 if (pusher.pendingRewards.length > 0) {
@@ -264,14 +187,8 @@ function updatePusherState({ pusher, time }) {
     }
 }
 
-function updatePlatformPosition({ platform, time }) {
-    const deltaZ = getDeltaZ(time);
-    platform.position.z = POSITION[2] + deltaZ;
-    return deltaZ;
-}
-
-function getDeltaZ(time) {
-    return Math.sin((time / 1000) * SPEED + START_ANGLE) * DISTANCE;
+function updatePusherPosition({ pusher, time }) {
+    pusher.platform.position.z = (Math.sin((time / 1000) * SPEED + START_ANGLE) * DISTANCE) + POSITION[2];
 }
 
 async function initializeModel({ scene, pusher }) {
@@ -286,4 +203,80 @@ async function initializeModel({ scene, pusher }) {
     pusher.door.mesh = model.scene.children[1];
     scene.addObject(pusher.platform.mesh);
     scene.addObject(pusher.door.mesh);
+}
+
+function initializeColliders({ scene, parts }) {
+    const { platform, door } = parts;
+    platform.bodies = [
+        scene.createKinematicBody(),
+        scene.createKinematicBody(),
+        scene.createKinematicBody(),
+        scene.createKinematicBody()
+    ];
+    scene.createCuboidCollider({
+        width: WIDTH,
+        height: PUSHER_WALL_WIDTH,
+        depth: DEPTH,
+        friction: FRICTION,
+        restitution: RESTITUTION,
+        position: [0, (HEIGHT - PUSHER_WALL_WIDTH) / 2, 0]
+    }, platform.bodies[0]);
+    scene.createCuboidCollider({
+        width: PUSHER_WALL_WIDTH,
+        height: HEIGHT - PUSHER_WALL_WIDTH,
+        depth: DEPTH,
+        friction: FRICTION,
+        restitution: RESTITUTION,
+        position: [-(WIDTH - PUSHER_WALL_WIDTH) / 2, -PUSHER_WALL_WIDTH / 2, 0]
+    }, platform.bodies[1]);
+    scene.createCuboidCollider({
+        width: PUSHER_WALL_WIDTH,
+        height: HEIGHT - PUSHER_WALL_WIDTH,
+        depth: DEPTH,
+        friction: FRICTION,
+        restitution: RESTITUTION,
+        position: [(WIDTH - PUSHER_WALL_WIDTH) / 2, -PUSHER_WALL_WIDTH / 2, 0]
+    }, platform.bodies[2]);
+    scene.createCuboidCollider({
+        width: WIDTH,
+        height: EDGE_HEIGHT,
+        depth: EDGE_DEPTH,
+        friction: FRICTION,
+        restitution: RESTITUTION,
+        position: [0, HEIGHT / 2 - PUSHER_WALL_WIDTH, DEPTH / 2],
+        rotation: [Math.PI / 4, 0, 0]
+    }, platform.bodies[3]);
+    door.body = scene.createKinematicBody();
+    scene.createCuboidCollider({
+        width: WIDTH - PUSHER_WALL_WIDTH * 2,
+        height: HEIGHT - PUSHER_WALL_WIDTH,
+        depth: PUSHER_WALL_WIDTH,
+        friction: FRICTION,
+        restitution: RESTITUTION,
+        position: [0, -PUSHER_WALL_WIDTH / 2, (DEPTH - PUSHER_WALL_WIDTH) / 2 - door.position]
+    }, door.body);
+    scene.createCuboidCollider({
+        width: FLOOR_WIDTH,
+        height: FLOOR_HEIGHT,
+        depth: FLOOR_DEPTH,
+        friction: FLOOR_FRICTION,
+        restitution: FLOOR_RESTITUTION,
+        position: FLOOR_POSITION
+    });
+    scene.createCuboidCollider({
+        width: WALL_WIDTH,
+        height: WALL_HEIGHT,
+        depth: WALL_DEPTH,
+        friction: FRICTION,
+        restitution: RESTITUTION,
+        position: LEFT_WALL_POSITION
+    });
+    scene.createCuboidCollider({
+        width: WALL_WIDTH,
+        height: WALL_HEIGHT,
+        depth: WALL_DEPTH,
+        friction: FRICTION,
+        restitution: RESTITUTION,
+        position: RIGHT_WALL_POSITION
+    });
 }
