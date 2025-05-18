@@ -3,14 +3,16 @@ import { Quaternion, Vector3 } from "three";
 const MODEL_PATH = "./../assets/tower.glb";
 const RESTITUTION = 0;
 const BASE_PART_NAME = "base";
+const STAND_PART_NAME = "stand";
+const TURRET_PART_NAME = "turret";
 const INIT_POSITION_PART_NAME = "init-position";
 const POSITION_UP_Y = 0.1;
 const POSITION_DOWN_Y = 0;
 const ANGLE_IDLE = 0;
 const ANGLE_AMPLITUDE = Math.PI / 4;
-const DELTA_POSITION_STEP = 0.001;
+const DELTA_POSITION_STEP = 0.002;
 const DELAY_SHOOT = 200;
-const IMPULSE_STRENGTH = 0.0001;
+const IMPULSE_STRENGTH = 0.00005;
 const IMPULSE_DIRECTION = new Vector3(0, 0, -1);
 const Y_AXIS = new Vector3(0, 1, 0);
 
@@ -29,6 +31,7 @@ export default class {
     #onShootCoin;
     #tower = {
         state: TOWER_STATES.IDLE,
+        pendingShots: 0,
         parts: new Map(),
         position: POSITION_DOWN_Y,
         angle: ANGLE_IDLE,
@@ -59,15 +62,24 @@ export default class {
             const impulse = IMPULSE_DIRECTION.clone().applyQuaternion(rotation).normalize().multiplyScalar(IMPULSE_STRENGTH);
             this.#onShootCoin({ position, impulse });
         }
-        this.#tower.parts.forEach(({ meshes, body }) => {
+        this.#tower.parts.forEach(({ meshes, body }, name) => {
             meshes.forEach(({ data }) => {
                 data.position.copy(body.translation());
                 data.quaternion.copy(body.rotation());
             });
-            const position = new Vector3().sub(this.#initPosition).applyQuaternion(rotation).add(this.#initPosition);
-            position.y = this.#tower.position;
-            body.setNextKinematicTranslation(position);
-            body.setNextKinematicRotation(rotation);
+            if (this.#tower.state !== TOWER_STATES.IDLE) {
+                const position = new Vector3();
+                if (name === TURRET_PART_NAME) {
+                    position.sub(this.#initPosition).applyQuaternion(rotation).add(this.#initPosition);
+                    position.y = this.#tower.position;
+                    body.setNextKinematicTranslation(position);
+                    body.setNextKinematicRotation(rotation);
+                }
+                if (name === STAND_PART_NAME) {
+                    position.y = this.#tower.position;
+                    body.setNextKinematicTranslation(position);
+                }
+            }
         });
     }
 
@@ -75,7 +87,7 @@ export default class {
         if (this.#tower.state === TOWER_STATES.IDLE) {
             this.#tower.state = TOWER_STATES.ACTIVATING;
         } else {
-            this.#tower.oscillationCount--;
+            this.#tower.pendingShots++;
         }
     }
 
@@ -92,6 +104,7 @@ export default class {
             position: this.#tower.position,
             angle: this.#tower.angle,
             oscillationCount: this.#tower.oscillationCount,
+            pendingShots: this.#tower.pendingShots,
             timeActive: this.#tower.timeActive,
             timeLastShot: this.#tower.timeLastShot
         };
@@ -100,6 +113,7 @@ export default class {
     load(tower) {
         this.#tower.state = Symbol.for(tower.state);
         this.#tower.oscillationCount = tower.oscillationCount;
+        this.#tower.pendingShots = tower.pendingShots;
         this.#tower.timeActive = tower.timeActive;
         this.#tower.timeLastShot = tower.timeLastShot;
         this.#tower.position = tower.position;
@@ -135,8 +149,13 @@ function updateTowerState({ tower, time }) {
                 if (time - tower.timeLastShot > DELAY_SHOOT) {
                     tower.state = TOWER_STATES.SHOOTING_COIN;
                 }
+            } else if (tower.pendingShots) {
+                tower.pendingShots--;
+                tower.timeActive = time;
+                tower.oscillationCount = 0;
             } else {
                 tower.timeActive = -1;
+                tower.oscillationCount = 0;
                 tower.angle = ANGLE_IDLE;
                 tower.state = TOWER_STATES.MOVING_DOWN;
             }
