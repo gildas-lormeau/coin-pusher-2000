@@ -81,11 +81,11 @@ export default class {
         }
         const position = this.#pusher.platform.position;
         const doorPosition = position.z - this.#pusher.door.position;
-        this.#nextKinematicDoorTranslation.set(position.x, position.y, doorPosition);
+        this.#nextKinematicDoorTranslation.copy(position).setZ(doorPosition);
         this.#pusher.platform.bodies.forEach(body => body.setNextKinematicTranslation(position));
         this.#pusher.door.body.setNextKinematicTranslation(this.#nextKinematicDoorTranslation);
-        this.#pusher.platform.mesh.position.set(position.x, position.y, position.z);
-        this.#pusher.door.mesh.position.set(position.x, position.y, doorPosition);
+        this.#pusher.platform.mesh.position.copy(position);
+        this.#pusher.door.mesh.position.copy(position).setZ(doorPosition);
     }
 
     deliverBonus(reward) {
@@ -137,9 +137,7 @@ export default class {
         this.#pusher.platform.position.z = pusher.position;
         this.#pusher.door.position = pusher.door.position;
     }
-
 }
-
 
 function updatePusherState({ pusher, time }) {
     switch (pusher.state) {
