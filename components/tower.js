@@ -128,8 +128,6 @@ export default class {
 
 function updateTowerState({ tower, time }) {
     switch (tower.state) {
-        case TOWER_STATES.IDLE:
-            break;
         case TOWER_STATES.ACTIVATING:
             if (tower.position < POSITION_UP_Y) {
                 tower.position += DELTA_POSITION_STEP;
