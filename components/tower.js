@@ -70,13 +70,12 @@ export default class {
             if (this.#tower.state !== TOWER_STATES.IDLE) {
                 const position = new Vector3();
                 if (name === TURRET_PART_NAME) {
-                    position.sub(this.#initPosition).applyQuaternion(rotation).add(this.#initPosition);
-                    position.y = this.#tower.position;
+                    position.sub(this.#initPosition).applyQuaternion(rotation).add(this.#initPosition).setY(this.#tower.position);
                     body.setNextKinematicTranslation(position);
                     body.setNextKinematicRotation(rotation);
                 }
                 if (name === STAND_PART_NAME) {
-                    position.y = this.#tower.position;
+                    position.setY(this.#tower.position);
                     body.setNextKinematicTranslation(position);
                 }
             }
