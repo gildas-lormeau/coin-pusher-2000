@@ -173,7 +173,6 @@ export default class {
             scene: this.#scene,
             onShootCoin: ({ position, impulse }) => {
                 Coins.depositCoin({ position: position, impulse });
-                this.#state.coinsInPool++;
             }
         });
         await this.#tower.initialize();
