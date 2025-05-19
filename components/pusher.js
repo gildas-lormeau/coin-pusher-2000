@@ -5,7 +5,6 @@ const DISTANCE = 0.1075;
 const WIDTH = 0.6;
 const HEIGHT = 0.05;
 const DEPTH = 0.6;
-const COLOR = 0xffffff;
 const FRICTION = 0;
 const RESTITUTION = .05;
 const POSITION = [0, 0.21, -0.22];
@@ -68,7 +67,6 @@ export default class {
 
     async initialize() {
         await initializeModel({ scene: this.#scene, pusher: this.#pusher });
-        this.#pusher.platform.mesh.material.color.setHex(COLOR);
         initializeColliders({ scene: this.#scene, parts: this.#pusher });
     }
 
