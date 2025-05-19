@@ -1,4 +1,3 @@
-const POSITION = [-.6, .6, -0.345];
 const MAX_ITEMS = 8;
 const REEL_MIN_SPEED = Math.PI / 20;
 const REEL_MAX_SPEED = Math.PI / 10;
@@ -198,7 +197,6 @@ async function initializeModel({ scene, reels }) {
         }
     });
     const mesh = sensorGateModel.scene;
-    mesh.position.set(...POSITION);
     for (let indexReel = 0; indexReel < reels.length; indexReel++) {
         reels[indexReel].mesh = mesh.children[indexReel];
     }
