@@ -175,8 +175,8 @@ function updateTowerState({ tower, time }) {
 }
 
 async function initializeModel({ scene }) {
-    const cabinetModel = await scene.loadModel(MODEL_PATH);
-    const mesh = cabinetModel.scene;
+    const model = await scene.loadModel(MODEL_PATH);
+    const mesh = model.scene;
     const parts = new Map();
     const initPosition = new Vector3();
     mesh.traverse((child) => {

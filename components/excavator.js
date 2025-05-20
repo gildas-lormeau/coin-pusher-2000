@@ -371,8 +371,8 @@ function getAngle(jointData) {
 }
 
 async function initializeModel({ scene }) {
-    const cabinetModel = await scene.loadModel(MODEL_PATH);
-    const mesh = cabinetModel.scene;
+    const model = await scene.loadModel(MODEL_PATH);
+    const mesh = model.scene;
     const parts = new Map();
     const joints = new Map();
     const dropPosition = new Vector3();
