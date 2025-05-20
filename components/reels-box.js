@@ -198,7 +198,7 @@ async function initializeModel({ scene, reels }) {
     });
     const mesh = sensorGateModel.scene;
     for (let indexReel = 0; indexReel < reels.length; indexReel++) {
-        reels[indexReel].mesh = mesh.children[indexReel];
+        reels[indexReel].mesh = mesh.children[indexReel + 1];
     }
     scene.addObject(mesh);
 }
