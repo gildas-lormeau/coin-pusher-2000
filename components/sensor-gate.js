@@ -1,10 +1,10 @@
 import Coins from "./instanced-meshes/coins.js";
 
 const DEFAULT_COLOR = 0xE7E7E7;
-const HIGHLIGHT_COLOR = 0xFF0000;
+const HIGHLIGHT_COLOR = 0xffffff;
 const DEFAULT_OPACITY = 0.1;
 const HIGHLIGHT_OPACITY = 0.25;
-const EMISSIVE_COLOR = 0xFF0000;
+const EMISSIVE_COLOR = 0xffffff;
 const EMISSIVE_INTENSITY = 0;
 const EMISSIVE_HIGHLIGHT_INTENSITY = 0.25;
 const BONUS_FLASHING_DELAY = 150;
