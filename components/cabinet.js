@@ -11,6 +11,7 @@ import SensorGate from "./sensor-gate.js";
 import ReelsBox from "./reels-box.js";
 import Excavator from "./excavator.js";
 import Tower from "./tower.js";
+import CoinRoller from "./coin-roller.js";
 
 const RESTITUTION = 0;
 const MIN_POSITION_Y_OBJECTS = 0;
@@ -68,6 +69,7 @@ export default class {
     #reelsBox;
     #excavator;
     #tower;
+    #coinRoller;
 
     async initialize() {
         const mesh = await initializeModel({
@@ -86,6 +88,9 @@ export default class {
                     Coins.dropCoin({ slot });
                     this.#state.coinsInPool--;
                 }
+            },
+            onPressActionButton: () => {
+                this.#coinRoller.triggerCoin();
             },
             onPressBonusButton: () => {
                 Coins.dropCoins({ count: 50 });
@@ -114,6 +119,8 @@ export default class {
                     this.#reelsBox.spinReels();
                 } else if (random < .5) {
                     this.#excavator.pick();
+                } else if (random < .75) {
+                    this.#coinRoller.shootCoin();
                 } else {
                     this.#tower.shootCoins();
                 }
@@ -172,10 +179,20 @@ export default class {
         this.#tower = new Tower({
             scene: this.#scene,
             onShootCoin: ({ position, impulse }) => {
-                Coins.depositCoin({ position: position, impulse });
+                Coins.depositCoin({ position, impulse });
             }
         });
         await this.#tower.initialize();
+        this.#coinRoller = new CoinRoller({
+            scene: this.#scene,
+            onInitializeCoin: ({ position, rotation }) => Coins.depositCoin({ position, rotation }),
+            onGetCoin: coinData => Coins.getCoin(coinData),
+            onRecycleCoin: coin => Coins.recycle(coin),
+            onBonusWon(bonus) {
+                Coins.dropCoins({ count: Math.pow(bonus + 1, 2) * 5 });
+            }
+        });
+        await this.#coinRoller.initialize();
     }
 
     update(time) {
@@ -188,6 +205,7 @@ export default class {
         this.#reelsBox.update(time);
         this.#excavator.update(time);
         this.#tower.update(time);
+        this.#coinRoller.update(time);
         this.dynamicBodies.forEach(({ object, objects }) => {
             if (object.position.y < MIN_POSITION_Y_OBJECTS) {
                 console.warn("object recycled", object, structuredClone(object.position), structuredClone(object.rotation));
@@ -232,7 +250,8 @@ export default class {
             sensorGate: this.#sensorGate.save(),
             reelsBox: this.#reelsBox.save(),
             excavator: this.#excavator.save(),
-            tower: this.#tower.save()
+            tower: this.#tower.save(),
+            coinRoller: this.#coinRoller.save()
         };
     }
 
@@ -261,6 +280,7 @@ export default class {
         this.#reelsBox.load(cabinet.reelsBox);
         this.#excavator.load(cabinet.excavator);
         this.#tower.load(cabinet.tower);
+        this.#coinRoller.load(cabinet.coinRoller);
     }
 
     #getObject(userData) {
