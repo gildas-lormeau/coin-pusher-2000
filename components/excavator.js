@@ -148,7 +148,7 @@ export default class {
                             const colliderHandle = excavator.sensorCollidersHandles[objectType];
                             const collider = this.#scene.worldColliders.get(colliderHandle);
                             collider.userData = {
-                                objectType: objectType,
+                                objectType,
                                 onIntersect: this.#onRecycleObject
                             };
                             this.#sensorColliders.set(objectType, collider);
