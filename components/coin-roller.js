@@ -1,19 +1,25 @@
 import { Vector3 } from "three";
 
 const SPEED = .001;
+const SPEED_TRAP = .002;
 const DISTANCE = 0.13;
+const DISTANCE_TRAP = 0.25;
 const START_ANGLE = -Math.PI / 2;
 const MODEL_PATH = "./../assets/coin-roller.glb";
 const RESTITUTION = 0.5;
 const LAUNCHER_PART_NAME = "launcher";
+const TRAP_PART_NAME = "trap";
+const TRAP_SENSOR_NAME = "trap-sensor";
 const INIT_POSITION = "init-position";
 const BONUS_VALUES = ["slot-3", "slot-2", "slot-1"];
-const COIN_IMPULSE_STRENGTH = 0.00002;
+const COIN_IMPULSE_STRENGTH = 0.00003;
 const COIN_IMPULSE = new Vector3(0, 0, -1).multiplyScalar(COIN_IMPULSE_STRENGTH);
 const MAX_DELAY_MOVING_COIN = 2000;
 const MIN_LAUNCHER_POSITION = 0.00001;
 const INITIALIZATION_COIN_POSITION = 0.14;
 const COIN_ROTATION = new Vector3(Math.PI / 2, 0, Math.PI / 2);
+const MIN_TRAP_POSITION = 0.0001;
+const MAX_TRAP_POSITION = 0.25 - MIN_TRAP_POSITION;
 
 const COIN_ROLLER_STATES = {
     IDLE: Symbol.for("coin-roller-idle"),
@@ -24,6 +30,8 @@ const COIN_ROLLER_STATES = {
     TRIGGERING_COIN: Symbol.for("coin-roller-triggering-coin"),
     DELIVERING_COIN: Symbol.for("coin-roller-delivering-coin"),
     MOVING_COIN: Symbol.for("coin-roller-moving-coin"),
+    OPENING_TRAP: Symbol.for("coin-roller-opening-trap"),
+    CLOSING_TRAP: Symbol.for("coin-roller-closing-trap"),
     PREPARING_TO_IDLE: Symbol.for("coin-roller-preparing-to-idle")
 };
 
@@ -31,8 +39,8 @@ export default class {
 
     #scene;
     #onInitializeCoin;
-    #onRecycleCoin;
     #onBonusWon;
+    #onCoinLost;
     #onGetCoin;
     #initPosition;
     #sensorColliders = new Map();
@@ -40,13 +48,13 @@ export default class {
         state: COIN_ROLLER_STATES.IDLE,
         pendingShots: 0,
         timeActive: -1,
-        timeMovingCoin: -1
+        timeMovingCoin: -1,
+        timeOpeningTrap: -1
     };
 
     constructor({ scene, onInitializeCoin, onRecycleCoin, onBonusWon, onGetCoin }) {
         this.#scene = scene;
         this.#onInitializeCoin = onInitializeCoin;
-        this.#onRecycleCoin = onRecycleCoin;
         this.#onBonusWon = (userData, slotName) => {
             const { state, coin } = this.#coinRoller;
             if (coin && userData.objectType === coin.objectType && userData.index === coin.index && state === COIN_ROLLER_STATES.MOVING_COIN) {
@@ -55,6 +63,10 @@ export default class {
                 this.#coinRoller.coin = null;
                 onBonusWon(value);
             }
+        };
+        this.#onCoinLost = () => {
+            onRecycleCoin(this.#coinRoller.coin);
+            this.#coinRoller.coin = null;
         };
         this.#onGetCoin = onGetCoin;
     }
@@ -70,7 +82,8 @@ export default class {
             scene,
             parts,
             sensorColliders: this.#sensorColliders,
-            onBonusWon: this.#onBonusWon
+            onBonusWon: this.#onBonusWon,
+            onCoinLost: this.#onCoinLost
         });
         parts.forEach(({ body, meshes }) => {
             meshes.forEach(({ data }) => this.#scene.addObject(data));
@@ -80,6 +93,7 @@ export default class {
         this.#coinRoller.launcher = this.#coinRoller.parts.get(LAUNCHER_PART_NAME);
         this.#coinRoller.launcher.body.setEnabledRotations(false, false, false);
         this.#coinRoller.launcher.body.setEnabledTranslations(false, false, false);
+        this.#coinRoller.trap = this.#coinRoller.parts.get(TRAP_PART_NAME);
     }
 
     update(time) {
@@ -87,35 +101,29 @@ export default class {
             coinRoller: this.#coinRoller,
             time
         });
-        const { parts, state, coin } = this.#coinRoller;
-        parts.forEach(({ meshes, body, position }) => {
+        const { parts, state, launcher, trap, coin } = this.#coinRoller;
+        parts.forEach(({ meshes, body }) => {
             meshes.forEach(({ data }) => {
                 data.position.copy(body.translation());
                 data.quaternion.copy(body.rotation());
             });
-            if (position) {
-                const bodyPosition = body.translation();
-                bodyPosition.x = position;
-                body.setNextKinematicTranslation(bodyPosition);
-                if (state === COIN_ROLLER_STATES.MOVING_LAUNCHER) {
-                    coin.body.setNextKinematicTranslation(bodyPosition);
-                }
-            }
         });
+        const launcherPosition = launcher.body.translation();
+        launcherPosition.x = launcher.position;
+        launcher.body.setNextKinematicTranslation(launcherPosition);
+        const trapPosition = trap.body.translation();
+        trapPosition.z = trap.position;
+        trap.body.setNextKinematicTranslation(trapPosition);
         if (state === COIN_ROLLER_STATES.INITIALIZING) {
             this.#coinRoller.coin = this.#onInitializeCoin({ position: this.#initPosition, rotation: COIN_ROTATION });
         }
         if (state === COIN_ROLLER_STATES.MOVING_LAUNCHER) {
             coin.body.setEnabledRotations(false, false, false);
+            coin.body.setNextKinematicTranslation(launcherPosition);
         }
         if (state === COIN_ROLLER_STATES.DELIVERING_COIN) {
             coin.body.setEnabledRotations(true, true, true);
             coin.body.applyImpulse(COIN_IMPULSE);
-        }
-        if (state === COIN_ROLLER_STATES.PREPARING_TO_IDLE) {
-            if (coin) {
-                this.#onRecycleCoin(coin);
-            }
         }
     }
 
@@ -150,8 +158,13 @@ export default class {
                 bodyHandle: this.#coinRoller.launcher.body.handle,
                 position: this.#coinRoller.launcher.position
             },
+            trap: {
+                bodyHandle: this.#coinRoller.trap.body.handle,
+                position: this.#coinRoller.trap.position
+            },
             timeActive: this.#coinRoller.timeActive,
             timeMovingCoin: this.#coinRoller.timeMovingCoin,
+            timeOpeningTrap: this.#coinRoller.timeOpeningTrap,
             pendingShots: this.#coinRoller.pendingShots
         };
     }
@@ -168,7 +181,13 @@ export default class {
                             const collider = this.#scene.worldColliders.get(colliderHandle);
                             collider.userData = {
                                 objectType,
-                                onIntersect: userData => this.#onBonusWon(userData, objectType)
+                                onIntersect: userData => {
+                                    if (name === TRAP_SENSOR_NAME) {
+                                        this.#onCoinLost();
+                                    } else {
+                                        this.#onBonusWon(userData, objectType);
+                                    }
+                                }
                             };
                             this.#sensorColliders.set(objectType, collider);
                         }
@@ -179,9 +198,12 @@ export default class {
         this.#coinRoller.state = Symbol.for(coinRoller.state);
         this.#coinRoller.timeActive = coinRoller.timeActive;
         this.#coinRoller.timeMovingCoin = coinRoller.timeMovingCoin;
+        this.#coinRoller.timeOpeningTrap = coinRoller.timeOpeningTrap;
         this.#coinRoller.pendingShots = coinRoller.pendingShots;
         this.#coinRoller.launcher.body = this.#scene.worldBodies.get(coinRoller.launcher.bodyHandle);
         this.#coinRoller.launcher.position = coinRoller.launcher.position;
+        this.#coinRoller.trap.body = this.#scene.worldBodies.get(coinRoller.trap.bodyHandle);
+        this.#coinRoller.trap.position = coinRoller.trap.position;
         if (coinRoller.coin) {
             this.#coinRoller.coin = this.#onGetCoin(coinRoller.coin);
         }
@@ -205,25 +227,44 @@ function updateCoinRollerState({ coinRoller, time }) {
             }
             break;
         case COIN_ROLLER_STATES.MOVING_LAUNCHER:
-            coinRoller.launcher.position = Math.sin((time - coinRoller.timeActive) * SPEED + START_ANGLE) * DISTANCE + DISTANCE;
+            updateLauncherPosition({ coinRoller, time });
             break;
         case COIN_ROLLER_STATES.TRIGGERING_COIN:
-            coinRoller.launcher.position = Math.sin((time - coinRoller.timeActive) * SPEED + START_ANGLE) * DISTANCE + DISTANCE;
+            updateLauncherPosition({ coinRoller, time });
             coinRoller.state = COIN_ROLLER_STATES.DELIVERING_COIN;
             coinRoller.timeMovingCoin = time;
             break;
         case COIN_ROLLER_STATES.DELIVERING_COIN:
-            coinRoller.launcher.position = Math.sin((time - coinRoller.timeActive) * SPEED + START_ANGLE) * DISTANCE + DISTANCE;
+            updateLauncherPosition({ coinRoller, time });
             coinRoller.state = COIN_ROLLER_STATES.MOVING_COIN;
             break;
         case COIN_ROLLER_STATES.MOVING_COIN:
-            coinRoller.launcher.position = Math.sin((time - coinRoller.timeActive) * SPEED + START_ANGLE) * DISTANCE + DISTANCE;
+            updateLauncherPosition({ coinRoller, time });
             if (time - coinRoller.timeMovingCoin > MAX_DELAY_MOVING_COIN) {
+                coinRoller.state = COIN_ROLLER_STATES.OPENING_TRAP;
+                coinRoller.timeOpeningTrap = time;
+            } else if (!coinRoller.coin) {
                 coinRoller.state = COIN_ROLLER_STATES.PREPARING_TO_IDLE;
             }
             break;
+        case COIN_ROLLER_STATES.OPENING_TRAP:
+            updateLauncherPosition({ coinRoller, time });
+            updateTrapPosition({ coinRoller, time });
+            if (coinRoller.trap.position > MAX_TRAP_POSITION) {
+                coinRoller.state = COIN_ROLLER_STATES.CLOSING_TRAP;
+            }
+            break;
+        case COIN_ROLLER_STATES.CLOSING_TRAP:
+            updateLauncherPosition({ coinRoller, time });
+            updateTrapPosition({ coinRoller, time });
+            if (coinRoller.trap.position < MIN_TRAP_POSITION) {
+                coinRoller.trap.position = 0;
+                coinRoller.state = COIN_ROLLER_STATES.PREPARING_TO_IDLE;
+                coinRoller.timeOpeningTrap = -1;
+            }
+            break;
         case COIN_ROLLER_STATES.PREPARING_TO_IDLE:
-            coinRoller.launcher.position = Math.sin((time - coinRoller.timeActive) * SPEED + START_ANGLE) * DISTANCE + DISTANCE;
+            updateLauncherPosition({ coinRoller, time });
             if (coinRoller.launcher.position < MIN_LAUNCHER_POSITION) {
                 coinRoller.launcher.position = 0;
                 coinRoller.timeMovingCoin = -1;
@@ -238,6 +279,14 @@ function updateCoinRollerState({ coinRoller, time }) {
         default:
             break;
     }
+}
+
+function updateLauncherPosition({ coinRoller, time }) {
+    coinRoller.launcher.position = Math.sin((time - coinRoller.timeActive) * SPEED + START_ANGLE) * DISTANCE + DISTANCE;
+}
+
+function updateTrapPosition({ coinRoller, time }) {
+    coinRoller.trap.position = Math.sin((time - coinRoller.timeOpeningTrap) * SPEED_TRAP) * DISTANCE_TRAP;
 }
 
 async function initializeModel({ scene }) {
@@ -303,11 +352,11 @@ function getPart(parts, name) {
     return partData;
 }
 
-function initializeColliders({ scene, parts, sensorColliders, onBonusWon }) {
+function initializeColliders({ scene, parts, sensorColliders, onBonusWon, onCoinLost }) {
     parts.forEach((partData, name) => {
         const { meshes, friction, sensor } = partData;
         let body;
-        if (name === LAUNCHER_PART_NAME) {
+        if (name === LAUNCHER_PART_NAME || name === TRAP_PART_NAME) {
             body = partData.body = scene.createKinematicBody();
             partData.position = 0;
         } else {
@@ -325,7 +374,13 @@ function initializeColliders({ scene, parts, sensorColliders, onBonusWon }) {
                     sensor,
                     userData: {
                         objectType: name,
-                        onIntersect: userData => onBonusWon(userData, name)
+                        onIntersect: userData => {
+                            if (name === TRAP_SENSOR_NAME) {
+                                onCoinLost();
+                            } else {
+                                onBonusWon(userData, name);
+                            }
+                        }
                     }
                 }, body);
                 body.setSoftCcdPrediction(.01);
