@@ -111,8 +111,18 @@ export default class {
         if (this.#excavator.state === EXCAVATOR_STATES.PICKING) {
             this.#excavator.pickedObjects = this.#onPick(this.#dropPosition);
         }
+        if (this.#excavator.state === EXCAVATOR_STATES.MOVING_TO_DROP_ZONE) {
+            this.#platform.body.setEnabledRotations(false, true, false);
+        }
         if (this.#excavator.state === EXCAVATOR_STATES.EXTENDING_ARMS) {
+            this.#platform.body.setEnabledRotations(false, false, false);
             this.#excavator.pickedObjects = [];
+        }
+        if (this.#excavator.state === EXCAVATOR_STATES.MOVING_TO_BASE) {
+            this.#platform.body.setEnabledRotations(false, true, false);
+        }
+        if (this.#excavator.state === EXCAVATOR_STATES.PREPARING_IDLE) {
+            this.#platform.body.setEnabledRotations(false, false, false);
         }
         this.#excavator.pickedObjects.forEach(object => {
             if (object.used && object.position.y < MIN_POSITION_Y) {
@@ -232,7 +242,7 @@ export default class {
     }
 }
 
-function updateExcavatorState({ excavator, joints, platform, time }) {
+function updateExcavatorState({ excavator, joints, time }) {
     const { platformJoint, platformArmJoint, armsJoint, jaw1Joint, jaw2Joint, jaw3Joint, jaw4Joint } = joints;
     switch (excavator.state) {
         case EXCAVATOR_STATES.IDLE:
@@ -280,7 +290,6 @@ function updateExcavatorState({ excavator, joints, platform, time }) {
         case EXCAVATOR_STATES.MOVING_UP:
             // console.log("=> moving up", getAngle(platformArmJoint), getAngle(armsJoint));
             if (getAngle(platformArmJoint) > .5) {
-                platform.body.setEnabledRotations(false, true, false);
                 platformJoint.joint.configureMotor(-2, -3, MOTOR_STIFFNESS, MOTOR_STIFFNESS);
                 excavator.state = EXCAVATOR_STATES.MOVING_TO_DROP_ZONE;
                 excavator.delayMovingUp = time - excavator.timeMovingUp;
@@ -290,7 +299,6 @@ function updateExcavatorState({ excavator, joints, platform, time }) {
         case EXCAVATOR_STATES.MOVING_TO_DROP_ZONE:
             // console.log("=> moving to drop zone", getAngle(platformJoint), excavator.delayMovingUp);
             if (getAngle(platformJoint) < -2) {
-                platform.body.setEnabledRotations(false, false, false);
                 const additionalPlatformVelocity = Math.min(Math.max(excavator.delayMovingUp - MIN_DELAY_MOVING_UP, 0) / (MAX_DELAY_MOVING_UP - MIN_DELAY_MOVING_UP), 1) * .5;
                 platformArmJoint.joint.configureMotor(-.3, 1 + additionalPlatformVelocity, MOTOR_STIFFNESS, MOTOR_DAMPING);
                 const additionalArmsVelocity = Math.min(Math.max(excavator.delayMovingUp - MIN_DELAY_MOVING_UP, 0) / (MAX_DELAY_MOVING_UP - MIN_DELAY_MOVING_UP), 1) * 2.5;
@@ -332,7 +340,6 @@ function updateExcavatorState({ excavator, joints, platform, time }) {
         case EXCAVATOR_STATES.RETRACTING_ARMS:
             // console.log("=> retracting arms", getAngle(platformArmJoint), getAngle(armsJoint));
             if (getAngle(platformArmJoint) > .4 && getAngle(armsJoint) < .5) {
-                platform.body.setEnabledRotations(false, true, false);
                 platformJoint.joint.configureMotor(0, -.3, MOTOR_STIFFNESS, MOTOR_STIFFNESS);
                 excavator.state = EXCAVATOR_STATES.MOVING_TO_BASE;
             }
@@ -340,7 +347,6 @@ function updateExcavatorState({ excavator, joints, platform, time }) {
         case EXCAVATOR_STATES.MOVING_TO_BASE:
             // console.log("=> moving to base", getAngle(platformJoint));
             if (getAngle(platformJoint) > -.01) {
-                platform.body.setEnabledRotations(false, false, false);
                 platformArmJoint.joint.configureMotor(0, 1.2, MOTOR_STIFFNESS, MOTOR_DAMPING);
                 armsJoint.joint.configureMotor(0, 3.7, MOTOR_STIFFNESS, MOTOR_DAMPING);
                 excavator.state = EXCAVATOR_STATES.PREPARING_IDLE;
