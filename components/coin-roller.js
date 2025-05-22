@@ -9,6 +9,7 @@ const MODEL_PATH = "./../assets/coin-roller.glb";
 const RESTITUTION = 0.5;
 const LAUNCHER_PART_NAME = "launcher";
 const TRAP_PART_NAME = "trap";
+const DOORS_PART_NAME = "doors";
 const TRAP_SENSOR_NAME = "trap-sensor";
 const INIT_POSITION = "init-position";
 const BONUS_VALUES = ["slot-3", "slot-2", "slot-1"];
@@ -49,7 +50,8 @@ export default class {
         pendingShots: 0,
         timeActive: -1,
         timeMovingCoin: -1,
-        timeOpeningTrap: -1
+        timeOpeningTrap: -1,
+        doorsOpened: false
     };
 
     constructor({ scene, onInitializeCoin, onRecycleCoin, onBonusWon, onGetCoin }) {
@@ -94,6 +96,9 @@ export default class {
         this.#coinRoller.launcher.body.setEnabledRotations(false, false, false);
         this.#coinRoller.launcher.body.setEnabledTranslations(false, false, false);
         this.#coinRoller.trap = this.#coinRoller.parts.get(TRAP_PART_NAME);
+        const doors = getPart(parts, DOORS_PART_NAME);
+        this.#coinRoller.doorsMaterial = doors.meshes[0].data.material;
+        this.#coinRoller.doorsMaterial.transparent = true;
     }
 
     update(time) {
@@ -101,13 +106,14 @@ export default class {
             coinRoller: this.#coinRoller,
             time
         });
-        const { parts, state, launcher, trap, coin } = this.#coinRoller;
+        const { parts, state, launcher, trap, coin, doorsMaterial, doorsOpened } = this.#coinRoller;
         parts.forEach(({ meshes, body }) => {
             meshes.forEach(({ data }) => {
                 data.position.copy(body.translation());
                 data.quaternion.copy(body.rotation());
             });
         });
+        doorsMaterial.opacity = doorsOpened ? 0 : 1;
         const launcherPosition = launcher.body.translation();
         launcherPosition.x = launcher.position;
         launcher.body.setNextKinematicTranslation(launcherPosition);
@@ -165,7 +171,8 @@ export default class {
             timeActive: this.#coinRoller.timeActive,
             timeMovingCoin: this.#coinRoller.timeMovingCoin,
             timeOpeningTrap: this.#coinRoller.timeOpeningTrap,
-            pendingShots: this.#coinRoller.pendingShots
+            pendingShots: this.#coinRoller.pendingShots,
+            doorsOpened: this.#coinRoller.doorsOpened
         };
     }
 
@@ -204,6 +211,7 @@ export default class {
         this.#coinRoller.launcher.position = coinRoller.launcher.position;
         this.#coinRoller.trap.body = this.#scene.worldBodies.get(coinRoller.trap.bodyHandle);
         this.#coinRoller.trap.position = coinRoller.trap.position;
+        this.#coinRoller.doorsOpened = coinRoller.doorsOpened;
         if (coinRoller.coin) {
             this.#coinRoller.coin = this.#onGetCoin(coinRoller.coin);
         }
@@ -219,6 +227,7 @@ function updateCoinRollerState({ coinRoller, time }) {
             break;
         case COIN_ROLLER_STATES.INITIALIZING:
             coinRoller.state = COIN_ROLLER_STATES.INITIALIZING_COIN;
+            coinRoller.doorsOpened = true;
             break;
         case COIN_ROLLER_STATES.INITIALIZING_COIN:
             if (coinRoller.coin.position.z < INITIALIZATION_COIN_POSITION) {
@@ -273,6 +282,7 @@ function updateCoinRollerState({ coinRoller, time }) {
                     coinRoller.pendingShots--;
                     coinRoller.state = COIN_ROLLER_STATES.ACTIVATING;
                 } else {
+                    coinRoller.doorsOpened = false;
                     coinRoller.state = COIN_ROLLER_STATES.IDLE;
                 }
             }

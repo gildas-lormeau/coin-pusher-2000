@@ -20237,7 +20237,8 @@
             "timeActive": -1,
             "timeMovingCoin": -1,
             "timeOpeningTrap": -1,
-            "pendingShots": 0
+            "pendingShots": 0,
+            "doorsOpened": false
         }
     }
 }
