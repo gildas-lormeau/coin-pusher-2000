@@ -116,10 +116,10 @@ export default class {
         }
         if (this.#excavator.state === EXCAVATOR_STATES.EXTENDING_ARMS) {
             this.#platform.body.setEnabledRotations(false, false, false);
-            this.#excavator.pickedObjects = [];
         }
         if (this.#excavator.state === EXCAVATOR_STATES.MOVING_TO_BASE) {
             this.#platform.body.setEnabledRotations(false, true, false);
+            this.#excavator.pickedObjects = [];
         }
         if (this.#excavator.state === EXCAVATOR_STATES.PREPARING_IDLE) {
             this.#platform.body.setEnabledRotations(false, false, false);
@@ -303,7 +303,7 @@ function updateExcavatorState({ excavator, joints, time }) {
                 platformArmJoint.joint.configureMotor(-.3, 1 + additionalPlatformVelocity, MOTOR_STIFFNESS, MOTOR_DAMPING);
                 const additionalArmsVelocity = Math.min(Math.max(excavator.delayMovingUp - MIN_DELAY_MOVING_UP, 0) / (MAX_DELAY_MOVING_UP - MIN_DELAY_MOVING_UP), 1) * 3;
                 excavator.delayMovingUp = -1;
-                armsJoint.joint.configureMotor(.9, 7 + additionalArmsVelocity, MOTOR_STIFFNESS, MOTOR_DAMPING);
+                armsJoint.joint.configureMotor(.9, 8 + additionalArmsVelocity, MOTOR_STIFFNESS, MOTOR_DAMPING);
                 excavator.state = EXCAVATOR_STATES.EXTENDING_ARMS;
             }
             break;
