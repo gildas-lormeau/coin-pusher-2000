@@ -137,6 +137,7 @@ export default class {
         this.#excavator = new Excavator({
             scene: this.#scene,
             onPick: dropPosition => {
+                const objects = [];
                 for (let i = 0; i < 20 + Math.floor(Math.random() * 5); i++) {
                     const rotation = {
                         x: (Math.random() - 0.5) * Math.PI / 4,
@@ -148,13 +149,13 @@ export default class {
                         y: dropPosition.y,
                         z: dropPosition.z + (Math.random() - 0.5) * 0.02
                     };
-                    Coins.depositCoin({
+                    objects.push(Coins.depositCoin({
                         position,
                         rotation
-                    });
+                    }));
                 }
                 if (Math.random() < .25) {
-                    Tokens.depositToken({
+                    objects.push(Tokens.depositToken({
                         position: {
                             x: dropPosition.x + (Math.random() - 0.5) * 0.02,
                             y: dropPosition.y,
@@ -165,8 +166,12 @@ export default class {
                             y: (Math.random() - 0.5) * Math.PI / 4,
                             z: (Math.random() - 0.5) * Math.PI / 4
                         }
-                    });
+                    }));
                 }
+                return objects;
+            },
+            onGetObject: userData => {
+                return this.#getObject(userData);
             },
             onRecycleObject: userData => {
                 const object = this.#getObject(userData);

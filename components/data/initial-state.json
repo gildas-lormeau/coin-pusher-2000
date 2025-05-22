@@ -20130,9 +20130,6 @@
         },
         "excavator": {
             "state": "excavator-idle",
-            "sensorCollidersHandles": {
-                "trap-excavator": 7.17e-321
-            },
             "pendingPicks": 0,
             "timePick": -1,
             "timeDrop": -1,
@@ -20189,9 +20186,6 @@
                 "base": {
                     "bodyHandle": 6.176e-321
                 },
-                "trap-excavator": {
-                    "bodyHandle": 6.18e-321
-                },
                 "jaw-4": {
                     "bodyHandle": 6.186e-321
                 },
@@ -20201,7 +20195,8 @@
                 "jaw-2": {
                     "bodyHandle": 6.196e-321
                 }
-            }
+            },
+            "pickedObjects": []
         },
         "tower": {
             "state": "tower-idle",

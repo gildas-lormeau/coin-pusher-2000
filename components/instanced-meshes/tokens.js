@@ -90,6 +90,7 @@ export default class {
         instance.used = true;
         initializePosition({ instance, position, rotation });
         instance.body.setEnabled(true);
+        return instance;
     }
 
     static recycle(instance) {
