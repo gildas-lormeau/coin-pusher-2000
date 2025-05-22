@@ -14,7 +14,7 @@ import Tower from "./tower.js";
 import CoinRoller from "./coin-roller.js";
 
 const RESTITUTION = 0;
-const MIN_POSITION_Y_OBJECTS = 0;
+const MIN_POSITION_Y_OBJECTS = -1;
 const MODEL_PATH = "./../assets/cabinet.glb";
 
 export default class {
