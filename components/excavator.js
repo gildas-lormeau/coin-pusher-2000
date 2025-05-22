@@ -134,7 +134,6 @@ export default class {
     save() {
         const joints = {};
         const parts = {};
-        const sensorCollidersHandles = {};
         this.#excavator.joints.forEach((jointData, name) => {
             joints[name] = {
                 jointHandle: jointData.joint.handle
@@ -153,7 +152,6 @@ export default class {
         }));
         return {
             state: this.#excavator.state.description,
-            sensorCollidersHandles,
             pendingPicks: this.#excavator.pendingPicks,
             timePick: this.#excavator.timePick,
             timeDrop: this.#excavator.timeDrop,
