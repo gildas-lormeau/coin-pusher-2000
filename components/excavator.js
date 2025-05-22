@@ -17,7 +17,7 @@ const DELAY_PICK_WAIT = 1000;
 const DELAY_DROP_WAIT = 750;
 const MOTOR_STIFFNESS = 50000;
 const MOTOR_DAMPING = 20000;
-const MAX_DELAY_MOVING_UP = 4000;
+const MAX_DELAY_MOVING_UP = 3500;
 const MIN_DELAY_MOVING_UP = 1500;
 const MIN_POSITION_Y = 0.015;
 
@@ -301,7 +301,7 @@ function updateExcavatorState({ excavator, joints, time }) {
             if (getAngle(platformJoint) < -2) {
                 const additionalPlatformVelocity = Math.min(Math.max(excavator.delayMovingUp - MIN_DELAY_MOVING_UP, 0) / (MAX_DELAY_MOVING_UP - MIN_DELAY_MOVING_UP), 1) * .5;
                 platformArmJoint.joint.configureMotor(-.3, 1 + additionalPlatformVelocity, MOTOR_STIFFNESS, MOTOR_DAMPING);
-                const additionalArmsVelocity = Math.min(Math.max(excavator.delayMovingUp - MIN_DELAY_MOVING_UP, 0) / (MAX_DELAY_MOVING_UP - MIN_DELAY_MOVING_UP), 1) * 2.5;
+                const additionalArmsVelocity = Math.min(Math.max(excavator.delayMovingUp - MIN_DELAY_MOVING_UP, 0) / (MAX_DELAY_MOVING_UP - MIN_DELAY_MOVING_UP), 1) * 3;
                 excavator.delayMovingUp = -1;
                 armsJoint.joint.configureMotor(.9, 7 + additionalArmsVelocity, MOTOR_STIFFNESS, MOTOR_DAMPING);
                 excavator.state = EXCAVATOR_STATES.EXTENDING_ARMS;
