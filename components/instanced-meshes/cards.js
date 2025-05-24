@@ -98,7 +98,15 @@ export default class {
     }
 
     static get dynamicBodies() {
-        return this.#instances.filter(instance => instance.used).map(instance => ({ object: instance, objects: this, body: instance.body }));
+        const instances = [];
+        for (let type = 0; type < TYPES; type++) {
+            for (const instance of this.#instances[type]) {
+                if (instance.used) {
+                    instances.push({ object: instance, objects: this, body: instance.body });
+                }
+            }
+        }
+        return instances;
     }
 
     static save() {
