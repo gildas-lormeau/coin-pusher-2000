@@ -41,6 +41,7 @@ export default class {
             containerElement: this.#containerElement,
             camera
         });
+        await this.#scene.initialize();
         this.#cabinet = new Cabinet(({
             scene: this.#scene,
             state: this.#state

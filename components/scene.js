@@ -1,5 +1,6 @@
-import { Quaternion, Vector3, Euler, Scene, Color, WebGLRenderer, VSMShadowMap, AmbientLight, DirectionalLight } from "three";
+import { Quaternion, Vector3, Euler, Scene, Color, WebGLRenderer, VSMShadowMap, PMREMGenerator, LinearToneMapping } from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
+import { EXRLoader } from "three/examples/jsm/loaders/EXRLoader";
 import { World, RigidBodyDesc, ColliderDesc, TriMeshFlags, JointData } from "@dimforge/rapier3d";
 
 const BACKGROUND_COLOR = 0x222222;
@@ -10,62 +11,49 @@ const TIMESTEP = 1 / 60;
 const ANTIALIAS = true;
 const PRESERVE_DRAWING_BUFFER = true;
 const POWER_PREFERENCE = "high-performance";
-const SHADOW_MAP_SIZE = 256;
 const SHADOW_MAP_TYPE = VSMShadowMap;
 const GRAVITY_FORCE = new Vector3(0, -9.81, 0);
-const AMBIANT_LIGHT_COLOR = 0xffffff;
-const AMBIANT_LIGHT_INTENSITY = 0.5;
-const DIRECTIONAL_LIGHT_COLOR = 0xffffff;
-const DIRECTIONAL_LIGHT_INTENSITY = 0.75;
-const DIRECTIONAL_LIGHT_POSITION = [.5, 2.5, 1];
-const DIRECTIONAL_LIGHT_CAST_SHADOW = true;
-const DIRECTIONAL_LIGHT_SHADOW_BIAS = -0.003;
-const DIRECTIONAL_LIGHT_SHADOW_NEAR = 0.5;
-const DIRECTIONAL_LIGHT_SHADOW_FAR = 50;
-const DIRECTIONAL_LIGHT_SHADOW_LEFT = -5;
-const DIRECTIONAL_LIGHT_SHADOW_RIGHT = 5;
-const DIRECTIONAL_LIGHT_SHADOW_TOP = 5;
-const DIRECTIONAL_LIGHT_SHADOW_BOTTOM = -5;
+const EXR_ASSET_PATH = "assets/forest.exr";
+const ENVIRONMENT_INTENSITY = 1;
+const TONE_MAPPING_EXPOSURE = 0.5;
 
 export default class {
 
     static TIMESTEP = TIMESTEP;
 
     constructor({ containerElement, camera }) {
+        this.#containerElement = containerElement;
         this.#camera = camera;
-        this.#scene.background = new Color(BACKGROUND_COLOR);
-        this.#renderer.setSize(innerWidth, innerHeight);
-        this.#renderer.shadowMap.enabled = true;
-        this.#renderer.shadowMap.type = SHADOW_MAP_TYPE;
         this.#world.integrationParameters.numSolverIterations = NUM_SOLVER_ITERATIONS;
         this.#world.integrationParameters.numAdditionalFrictionIterations = NUM_ADDITIONAL_FRICTION_ITERATIONS;
         this.#world.integrationParameters.numInternalPgsIterations = NUM_INTERNAL_PGS_ITERATIONS;
         this.#world.timestep = TIMESTEP;
-        this.#scene.add(new AmbientLight(AMBIANT_LIGHT_COLOR, AMBIANT_LIGHT_INTENSITY));
-        const directionalLight = new DirectionalLight(DIRECTIONAL_LIGHT_COLOR, DIRECTIONAL_LIGHT_INTENSITY);
-        directionalLight.shadow.mapSize.set(SHADOW_MAP_SIZE, SHADOW_MAP_SIZE);
-        directionalLight.position.set(...DIRECTIONAL_LIGHT_POSITION);
-        directionalLight.castShadow = DIRECTIONAL_LIGHT_CAST_SHADOW;
-        directionalLight.shadow.bias = DIRECTIONAL_LIGHT_SHADOW_BIAS;
-        directionalLight.shadow.camera.near = DIRECTIONAL_LIGHT_SHADOW_NEAR;
-        directionalLight.shadow.camera.far = DIRECTIONAL_LIGHT_SHADOW_FAR;
-        directionalLight.shadow.camera.left = DIRECTIONAL_LIGHT_SHADOW_LEFT;
-        directionalLight.shadow.camera.right = DIRECTIONAL_LIGHT_SHADOW_RIGHT;
-        directionalLight.shadow.camera.top = DIRECTIONAL_LIGHT_SHADOW_TOP;
-        directionalLight.shadow.camera.bottom = DIRECTIONAL_LIGHT_SHADOW_BOTTOM;
-        this.#scene.add(directionalLight);
-        containerElement.appendChild(this.#renderer.domElement);
     }
 
+    #containerElement;
     #scene = new Scene();
     #renderer = new WebGLRenderer({
         antialias: ANTIALIAS,
         preserveDrawingBuffer: PRESERVE_DRAWING_BUFFER,
         powerPreference: POWER_PREFERENCE
-
     });
     #world = new World(GRAVITY_FORCE);
     #camera = null;
+
+    async initialize() {
+        const pmremGenerator = new PMREMGenerator(this.#renderer);
+        pmremGenerator.compileEquirectangularShader();
+        this.#scene.environment = await new Promise((resolve, reject) => new EXRLoader().load(EXR_ASSET_PATH,
+            texture => resolve(pmremGenerator.fromEquirectangular(texture).texture), undefined, reject));
+        this.#scene.background = new Color(BACKGROUND_COLOR);
+        this.#scene.environmentIntensity = ENVIRONMENT_INTENSITY;
+        this.#renderer.toneMapping = LinearToneMapping;
+        this.#renderer.toneMappingExposure = TONE_MAPPING_EXPOSURE;
+        this.#renderer.setSize(innerWidth, innerHeight);
+        this.#renderer.shadowMap.enabled = true;
+        this.#renderer.shadowMap.type = SHADOW_MAP_TYPE;
+        this.#containerElement.appendChild(this.#renderer.domElement);
+    }
 
     createFixedBody() {
         const rigidBodyDesc = RigidBodyDesc.fixed();
