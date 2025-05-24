@@ -142,8 +142,6 @@ export default class {
     static save() {
         return this.#instances.map(instance => {
             return {
-                objectType: instance.objectType,
-                index: instance.index,
                 position: instance.position.toArray(),
                 rotation: instance.rotation.toArray(),
                 used: instance.used,
@@ -153,10 +151,10 @@ export default class {
     }
 
     static load(coins) {
-        coins.forEach(instance => {
+        coins.forEach((instance, indexInstance) => {
             const body = this.#scene.worldBodies.get(instance.bodyHandle);
-            this.#instances[instance.index] = {
-                ...this.#instances[instance.index],
+            this.#instances[indexInstance] = {
+                ...this.#instances[indexInstance],
                 position: new Vector3().fromArray(instance.position),
                 rotation: new Quaternion().fromArray(instance.rotation),
                 used: instance.used,
@@ -165,12 +163,12 @@ export default class {
             for (let indexCollider = 0; indexCollider < body.numColliders(); indexCollider++) {
                 const collider = body.collider(indexCollider);
                 collider.userData = {
-                    objectType: instance.objectType,
-                    index: instance.index
+                    objectType: TYPE,
+                    index: indexInstance
                 };
             }
             update({
-                instance: this.#instances[instance.index],
+                instance: this.#instances[indexInstance],
                 meshes: this.#meshes,
                 forceRefresh: true
             });

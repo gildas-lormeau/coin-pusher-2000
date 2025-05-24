@@ -113,8 +113,6 @@ export default class {
         return this.#instances.map(type => {
             return type.map(instance => {
                 return {
-                    index: instance.index,
-                    type: instance.type,
                     position: instance.position.toArray(),
                     rotation: instance.rotation.toArray(),
                     used: instance.used,
@@ -125,11 +123,11 @@ export default class {
     }
 
     static load(cards) {
-        cards.forEach(type => {
-            type.forEach(instance => {
+        cards.forEach((type, indexType) => {
+            type.forEach((instance, instanceIndex) => {
                 const body = this.#scene.worldBodies.get(instance.bodyHandle);
-                const card = this.#instances[instance.type][instance.index];
-                this.#instances[instance.type][instance.index] = {
+                const card = this.#instances[indexType][instanceIndex];
+                this.#instances[indexType][instanceIndex] = {
                     ...card,
                     position: new Vector3().fromArray(instance.position),
                     rotation: new Quaternion().fromArray(instance.rotation),
@@ -139,13 +137,14 @@ export default class {
                 for (let indexCollider = 0; indexCollider < body.numColliders(); indexCollider++) {
                     const collider = body.collider(indexCollider);
                     collider.userData = {
-                        objectType: instance.objectType,
-                        index: instance.index
+                        objectType: TYPE,
+                        type: indexType,
+                        index: instanceIndex
                     };
                 }
                 update({
-                    instance: this.#instances[instance.type][instance.index],
-                    meshes: this.#meshes[instance.type]
+                    instance: this.#instances[indexType][instanceIndex],
+                    meshes: this.#meshes[indexType]
                 });
             });
         });
