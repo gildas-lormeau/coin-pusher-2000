@@ -2,6 +2,7 @@ import { Vector3 } from "three";
 
 const SPEED = .001;
 const SPEED_TRAP = .002;
+const SPEED_DOORS = .003;
 const DISTANCE = 0.13;
 const DISTANCE_TRAP = 0.25;
 const START_ANGLE = -Math.PI / 2;
@@ -21,18 +22,22 @@ const INITIALIZATION_COIN_POSITION = 0.14;
 const COIN_ROTATION = new Vector3(Math.PI / 2, 0, Math.PI / 2);
 const MIN_TRAP_POSITION = 0.0001;
 const MAX_TRAP_POSITION = 0.25 - MIN_TRAP_POSITION;
+const MIN_DOORS_POSITION = 0;
+const MAX_DOORS_POSITION = 0.03;
 
 const COIN_ROLLER_STATES = {
     IDLE: Symbol.for("coin-roller-idle"),
     ACTIVATING: Symbol.for("coin-roller-activating"),
     INITIALIZING: Symbol.for("coin-roller-initializing"),
     INITIALIZING_COIN: Symbol.for("coin-roller-initializing-coin"),
+    OPENING_DOORS: Symbol.for("coin-roller-opening-doors"),
     MOVING_LAUNCHER: Symbol.for("coin-roller-moving-launcher"),
     TRIGGERING_COIN: Symbol.for("coin-roller-triggering-coin"),
     DELIVERING_COIN: Symbol.for("coin-roller-delivering-coin"),
     MOVING_COIN: Symbol.for("coin-roller-moving-coin"),
     OPENING_TRAP: Symbol.for("coin-roller-opening-trap"),
     CLOSING_TRAP: Symbol.for("coin-roller-closing-trap"),
+    CLOSING_DOORS: Symbol.for("coin-roller-closing-doors"),
     PREPARING_TO_IDLE: Symbol.for("coin-roller-preparing-to-idle")
 };
 
@@ -50,8 +55,7 @@ export default class {
         pendingShots: 0,
         timeActive: -1,
         timeMovingCoin: -1,
-        timeOpeningTrap: -1,
-        doorsOpened: false
+        timeOpeningTrap: -1
     };
 
     constructor({ scene, onInitializeCoin, onRecycleCoin, onBonusWon, onGetCoin }) {
@@ -96,9 +100,7 @@ export default class {
         this.#coinRoller.launcher.body.setEnabledRotations(false, false, false);
         this.#coinRoller.launcher.body.setEnabledTranslations(false, false, false);
         this.#coinRoller.trap = this.#coinRoller.parts.get(TRAP_PART_NAME);
-        const doors = getPart(parts, DOORS_PART_NAME);
-        this.#coinRoller.doorsMaterial = doors.meshes[0].data.material;
-        this.#coinRoller.doorsMaterial.transparent = true;
+        this.#coinRoller.doors = this.#coinRoller.parts.get(DOORS_PART_NAME);
     }
 
     update(time) {
@@ -106,30 +108,34 @@ export default class {
             coinRoller: this.#coinRoller,
             time
         });
-        const { parts, state, launcher, trap, coin, doorsMaterial, doorsOpened } = this.#coinRoller;
+        const { parts, state, launcher, trap, coin, doors } = this.#coinRoller;
         parts.forEach(({ meshes, body }) => {
             meshes.forEach(({ data }) => {
                 data.position.copy(body.translation());
                 data.quaternion.copy(body.rotation());
             });
         });
-        doorsMaterial.opacity = doorsOpened ? 0 : 1;
-        const launcherPosition = launcher.body.translation();
-        launcherPosition.x = launcher.position;
-        launcher.body.setNextKinematicTranslation(launcherPosition);
-        const trapPosition = trap.body.translation();
-        trapPosition.z = trap.position;
-        trap.body.setNextKinematicTranslation(trapPosition);
-        if (state === COIN_ROLLER_STATES.INITIALIZING) {
-            this.#coinRoller.coin = this.#onInitializeCoin({ position: this.#initPosition, rotation: COIN_ROTATION });
-        }
-        if (state === COIN_ROLLER_STATES.MOVING_LAUNCHER) {
-            coin.body.setEnabledRotations(false, false, false);
-            coin.body.setNextKinematicTranslation(launcherPosition);
-        }
-        if (state === COIN_ROLLER_STATES.DELIVERING_COIN) {
-            coin.body.setEnabledRotations(true, true, true);
-            coin.body.applyImpulse(COIN_IMPULSE);
+        if (state !== COIN_ROLLER_STATES.IDLE) {
+            const launcherPosition = launcher.body.translation();
+            launcherPosition.x = launcher.position;
+            launcher.body.setNextKinematicTranslation(launcherPosition);
+            const trapPosition = trap.body.translation();
+            trapPosition.z = trap.position;
+            trap.body.setNextKinematicTranslation(trapPosition);
+            const doorsPosition = doors.body.translation();
+            doorsPosition.x = doors.position;
+            doors.body.setNextKinematicTranslation(doorsPosition);
+            if (state === COIN_ROLLER_STATES.INITIALIZING) {
+                this.#coinRoller.coin = this.#onInitializeCoin({ position: this.#initPosition, rotation: COIN_ROTATION });
+            }
+            if (state === COIN_ROLLER_STATES.MOVING_LAUNCHER) {
+                coin.body.setEnabledRotations(false, false, false);
+                coin.body.setNextKinematicTranslation(launcherPosition);
+            }
+            if (state === COIN_ROLLER_STATES.DELIVERING_COIN) {
+                coin.body.setEnabledRotations(true, true, true);
+                coin.body.applyImpulse(COIN_IMPULSE);
+            }
         }
     }
 
@@ -168,11 +174,14 @@ export default class {
                 bodyHandle: this.#coinRoller.trap.body.handle,
                 position: this.#coinRoller.trap.position
             },
+            doors: {
+                bodyHandle: this.#coinRoller.doors.body.handle,
+                position: this.#coinRoller.doors.position
+            },
             timeActive: this.#coinRoller.timeActive,
             timeMovingCoin: this.#coinRoller.timeMovingCoin,
             timeOpeningTrap: this.#coinRoller.timeOpeningTrap,
             pendingShots: this.#coinRoller.pendingShots,
-            doorsOpened: this.#coinRoller.doorsOpened
         };
     }
 
@@ -211,7 +220,8 @@ export default class {
         this.#coinRoller.launcher.position = coinRoller.launcher.position;
         this.#coinRoller.trap.body = this.#scene.worldBodies.get(coinRoller.trap.bodyHandle);
         this.#coinRoller.trap.position = coinRoller.trap.position;
-        this.#coinRoller.doorsOpened = coinRoller.doorsOpened;
+        this.#coinRoller.doors.body = this.#scene.worldBodies.get(coinRoller.doors.bodyHandle);
+        this.#coinRoller.doors.position = coinRoller.doors.position;
         if (coinRoller.coin) {
             this.#coinRoller.coin = this.#onGetCoin(coinRoller.coin);
         }
@@ -223,11 +233,16 @@ function updateCoinRollerState({ coinRoller, time }) {
         case COIN_ROLLER_STATES.IDLE:
             break;
         case COIN_ROLLER_STATES.ACTIVATING:
-            coinRoller.state = COIN_ROLLER_STATES.INITIALIZING;
+            coinRoller.state = COIN_ROLLER_STATES.OPENING_DOORS;
+            break;
+        case COIN_ROLLER_STATES.OPENING_DOORS:
+            coinRoller.doors.position += SPEED_DOORS;
+            if (coinRoller.doors.position > MAX_DOORS_POSITION) {
+                coinRoller.state = COIN_ROLLER_STATES.INITIALIZING;
+            }
             break;
         case COIN_ROLLER_STATES.INITIALIZING:
             coinRoller.state = COIN_ROLLER_STATES.INITIALIZING_COIN;
-            coinRoller.doorsOpened = true;
             break;
         case COIN_ROLLER_STATES.INITIALIZING_COIN:
             if (coinRoller.coin.position.z < INITIALIZATION_COIN_POSITION) {
@@ -282,10 +297,17 @@ function updateCoinRollerState({ coinRoller, time }) {
                     coinRoller.pendingShots--;
                     coinRoller.state = COIN_ROLLER_STATES.ACTIVATING;
                 } else {
-                    coinRoller.doorsOpened = false;
-                    coinRoller.state = COIN_ROLLER_STATES.IDLE;
+                    coinRoller.state = COIN_ROLLER_STATES.CLOSING_DOORS;
                 }
             }
+            break;
+        case COIN_ROLLER_STATES.CLOSING_DOORS:
+            coinRoller.doors.position -= SPEED_DOORS;
+            if (coinRoller.doors.position < MIN_DOORS_POSITION) {
+                coinRoller.doors.position = 0;
+                coinRoller.state = COIN_ROLLER_STATES.IDLE;
+            }
+            break;
         default:
             break;
     }
@@ -366,7 +388,7 @@ function initializeColliders({ scene, parts, sensorColliders, onBonusWon, onCoin
     parts.forEach((partData, name) => {
         const { meshes, friction, sensor } = partData;
         let body;
-        if (name === LAUNCHER_PART_NAME || name === TRAP_PART_NAME) {
+        if (name === LAUNCHER_PART_NAME || name === TRAP_PART_NAME || name === DOORS_PART_NAME) {
             body = partData.body = scene.createKinematicBody();
             partData.position = 0;
         } else {
