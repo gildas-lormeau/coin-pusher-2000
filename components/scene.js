@@ -47,6 +47,8 @@ export default class {
             texture => resolve(pmremGenerator.fromEquirectangular(texture).texture), undefined, reject));
         this.#scene.background = new Color(BACKGROUND_COLOR);
         this.#scene.environmentIntensity = ENVIRONMENT_INTENSITY;
+        this.#scene.castShadow = true;
+        this.#scene.receiveShadow = true;
         this.#renderer.toneMapping = LinearToneMapping;
         this.#renderer.toneMappingExposure = TONE_MAPPING_EXPOSURE;
         this.#renderer.setSize(innerWidth, innerHeight);
