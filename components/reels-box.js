@@ -63,13 +63,14 @@ export default class {
 
     update(time) {
         updateReelsBoxState({ reelsBox: this.#reelsBox, time });
-        this.#reelsBox.reels.forEach(reel => updateReelState({ reel }));
-        if (this.#reelsBox.state === REELS_BOX_STATES.SETTLED) {
-            this.#onBonusWon(this.#reelsBox.reels.map(reel => reel.index));
+        const { state, reels } = this.#reelsBox;
+        reels.forEach(reel => updateReelState({ reel }));
+        if (state !== REELS_BOX_STATES.IDLE) {
+            reels.forEach(reel => reel.mesh.rotation.x = reel.rotation);
+            if (state === REELS_BOX_STATES.SETTLED) {
+                this.#onBonusWon(reels.map(reel => reel.index));
+            }
         }
-        this.#reelsBox.reels.forEach(reel => {
-            reel.mesh.rotation.x = reel.rotation;
-        });
     }
 
     spinReels() {
