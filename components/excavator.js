@@ -102,33 +102,34 @@ export default class {
             time,
             onPick: this.#onPick
         });
-        this.#excavator.parts.forEach(({ meshes, body }) =>
-            meshes.forEach(({ data }) => {
-                data.position.copy(body.translation());
-                data.quaternion.copy(body.rotation());
-            })
-        );
-        if (this.#excavator.state === EXCAVATOR_STATES.PICKING) {
-            this.#excavator.pickedObjects = this.#onPick(this.#dropPosition);
-        }
-        if (this.#excavator.state === EXCAVATOR_STATES.MOVING_TO_DROP_ZONE) {
-            this.#platform.body.setEnabledRotations(false, true, false);
-        }
-        if (this.#excavator.state === EXCAVATOR_STATES.EXTENDING_ARMS) {
-            this.#platform.body.setEnabledRotations(false, false, false);
-        }
-        if (this.#excavator.state === EXCAVATOR_STATES.MOVING_TO_BASE) {
-            this.#platform.body.setEnabledRotations(false, true, false);
-            this.#excavator.pickedObjects = [];
-        }
-        if (this.#excavator.state === EXCAVATOR_STATES.PREPARING_IDLE) {
-            this.#platform.body.setEnabledRotations(false, false, false);
-        }
-        this.#excavator.pickedObjects.forEach(object => {
+        const { state, parts, pickedObjects } = this.#excavator;
+        parts.forEach(({ meshes, body }) => meshes.forEach(({ data }) => {
+            data.position.copy(body.translation());
+            data.quaternion.copy(body.rotation());
+        }));
+        pickedObjects.forEach(object => {
             if (object.used && object.position.y < MIN_POSITION_Y) {
                 this.#onRecycleObject(object);
             }
         });
+        if (state !== EXCAVATOR_STATES.IDLE) {
+            if (state === EXCAVATOR_STATES.PICKING) {
+                this.#excavator.pickedObjects = this.#onPick(this.#dropPosition);
+            }
+            if (state === EXCAVATOR_STATES.MOVING_TO_DROP_ZONE) {
+                this.#platform.body.setEnabledRotations(false, true, false);
+            }
+            if (state === EXCAVATOR_STATES.EXTENDING_ARMS) {
+                this.#platform.body.setEnabledRotations(false, false, false);
+            }
+            if (state === EXCAVATOR_STATES.MOVING_TO_BASE) {
+                this.#platform.body.setEnabledRotations(false, true, false);
+                this.#excavator.pickedObjects = [];
+            }
+            if (state === EXCAVATOR_STATES.PREPARING_IDLE) {
+                this.#platform.body.setEnabledRotations(false, false, false);
+            }
+        }
     }
 
     save() {
