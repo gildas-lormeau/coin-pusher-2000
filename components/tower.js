@@ -30,6 +30,10 @@ export default class {
     #scene;
     #initPosition;
     #onShootCoin;
+    #turret;
+    #turretPosition = new Vector3();
+    #stand;
+    #standPosition = new Vector3();
     #tower = {
         state: TOWER_STATES.IDLE,
         pendingShots: 0,
@@ -53,6 +57,8 @@ export default class {
         this.#initPosition = initPosition;
         parts.forEach(({ meshes }) => meshes.forEach(({ data }) => this.#scene.addObject(data)));
         Object.assign(this.#tower, { parts });
+        this.#turret = this.#tower.parts.get(TURRET_PART_NAME);
+        this.#stand = this.#tower.parts.get(STAND_PART_NAME);
     }
 
     update(time) {
@@ -69,11 +75,9 @@ export default class {
                 const impulse = IMPULSE_DIRECTION.clone().applyQuaternion(rotation).normalize().multiplyScalar(IMPULSE_STRENGTH);
                 this.#onShootCoin({ position, impulse });
             }
-            const turret = getPart(parts, TURRET_PART_NAME);
-            const stand = getPart(parts, STAND_PART_NAME);
-            turret.body.setNextKinematicTranslation(new Vector3().sub(this.#initPosition).applyQuaternion(rotation).add(this.#initPosition).setY(position));
-            turret.body.setNextKinematicRotation(rotation);
-            stand.body.setNextKinematicTranslation(new Vector3().setY(position));
+            this.#turret.body.setNextKinematicTranslation(this.#turretPosition.set(0, 0, 0).sub(this.#initPosition).applyQuaternion(rotation).add(this.#initPosition).setY(position));
+            this.#turret.body.setNextKinematicRotation(rotation);
+            this.#stand.body.setNextKinematicTranslation(this.#standPosition.setY(position));
         }
     }
 
