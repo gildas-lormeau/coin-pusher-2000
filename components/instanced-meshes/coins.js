@@ -273,15 +273,10 @@ function initializePosition({ instance, hidden, position, rotation, slot = 1 }) 
 
 function update({ instance, meshes, forceRefresh }) {
     const linearVelocity = instance.body.linvel();
-    const angularVelocity = instance.body.angvel();
     const linearSpeed =
         linearVelocity.x * linearVelocity.x +
         linearVelocity.y * linearVelocity.y +
         linearVelocity.z * linearVelocity.z;
-    const angularSpeed =
-        angularVelocity.x * angularVelocity.x +
-        angularVelocity.y * angularVelocity.y +
-        angularVelocity.z * angularVelocity.z;
     if (linearSpeed > RENDERING_LINEAR_THRESHOLD||
         forceRefresh) {
         instance.position.copy(instance.body.translation());
