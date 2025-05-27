@@ -21,8 +21,7 @@ const TOWER_STATES = {
     ACTIVATING: Symbol.for("tower-activating"),
     SHOOTING_COINS: Symbol.for("tower-shooting-coins"),
     SHOOTING_COIN: Symbol.for("tower-shooting-coin"),
-    MOVING_DOWN: Symbol.for("tower-moving-down"),
-    PREPARING_IDLE: Symbol.for("tower-preparing-idle")
+    MOVING_DOWN: Symbol.for("tower-moving-down")
 };
 
 export default class {
@@ -165,10 +164,8 @@ function updateTowerState({ tower, time }) {
                 tower.position -= DELTA_POSITION_STEP;
             } else {
                 tower.position = POSITION_DOWN_Y;
-                tower.state = TOWER_STATES.PREPARING_IDLE;
+                tower.state = TOWER_STATES.IDLE;
             }
-            break;
-        case TOWER_STATES.PREPARING_IDLE:
             break;
         default:
             break;
