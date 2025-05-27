@@ -73,7 +73,6 @@ export default class {
                 });
             }
         }
-        this.#meshes.forEach(mesh => mesh.instanceMatrix.needsUpdate = true);
     }
 
     static dropCoin({ slot }) {
@@ -288,7 +287,10 @@ function update({ instance, meshes, forceRefresh }) {
         instance.position.copy(instance.body.translation());
         instance.rotation.copy(instance.body.rotation());
         instance.matrix.compose(instance.position, instance.rotation, INITIAL_SCALE);
-        meshes.forEach(mesh => mesh.setMatrixAt(instance.index, instance.matrix));
+        meshes.forEach(mesh => {
+            mesh.setMatrixAt(instance.index, instance.matrix)
+            mesh.instanceMatrix.needsUpdate = true;
+        });
     } else if (!instance.body.isSleeping() && linearSpeed > 0) {
         instance.body.sleep();
     }
