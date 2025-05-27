@@ -277,13 +277,12 @@ function update({ instance, meshes, forceRefresh }) {
         linearVelocity.x * linearVelocity.x +
         linearVelocity.y * linearVelocity.y +
         linearVelocity.z * linearVelocity.z;
-    if (linearSpeed > RENDERING_LINEAR_THRESHOLD||
-        forceRefresh) {
+    if (linearSpeed > RENDERING_LINEAR_THRESHOLD || forceRefresh) {
         instance.position.copy(instance.body.translation());
         instance.rotation.copy(instance.body.rotation());
         instance.matrix.compose(instance.position, instance.rotation, INITIAL_SCALE);
         meshes.forEach(mesh => {
-            mesh.setMatrixAt(instance.index, instance.matrix)
+            mesh.setMatrixAt(instance.index, instance.matrix);
             mesh.instanceMatrix.needsUpdate = true;
         });
     } else if (!instance.body.isSleeping() && linearSpeed > 0) {
