@@ -3,7 +3,7 @@ import { Vector3, Quaternion, Matrix4, Euler, InstancedMesh } from "three";
 const TYPE = "coin";
 const MAX_INSTANCES = 1024;
 const RADIUS = 0.03;
-const DEPTH = 0.0075;
+const DEPTH = 0.006;
 const INIIAL_POSITION_DELTA_X = .025;
 const INITIAL_POSITION_MIN_DELTA_X = 0.001;
 const INITIAL_POSITIONS_X = [-0.1125, 0, 0.1125];
@@ -18,13 +18,12 @@ const SOFT_CCD_PREDICTION = 0.1;
 const ADDITIONAL_SOLVER_ITERATIONS = 1;
 const ANGULAR_DAMPING = 0.5;
 const LINEAR_DAMPING = 0.5;
-const FRICTION = 0.1;
-const RESTITUTION = 0.3;
+const FRICTION = 0.2;
+const RESTITUTION = 0;
 const DENSITY = 1;
 const MODEL_PATH = "./../assets/coin.glb";
 const SPAWN_TIME_DELTA = 60;
-const RENDERING_LINEAR_THRESHOLD = .000000005 ** 2;
-const RENDERING_ANGULAR_THRESHOLD = .000001 ** 2;
+const RENDERING_LINEAR_THRESHOLD = .005 ** 2;
 
 export default class {
 
@@ -284,12 +283,13 @@ function update({ instance, meshes, forceRefresh }) {
         angularVelocity.x * angularVelocity.x +
         angularVelocity.y * angularVelocity.y +
         angularVelocity.z * angularVelocity.z;
-    if (linearSpeed > RENDERING_LINEAR_THRESHOLD ||
-        angularSpeed > RENDERING_ANGULAR_THRESHOLD ||
+    if (linearSpeed > RENDERING_LINEAR_THRESHOLD||
         forceRefresh) {
         instance.position.copy(instance.body.translation());
         instance.rotation.copy(instance.body.rotation());
         instance.matrix.compose(instance.position, instance.rotation, INITIAL_SCALE);
         meshes.forEach(mesh => mesh.setMatrixAt(instance.index, instance.matrix));
+    } else if (!instance.body.isSleeping() && linearSpeed > 0) {
+        instance.body.sleep();
     }
 }

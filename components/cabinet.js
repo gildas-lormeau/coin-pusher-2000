@@ -138,7 +138,7 @@ export default class {
             scene: this.#scene,
             onPick: dropPosition => {
                 const objects = [];
-                for (let i = 0; i < 20 + Math.floor(Math.random() * 5); i++) {
+                for (let i = 0; i < 30 + Math.floor(Math.random() * 10); i++) {
                     const rotation = {
                         x: (Math.random() - 0.5) * Math.PI / 4,
                         y: (Math.random() - 0.5) * Math.PI / 4,
