@@ -320,7 +320,7 @@ function recycleObject(object) {
 
 async function initializeModel({ scene, sensorListeners, sensorColliders, DEBUG_HIDE_CABINET }) {
     const cabinetModel = await scene.loadModel(MODEL_PATH);
-    const mesh = cabinetModel.scene.children[0];
+    const mesh = cabinetModel.scene;
     const body = scene.createFixedBody();
     mesh.traverse((child) => {
         if (child.isMesh) {

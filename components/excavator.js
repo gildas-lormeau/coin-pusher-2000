@@ -298,11 +298,9 @@ function updateExcavatorState({ excavator, joints, time }) {
         case EXCAVATOR_STATES.MOVING_TO_DROP_ZONE:
             // console.log("=> moving to drop zone", getAngle(platformJoint), excavator.delayMovingUp);
             if (getAngle(platformJoint) < -2) {
-                const additionalPlatformVelocity = Math.min(Math.max(excavator.delayMovingUp - MIN_DELAY_MOVING_UP, 0) / (MAX_DELAY_MOVING_UP - MIN_DELAY_MOVING_UP), 1) * .5;
-                platformArmJoint.joint.configureMotor(-.3, 1 + additionalPlatformVelocity, MOTOR_STIFFNESS, MOTOR_DAMPING);
-                const additionalArmsVelocity = Math.min(Math.max(excavator.delayMovingUp - MIN_DELAY_MOVING_UP, 0) / (MAX_DELAY_MOVING_UP - MIN_DELAY_MOVING_UP), 1) * 3;
+                platformArmJoint.joint.configureMotor(-.3, 1, MOTOR_STIFFNESS, MOTOR_DAMPING);
                 excavator.delayMovingUp = -1;
-                armsJoint.joint.configureMotor(.9, 8 + additionalArmsVelocity, MOTOR_STIFFNESS, MOTOR_DAMPING);
+                armsJoint.joint.configureMotor(.9, 8, MOTOR_STIFFNESS, MOTOR_DAMPING);
                 excavator.state = EXCAVATOR_STATES.EXTENDING_ARMS;
             }
             break;
