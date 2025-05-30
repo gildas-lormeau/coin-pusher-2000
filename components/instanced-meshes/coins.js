@@ -23,7 +23,7 @@ const RESTITUTION = 0;
 const DENSITY = 1;
 const MODEL_PATH = "./../assets/coin.glb";
 const SPAWN_TIME_DELTA = 60;
-const RENDERING_LINEAR_THRESHOLD = .005 ** 2;
+const RENDERING_LINEAR_THRESHOLD = .003 ** 2;
 
 export default class {
 

@@ -1,7 +1,7 @@
 import { BoxGeometry, MeshStandardMaterial, Mesh, CylinderGeometry } from "three";
 
 const POSITION_WALL = [0, 0.535, -0.3725];
-const POSITION_GLASS = [0, 0.6425, -0.30];
+const POSITION_GLASS = [0, 0.6425, -0.325];
 const WIDTH_GLASS = 0.6;
 const WIDTH_WALL = 0.7;
 const HEIGHT_WALL = 0.9;
