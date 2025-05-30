@@ -10,7 +10,7 @@ const POSITION_COINS_IN_POOL = [0.5, 0.75, -0.32];
 const ROTATION_COINS_IN_POOL = [0, 0, 0];
 const DIGITS_COUNT_COINS_IN_PLAY = 3;
 const COLOR_COINS_IN_PLAY = 1;
-const POSITION_COINS_IN_PLAY = [0.7, 0.29, 0.65];
+const POSITION_COINS_IN_PLAY = [-0.95, 0.29, 0.67];
 const ROTATION_COINS_IN_PLAY = [-Math.PI / 2, 0, 0];
 
 export default class {
