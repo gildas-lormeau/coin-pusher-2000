@@ -3,7 +3,7 @@ import { Vector3, Quaternion, Matrix4, Euler, InstancedMesh } from "three";
 const TYPE = "coin";
 const MAX_INSTANCES = 1024;
 const RADIUS = 0.03;
-const DEPTH = 0.006;
+const DEPTH = 0.0065;
 const INIIAL_POSITION_DELTA_X = .025;
 const INITIAL_POSITION_MIN_DELTA_X = 0.001;
 const INITIAL_POSITIONS_X = [-0.1125, 0, 0.1125];
@@ -24,6 +24,8 @@ const DENSITY = 1;
 const MODEL_PATH = "./../assets/coin.glb";
 const SPAWN_TIME_DELTA = 60;
 const RENDERING_LINEAR_THRESHOLD = .003 ** 2;
+const TEMP_EULER = new Euler(0, 0, 0, "XYZ");
+const MAX_ANGLE_FLAT = Math.PI / 4;
 
 export default class {
 
@@ -285,7 +287,14 @@ function update({ instance, meshes, forceRefresh }) {
             mesh.setMatrixAt(instance.index, instance.matrix);
             mesh.instanceMatrix.needsUpdate = true;
         });
-    } else if (!instance.body.isSleeping() && linearSpeed > 0) {
+    } else if (!instance.body.isSleeping() && linearSpeed > 0 && isFlat(instance)) {
         instance.body.sleep();
     }
+}
+
+function isFlat(instance) {
+    const eulerRotation = TEMP_EULER.setFromQuaternion(instance.rotation);
+    return (
+        (Math.abs(eulerRotation.x) < MAX_ANGLE_FLAT || Math.abs(eulerRotation.x - Math.PI) < MAX_ANGLE_FLAT || Math.abs(eulerRotation.x + Math.PI) < MAX_ANGLE_FLAT) &&
+        (Math.abs(eulerRotation.z) < MAX_ANGLE_FLAT) || Math.abs(eulerRotation.z - Math.PI) < MAX_ANGLE_FLAT || Math.abs(eulerRotation.z + Math.PI) < MAX_ANGLE_FLAT);
 }

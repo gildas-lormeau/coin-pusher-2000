@@ -16,6 +16,7 @@ import CoinRoller from "./coin-roller.js";
 const RESTITUTION = 0;
 const MIN_POSITION_Y_OBJECTS = -1;
 const MODEL_PATH = "./../assets/cabinet.glb";
+const SENSOR_HEIGHT = 0.1;
 
 export default class {
 
@@ -330,37 +331,55 @@ async function initializeModel({ scene, sensorListeners, sensorColliders, DEBUG_
             if (userData.collider || userData.sensor) {
                 const name = child.material.name;
                 const index = child.geometry.index;
-                const positionAttribute = child.geometry.attributes.position;
-                const vertices = [];
-                const indices = [];
-                for (let indexVertex = 0; indexVertex < index.count; indexVertex += 3) {
-                    const vertexA = index.getX(indexVertex);
-                    const vertexB = index.getX(indexVertex + 1);
-                    const vertexC = index.getX(indexVertex + 2);
-                    vertices.push(
-                        positionAttribute.getX(vertexA),
-                        positionAttribute.getY(vertexA),
-                        positionAttribute.getZ(vertexA),
-                        positionAttribute.getX(vertexB),
-                        positionAttribute.getY(vertexB),
-                        positionAttribute.getZ(vertexB),
-                        positionAttribute.getX(vertexC),
-                        positionAttribute.getY(vertexC),
-                        positionAttribute.getZ(vertexC)
-                    );
-                    indices.push(indexVertex, indexVertex + 1, indexVertex + 2);
+                let collider;
+                if (userData.sensor) {
+                    child.geometry.computeBoundingBox();
+                    const bbox = child.geometry.boundingBox;
+                    const worldMatrix = child.matrixWorld;
+                    worldMatrix.decompose(child.position, child.quaternion, child.scale);
+                    const width = bbox.max.x - bbox.min.x;
+                    const height = SENSOR_HEIGHT;
+                    const depth = bbox.max.z - bbox.min.z;
+                    const minX = bbox.min.x;
+                    const minZ = bbox.min.z;
+                    collider = scene.createCuboidCollider({
+                        width: width,
+                        height: height,
+                        depth: depth,
+                        sensor: true,
+                        position: [minX + width / 2, bbox.min.y - height / 2, minZ + depth / 2],
+                        userData: {
+                            objectType: name,
+                            onIntersect: sensorListeners[name]
+                        }
+                    }, body);
+                } else {
+                    const positionAttribute = child.geometry.attributes.position;
+                    const vertices = [];
+                    const indices = [];
+                    for (let indexVertex = 0; indexVertex < index.count; indexVertex += 3) {
+                        const vertexA = index.getX(indexVertex);
+                        const vertexB = index.getX(indexVertex + 1);
+                        const vertexC = index.getX(indexVertex + 2);
+                        vertices.push(
+                            positionAttribute.getX(vertexA), positionAttribute.getY(vertexA), positionAttribute.getZ(vertexA),
+                            positionAttribute.getX(vertexB), positionAttribute.getY(vertexB), positionAttribute.getZ(vertexB),
+                            positionAttribute.getX(vertexC), positionAttribute.getY(vertexC), positionAttribute.getZ(vertexC)
+                        );
+                        indices.push(indexVertex, indexVertex + 1, indexVertex + 2);
+                    }
+                    collider = scene.createTrimeshCollider({
+                        vertices: new Float32Array(vertices),
+                        indices: new Uint16Array(indices),
+                        friction: userData.friction,
+                        restitution: RESTITUTION,
+                        sensor: userData.sensor,
+                        userData: userData.sensor ? {
+                            objectType: name,
+                            onIntersect: sensorListeners[name]
+                        } : undefined
+                    }, body);
                 }
-                const collider = scene.createTrimeshCollider({
-                    vertices: new Float32Array(vertices),
-                    indices: new Uint16Array(indices),
-                    friction: userData.friction,
-                    restitution: RESTITUTION,
-                    sensor: userData.sensor,
-                    userData: userData.sensor ? {
-                        objectType: name,
-                        onIntersect: sensorListeners[name]
-                    } : undefined
-                }, body);
                 collider.setFrictionCombineRule(1);
                 if (userData.sensor) {
                     sensorColliders.set(name, collider);

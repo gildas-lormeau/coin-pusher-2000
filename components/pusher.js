@@ -9,12 +9,15 @@ const FRICTION = 0;
 const RESTITUTION = .05;
 const POSITION = [0, 0.21, -0.22];
 const START_ANGLE = Math.PI / 4;
-const FLOOR_POSITION = [0, 0.135, 0];
+const FLOOR_BACK_POSITION = [0, 0.135, -.13];
+const FLOOR_FRONT_POSITION = [0, 0.133, 0.58];
 const LEFT_WALL_POSITION = [-0.325, 0.215, -0.12];
 const RIGHT_WALL_POSITION = [0.325, 0.215, -0.12];
-const FLOOR_WIDTH = 0.7;
+const FLOOR_BACK_WIDTH = 0.75;
+const FLOOR_FRONT_WIDTH = 1.2;
 const FLOOR_HEIGHT = 0.1;
-const FLOOR_DEPTH = 1.25;
+const FLOOR_BACK_DEPTH = .9;
+const FLOOR_FRONT_DEPTH = 0.525;
 const WALL_WIDTH = 0.05;
 const WALL_HEIGHT = 0.15;
 const WALL_DEPTH = 0.6;
@@ -254,12 +257,20 @@ function initializeColliders({ scene, parts }) {
     }, door.body);
     door.body.setSoftCcdPrediction(DOOR_SOFT_CCD_PREDICTION);
     scene.createCuboidCollider({
-        width: FLOOR_WIDTH,
+        width: FLOOR_BACK_WIDTH,
         height: FLOOR_HEIGHT,
-        depth: FLOOR_DEPTH,
+        depth: FLOOR_BACK_DEPTH,
         friction: FLOOR_FRICTION,
         restitution: FLOOR_RESTITUTION,
-        position: FLOOR_POSITION
+        position: FLOOR_BACK_POSITION
+    });
+    scene.createCuboidCollider({
+        width: FLOOR_FRONT_WIDTH,
+        height: FLOOR_HEIGHT,
+        depth: FLOOR_FRONT_DEPTH,
+        friction: FLOOR_FRICTION,
+        restitution: FLOOR_RESTITUTION,
+        position: FLOOR_FRONT_POSITION
     });
     scene.createCuboidCollider({
         width: WALL_WIDTH,
