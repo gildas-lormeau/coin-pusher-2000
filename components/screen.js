@@ -4,8 +4,8 @@ import { Vector3 } from "three";
 const MODEL_PATH = "./../assets/screen.glb";
 
 const DISPLAY_MATERIAL_NAME = "display";
-const SCREEN_WIDTH = 0.437;
-const SCREEN_HEIGHT = 0.316;
+const SCREEN_WIDTH = 0.442;
+const SCREEN_HEIGHT = 0.319;
 
 export default class {
 
