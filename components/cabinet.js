@@ -12,6 +12,7 @@ import ReelsBox from "./reels-box.js";
 import Excavator from "./excavator.js";
 import Tower from "./tower.js";
 import CoinRoller from "./coin-roller.js";
+import Screen from "./screen.js";
 
 const RESTITUTION = 0;
 const MIN_POSITION_Y_OBJECTS = -1;
@@ -71,6 +72,7 @@ export default class {
     #excavator;
     #tower;
     #coinRoller;
+    #screen;
 
     async initialize() {
         const mesh = await initializeModel({
@@ -199,6 +201,8 @@ export default class {
             }
         });
         await this.#coinRoller.initialize();
+        this.#screen = new Screen({ scene: this.#scene });
+        await this.#screen.initialize();
     }
 
     update(time) {
@@ -212,6 +216,7 @@ export default class {
         this.#excavator.update(time);
         this.#tower.update(time);
         this.#coinRoller.update(time);
+        this.#screen.update();
         this.dynamicBodies.forEach(({ object, objects }) => {
             if (object.position.y < MIN_POSITION_Y_OBJECTS) {
                 console.warn("object recycled", object, structuredClone(object.position), structuredClone(object.rotation));
@@ -221,6 +226,10 @@ export default class {
         if (this.DEBUG_AUTOPLAY) {
             this.#autoplay();
         }
+    }
+
+    resize(width, height) {
+        this.#screen.resize(width, height);
     }
 
     get interactiveObjects() {

@@ -60,6 +60,7 @@ export default class {
 
     #containerElement;
     #scene = new Scene();
+    #css3DScene = new Scene();
     #renderer = new WebGLRenderer({
         antialias: ANTIALIAS,
         preserveDrawingBuffer: PRESERVE_DRAWING_BUFFER,
@@ -273,6 +274,18 @@ export default class {
 
     get worldJoints() {
         return this.#world.impulseJoints;
+    }
+
+    get camera() {
+        return this.#camera;
+    }
+
+    get containerElement() {
+        return this.#containerElement;
+    }
+
+    get css3DScene() {
+        return this.#css3DScene;
     }
 
     removeWorldBody(body) {

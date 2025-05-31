@@ -34,9 +34,6 @@ export default class {
     static async initialize() {
         const camera = new Camera();
         this.#containerElement = document.body;
-        addEventListener("resize", () => this.#onWindowResize());
-        const resizeObserver = new ResizeObserver(() => this.#onContainerResize());
-        resizeObserver.observe(this.#containerElement);
         this.#scene = new Scene({
             containerElement: this.#containerElement,
             camera
@@ -68,6 +65,9 @@ export default class {
             containerElement: this.#containerElement,
             joints: this.#cabinet.joints
         });
+        onresize = () => this.#onWindowResize();
+        const resizeObserver = new ResizeObserver(() => this.#onContainerResize());
+        resizeObserver.observe(this.#containerElement);
         onkeydown = async (event) => {
             if ((event.key === "s" || event.key === "S") && event.ctrlKey) {
                 event.preventDefault();
@@ -127,11 +127,13 @@ export default class {
 
     static #onWindowResize() {
         this.#scene.resize(innerWidth, innerHeight);
+        this.#cabinet.resize(innerWidth, innerHeight);
     }
 
     static #onContainerResize() {
         const width = this.#containerElement.clientWidth;
         const height = this.#containerElement.clientHeight;
         this.#scene.resize(width, height);
+        this.#cabinet.resize(width, height);
     }
 }
