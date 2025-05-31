@@ -28,8 +28,8 @@ const BLOCKING_PLATFORM_POSITION_PRECISION = 0.0001;
 const DOOR_SPEED = 0.003;
 const DOOR_SOFT_CCD_PREDICTION = 0.001;
 const DELIVERY_POSITION = [0, 0.215, -0.25];
-const EDGE_HEIGHT = 0.01;
-const EDGE_DEPTH = 0.01;
+const EDGE_HEIGHT = 0.005;
+const EDGE_DEPTH = 0.005;
 const MODEL_PATH = "./../assets/pusher.glb";
 const PUSHER_STATES = {
     MOVING: Symbol.for("pusher-moving"),
