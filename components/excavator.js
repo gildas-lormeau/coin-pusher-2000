@@ -1,6 +1,4 @@
 import { Quaternion, Vector3 } from "three";
-import COLLIDERS from "./excavator-colliders.js";
-
 const MODEL_PATH = "./../assets/excavator.glb";
 const RESTITUTION = 0;
 const BASE_PART_NAME = "base";
@@ -19,8 +17,6 @@ const DELAY_DROP_WAIT = 750;
 const MOTOR_STIFFNESS = 50000;
 const MOTOR_DAMPING = 20000;
 const MIN_POSITION_Y = 0.015;
-const COLLIDER_DEPTH = 0.005;
-const FRICTION = 1;
 
 const EXCAVATOR_STATES = {
     IDLE: Symbol.for("excavator-idle"),
@@ -466,22 +462,6 @@ function initializeColliders({ scene, parts, joints }) {
             }
         });
     });
-    for (const name in COLLIDERS) {
-        COLLIDERS[name].forEach(colliderData => {
-            const normal = new Vector3().fromArray(colliderData.normal);
-            const facePosition = new Vector3().fromArray(colliderData.position);
-            const position = facePosition.clone().sub(normal.multiplyScalar(COLLIDER_DEPTH / 2));
-            scene.createCuboidCollider({
-                width: colliderData.width,
-                height: colliderData.height,
-                depth: COLLIDER_DEPTH,
-                position: [position.x, position.y, position.z],
-                rotation: colliderData.rotation,
-                friction: FRICTION,
-                restitution: RESTITUTION
-            }, parts.get(name).body);
-        });
-    }
     const platform = parts.get(PLATFORM);
     platform.body.setEnabledRotations(false, true, false);
     platform.body.setEnabledTranslations(false, false, false);
