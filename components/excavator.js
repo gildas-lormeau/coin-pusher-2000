@@ -1,4 +1,5 @@
 import { Quaternion, Vector3 } from "three";
+import COLLIDERS from "./excavator-colliders.js";
 
 const MODEL_PATH = "./../assets/excavator.glb";
 const RESTITUTION = 0;
@@ -17,9 +18,9 @@ const DELAY_PICK_WAIT = 1000;
 const DELAY_DROP_WAIT = 750;
 const MOTOR_STIFFNESS = 50000;
 const MOTOR_DAMPING = 20000;
-const MAX_DELAY_MOVING_UP = 3500;
-const MIN_DELAY_MOVING_UP = 1500;
 const MIN_POSITION_Y = 0.015;
+const COLLIDER_DEPTH = 0.005;
+const FRICTION = 1;
 
 const EXCAVATOR_STATES = {
     IDLE: Symbol.for("excavator-idle"),
@@ -258,7 +259,7 @@ function updateExcavatorState({ excavator, joints, time }) {
             if (getAngle(jaw1Joint) < -.5 && getAngle(jaw2Joint) > .5 && getAngle(jaw3Joint) < -.5 && getAngle(jaw4Joint) > .5) {
                 excavator.timePick = time;
                 platformArmJoint.joint.configureMotor(-.7, 1.2, MOTOR_STIFFNESS, MOTOR_DAMPING);
-                armsJoint.joint.configureMotor(.5, 2.3, MOTOR_STIFFNESS, MOTOR_DAMPING);
+                armsJoint.joint.configureMotor(.5, 2.5, MOTOR_STIFFNESS, MOTOR_DAMPING);
                 excavator.state = EXCAVATOR_STATES.MOVING_DOWN;
             }
             break;
@@ -448,7 +449,7 @@ function getPart(parts, name) {
     return partData;
 }
 
-function initializeColliders({ scene, parts, joints, onRecycleObject }) {
+function initializeColliders({ scene, parts, joints }) {
     parts.forEach((partData, name) => {
         const { meshes, friction } = partData;
         const body = partData.body = name === BASE_PART_NAME ? scene.createFixedBody() : scene.createDynamicBody();
@@ -456,19 +457,31 @@ function initializeColliders({ scene, parts, joints, onRecycleObject }) {
         meshes.forEach(meshData => {
             const { vertices, indices } = meshData;
             if (vertices && indices) {
-                meshData.collider = scene.createTrimeshCollider({
+                scene.createTrimeshCollider({
                     vertices,
                     indices,
                     friction,
-                    restitution: RESTITUTION,
-                    userData: {
-                        objectType: name,
-                        onIntersect: onRecycleObject
-                    }
+                    restitution: RESTITUTION
                 }, body);
             }
         });
     });
+    for (const name in COLLIDERS) {
+        COLLIDERS[name].forEach(colliderData => {
+            const normal = new Vector3().fromArray(colliderData.normal);
+            const facePosition = new Vector3().fromArray(colliderData.position);
+            const position = facePosition.clone().sub(normal.multiplyScalar(COLLIDER_DEPTH / 2));
+            scene.createCuboidCollider({
+                width: colliderData.width,
+                height: colliderData.height,
+                depth: COLLIDER_DEPTH,
+                position: [position.x, position.y, position.z],
+                rotation: colliderData.rotation,
+                friction: FRICTION,
+                restitution: RESTITUTION
+            }, parts.get(name).body);
+        });
+    }
     const platform = parts.get(PLATFORM);
     platform.body.setEnabledRotations(false, true, false);
     platform.body.setEnabledTranslations(false, false, false);
