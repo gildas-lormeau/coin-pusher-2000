@@ -259,7 +259,7 @@ function updateExcavatorState({ excavator, joints, time }) {
             if (getAngle(jaw1Joint) < -.5 && getAngle(jaw2Joint) > .5 && getAngle(jaw3Joint) < -.5 && getAngle(jaw4Joint) > .5) {
                 excavator.timePick = time;
                 platformArmJoint.joint.configureMotor(-.7, 1.2, MOTOR_STIFFNESS, MOTOR_DAMPING);
-                armsJoint.joint.configureMotor(.5, 2.5, MOTOR_STIFFNESS, MOTOR_DAMPING);
+                armsJoint.joint.configureMotor(.5, 3, MOTOR_STIFFNESS, MOTOR_DAMPING);
                 excavator.state = EXCAVATOR_STATES.MOVING_DOWN;
             }
             break;
