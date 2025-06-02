@@ -129,7 +129,7 @@ export default class {
     }
 
     createTrimeshCollider({ vertices, indices, userData, position, rotation, sensor, friction, restitution, density }, body = this.createFixedBody()) {
-        const colliderDesc = ColliderDesc.trimesh(vertices, indices, TriMeshFlags.FIX_INTERNAL_EDGES);
+        const colliderDesc = ColliderDesc.trimesh(vertices, indices, TriMeshFlags.ORIENTED | TriMeshFlags.FIX_INTERNAL_EDGES);
         if (position !== undefined) {
             colliderDesc.setTranslation(...position);
         }
