@@ -363,19 +363,12 @@ async function initializeModel({ scene, sensorListeners, sensorColliders, DEBUG_
                         }
                     }, body);
                 } else {
-                    const positionAttribute = child.geometry.attributes.position;
+                    const position = child.geometry.attributes.position;
                     const vertices = [];
                     const indices = [];
-                    for (let indexVertex = 0; indexVertex < index.count; indexVertex += 3) {
-                        const vertexA = index.getX(indexVertex);
-                        const vertexB = index.getX(indexVertex + 1);
-                        const vertexC = index.getX(indexVertex + 2);
-                        vertices.push(
-                            positionAttribute.getX(vertexA), positionAttribute.getY(vertexA), positionAttribute.getZ(vertexA),
-                            positionAttribute.getX(vertexB), positionAttribute.getY(vertexB), positionAttribute.getZ(vertexB),
-                            positionAttribute.getX(vertexC), positionAttribute.getY(vertexC), positionAttribute.getZ(vertexC)
-                        );
-                        indices.push(indexVertex, indexVertex + 1, indexVertex + 2);
+                    for (let indexVertex = 0; indexVertex < index.count; indexVertex++) {
+                        vertices.push(position.getX(indexVertex), position.getY(indexVertex), position.getZ(indexVertex));
+                        indices.push(index.getX(indexVertex));
                     }
                     collider = scene.createTrimeshCollider({
                         vertices: new Float32Array(vertices),
