@@ -164,8 +164,11 @@ function updateTowerState({ tower, time }) {
                 tower.position -= DELTA_POSITION_STEP;
             } else {
                 tower.position = POSITION_DOWN_Y;
-                tower.state = TOWER_STATES.IDLE;
+                tower.state = TOWER_STATES.PREPARING_IDLE;
             }
+            break;
+        case TOWER_STATES.PREPARING_IDLE:
+            tower.state = TOWER_STATES.IDLE;
             break;
         default:
             break;
