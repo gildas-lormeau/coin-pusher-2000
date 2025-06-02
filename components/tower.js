@@ -21,7 +21,8 @@ const TOWER_STATES = {
     ACTIVATING: Symbol.for("tower-activating"),
     SHOOTING_COINS: Symbol.for("tower-shooting-coins"),
     SHOOTING_COIN: Symbol.for("tower-shooting-coin"),
-    MOVING_DOWN: Symbol.for("tower-moving-down")
+    MOVING_DOWN: Symbol.for("tower-moving-down"),
+    PREPARING_IDLE: Symbol.for("tower-preparing-idle")
 };
 
 export default class {
@@ -192,16 +193,9 @@ async function initializeModel({ scene }) {
                 const position = geometry.attributes.position;
                 const vertices = [];
                 const indices = [];
-                for (let indexVertex = 0; indexVertex < index.count; indexVertex += 3) {
-                    const vertexA = index.getX(indexVertex);
-                    const vertexB = index.getX(indexVertex + 1);
-                    const vertexC = index.getX(indexVertex + 2);
-                    vertices.push(
-                        position.getX(vertexA), position.getY(vertexA), position.getZ(vertexA),
-                        position.getX(vertexB), position.getY(vertexB), position.getZ(vertexB),
-                        position.getX(vertexC), position.getY(vertexC), position.getZ(vertexC)
-                    );
-                    indices.push(indexVertex, indexVertex + 1, indexVertex + 2);
+                for (let indexVertex = 0; indexVertex < index.count; indexVertex++) {
+                    vertices.push(position.getX(indexVertex), position.getY(indexVertex), position.getZ(indexVertex));
+                    indices.push(index.getX(indexVertex));
                 }
                 const partData = getPart(parts, name);
                 partData.meshes.push({
