@@ -2,6 +2,7 @@ import { Quaternion, Vector3 } from "three";
 const MODEL_PATH = "./../assets/excavator.glb";
 const RESTITUTION = 0;
 const BASE_PART_NAME = "base";
+const TRAP_PART_NAME = "trap-excavator";
 const PLATFORM = "rotating-platform";
 const DROP_POSITION = "drop-position";
 const JOINT_PLATFORM = "joint-rotating-platform";
@@ -15,7 +16,7 @@ const JOINT_JAW_4 = "joint-jaw-4";
 const DELAY_PICK_WAIT = 1000;
 const MOTOR_STIFFNESS = 50000;
 const MOTOR_DAMPING = 20000;
-const MIN_POSITION_Y = 0.015;
+const SENSOR_HEIGHT = 0.1;
 
 const EXCAVATOR_STATES = {
     IDLE: Symbol.for("excavator-idle"),
@@ -41,9 +42,9 @@ export default class {
     #onRecycleObject;
     #onGetObject;
     #dropPosition;
+    #trapSensor;
     #excavator = {
         state: EXCAVATOR_STATES.IDLE,
-        pickedObjects: [],
         pendingPicks: 0,
         timePick: -1,
         timeDrop: -1,
@@ -64,20 +65,27 @@ export default class {
             scene
         });
         this.#dropPosition = dropPosition;
-        initializeColliders({
+        const { trapSensor } = initializeColliders({
             scene,
             parts,
             joints,
-            onRecycleObject: this.#onRecycleObject
+            trapSensor: this.#trapSensor,
+            onRecycleObject: userData => {
+                const object = this.#onGetObject(userData);
+                if (object) {
+                    this.#onRecycleObject(userData);
+                }
+            }
         });
+        this.#trapSensor = trapSensor;
         parts.forEach(({ body, meshes }) => {
             meshes.forEach(({ data }) => this.#scene.addObject(data));
             body.setEnabled(true);
         });
         parts.get(PLATFORM).body.setEnabledRotations(false, false, false);
         Object.assign(this.#excavator, { parts, joints });
-        this.#platformArmJoint.joint.configureMotor(0, 1.2, MOTOR_STIFFNESS, MOTOR_DAMPING);
-        this.#armsJoint.joint.configureMotor(0, 3.8, MOTOR_STIFFNESS, MOTOR_DAMPING);
+        this.#platformArmJoint.joint.configureMotor(0, 1, MOTOR_STIFFNESS, MOTOR_DAMPING);
+        this.#armsJoint.joint.configureMotor(0, 3.7, MOTOR_STIFFNESS, MOTOR_DAMPING);
         this.#jawsJoint.joint.configureMotor(0, 0, 1, 0);
     }
 
@@ -98,21 +106,15 @@ export default class {
             time,
             onPick: this.#onPick
         });
-        const { state, parts, pickedObjects } = this.#excavator;
+        const { state, parts } = this.#excavator;
         parts.forEach(({ meshes, body }) => meshes.forEach(({ data }) => {
             data.position.copy(body.translation());
             data.quaternion.copy(body.rotation());
         }));
-        pickedObjects.forEach(object => {
-            if (object.used && object.position.y < MIN_POSITION_Y) {
-                this.#onRecycleObject(object);
-            }
-        });
         if (state !== EXCAVATOR_STATES.IDLE) {
             if (state === EXCAVATOR_STATES.PICKING) {
-                this.#excavator.pickedObjects = this.#onPick(this.#dropPosition);
-            }
-            if (state === EXCAVATOR_STATES.MOVING_TO_DROP_ZONE) {
+                this.#onPick(this.#dropPosition);
+            } if (state === EXCAVATOR_STATES.MOVING_TO_DROP_ZONE) {
                 this.#platform.body.setEnabledRotations(false, true, false);
             }
             if (state === EXCAVATOR_STATES.EXTENDING_ARMS) {
@@ -120,7 +122,6 @@ export default class {
             }
             if (state === EXCAVATOR_STATES.MOVING_TO_BASE) {
                 this.#platform.body.setEnabledRotations(false, true, false);
-                this.#excavator.pickedObjects = [];
             }
             if (state === EXCAVATOR_STATES.CLOSING_JAWS_AFTER_DROPPING) {
                 this.#platform.body.setEnabledRotations(false, false, false);
@@ -142,11 +143,6 @@ export default class {
                 bodyHandle: body.handle
             };
         });
-        const pickedObjects = this.#excavator.pickedObjects.map(object => ({
-            objectType: object.objectType,
-            index: object.index,
-            type: object.type
-        }));
         return {
             state: this.#excavator.state.description,
             pendingPicks: this.#excavator.pendingPicks,
@@ -155,11 +151,30 @@ export default class {
             delayMovingUp: this.#excavator.delayMovingUp,
             joints,
             parts,
-            pickedObjects
+            trapSensorHandle: this.#trapSensor.handle
         };
     }
 
     load(excavator) {
+        this.#excavator.parts.forEach(partData => {
+            partData.meshes.forEach(({ data }) => {
+                data.traverse((child) => {
+                    if (child.isMesh) {
+                        const userData = child.material.userData;
+                        const objectType = child.material.name;
+                        if (userData.sensor) {
+                            const colliderHandle = excavator.trapSensorHandle;
+                            const collider = this.#scene.worldColliders.get(colliderHandle);
+                            collider.userData = {
+                                objectType,
+                                onIntersect: this.#onRecycleObject
+                            };
+                            this.#trapSensor = collider;
+                        }
+                    }
+                });
+            });
+        });
         this.#excavator.state = Symbol.for(excavator.state);
         this.#excavator.pendingPicks = excavator.pendingPicks;
         this.#excavator.timePick = excavator.timePick;
@@ -179,7 +194,6 @@ export default class {
                 partData.body = this.#scene.worldBodies.get(loadedPart.bodyHandle);
             }
         });
-        this.#excavator.pickedObjects = excavator.pickedObjects.map(object => this.#onGetObject(object));
     }
 
     pick() {
@@ -251,7 +265,7 @@ function updateExcavatorState({ excavator, joints, time }) {
             // console.log("=> opening jaws", getAngle(jaw1Joint), getAngle(jaw2Joint), getAngle(jaw3Joint), getAngle(jaw4Joint));
             if (getAngle(jaw1Joint) < -.5 && getAngle(jaw2Joint) > .5 && getAngle(jaw3Joint) < -.5 && getAngle(jaw4Joint) > .5) {
                 excavator.timePick = time;
-                platformArmJoint.joint.configureMotor(-.7, 1.2, MOTOR_STIFFNESS, MOTOR_DAMPING);
+                platformArmJoint.joint.configureMotor(-.7, 1, MOTOR_STIFFNESS, MOTOR_DAMPING);
                 armsJoint.joint.configureMotor(.5, 3, MOTOR_STIFFNESS, MOTOR_DAMPING);
                 excavator.state = EXCAVATOR_STATES.MOVING_DOWN;
             }
@@ -326,7 +340,7 @@ function updateExcavatorState({ excavator, joints, time }) {
         case EXCAVATOR_STATES.MOVING_TO_BASE:
             // console.log("=> moving to base", getAngle(platformJoint));
             if (getAngle(platformJoint) > -.01) {
-                platformArmJoint.joint.configureMotor(0, 1.2, MOTOR_STIFFNESS, MOTOR_DAMPING);
+                platformArmJoint.joint.configureMotor(0, 1, MOTOR_STIFFNESS, MOTOR_DAMPING);
                 armsJoint.joint.configureMotor(0, 3.7, MOTOR_STIFFNESS, MOTOR_DAMPING);
                 excavator.state = EXCAVATOR_STATES.CLOSING_JAWS_AFTER_DROPPING;
                 excavator.pendingPicks--;
@@ -380,8 +394,8 @@ async function initializeModel({ scene }) {
             child.receiveShadow = true;
             const { material, geometry } = child;
             const userData = material.userData;
-            if (userData.collider) {
-                const name = userData.name;
+            const name = userData.name;
+            if (userData.collider || userData.sensor) {
                 const index = geometry.index;
                 const position = geometry.attributes.position;
                 const vertices = [];
@@ -393,6 +407,7 @@ async function initializeModel({ scene }) {
                 const partData = getPart(parts, name);
                 partData.meshes.push({
                     data: child,
+                    sensor: userData.sensor,
                     vertices,
                     indices
                 });
@@ -433,14 +448,38 @@ function getPart(parts, name) {
     return partData;
 }
 
-function initializeColliders({ scene, parts, joints }) {
+function initializeColliders({ scene, parts, joints, onRecycleObject }) {
+    let trapSensor;
     parts.forEach((partData, name) => {
         const { meshes, friction } = partData;
-        const body = partData.body = name === BASE_PART_NAME ? scene.createFixedBody() : scene.createDynamicBody();
+        const body = partData.body = name === BASE_PART_NAME || name === TRAP_PART_NAME ? scene.createFixedBody() : scene.createDynamicBody();
         body.setEnabled(false);
         meshes.forEach(meshData => {
-            const { vertices, indices } = meshData;
-            if (vertices && indices) {
+            if (meshData.sensor) {
+                const child = meshData.data;
+                child.geometry.computeBoundingBox();
+                const bbox = child.geometry.boundingBox;
+                const worldMatrix = child.matrixWorld;
+                worldMatrix.decompose(child.position, child.quaternion, child.scale);
+                const width = bbox.max.x - bbox.min.x;
+                const height = SENSOR_HEIGHT;
+                const depth = bbox.max.z - bbox.min.z;
+                const minX = bbox.min.x;
+                const minZ = bbox.min.z;
+                const collider = scene.createCuboidCollider({
+                    width: width,
+                    height: height,
+                    depth: depth,
+                    sensor: true,
+                    position: [minX + width / 2, bbox.min.y - height / 2, minZ + depth / 2],
+                    userData: {
+                        objectType: name,
+                        onIntersect: userData => onRecycleObject(userData)
+                    }
+                }, body);
+                trapSensor = collider;
+            } else if (meshData.vertices) {
+                const { vertices, indices } = meshData;
                 scene.createTrimeshCollider({
                     vertices,
                     indices,
@@ -472,4 +511,5 @@ function initializeColliders({ scene, parts, joints }) {
             jointData.joint.setLimits(...limits);
         }
     });
+    return { trapSensor };
 }
