@@ -23,7 +23,8 @@ const RESTITUTION = 0;
 const DENSITY = 1;
 const MODEL_PATH = "./../assets/coin.glb";
 const SPAWN_TIME_DELTA = 60;
-const RENDERING_LINEAR_THRESHOLD = 0.00002;
+const RENDERING_LINEAR_SPEED_THRESHOLD = 0.00002;
+const SLEEP_LINEAR_SPEED_THRESHOLD = 0.000000005;
 const TEMP_EULER = new Euler(0, 0, 0, "XYZ");
 const MAX_ANGLE_FLAT = Math.PI / 4;
 
@@ -65,9 +66,16 @@ export default class {
         }
         for (const instance of this.#instances) {
             if (instance.used) {
+                const linearVelocity = instance.body.linvel();
+                instance.linearSpeed =
+                    linearVelocity.x * linearVelocity.x +
+                    linearVelocity.y * linearVelocity.y +
+                    linearVelocity.z * linearVelocity.z;
                 if (instance.pendingImpulse && instance.body.mass() > 0) {
                     instance.body.applyImpulse(instance.pendingImpulse, true);
                     instance.pendingImpulse = null;
+                } else if (instance.linearSpeed && instance.linearSpeed < SLEEP_LINEAR_SPEED_THRESHOLD && isFlat(instance) && !instance.body.isSleeping()) {
+                    instance.body.sleep();
                 }
                 update({
                     instance,
@@ -274,18 +282,25 @@ function initializePosition({ instance, hidden, position, rotation, slot = 1 }) 
 }
 
 function update({ instance, meshes, forceRefresh }) {
-    const linearVelocity = instance.body.linvel();
-    const linearSpeed =
-        linearVelocity.x * linearVelocity.x +
-        linearVelocity.y * linearVelocity.y +
-        linearVelocity.z * linearVelocity.z;
     instance.position.copy(instance.body.translation());
     instance.rotation.copy(instance.body.rotation());
-    if (linearSpeed > RENDERING_LINEAR_THRESHOLD || forceRefresh) {
+    if (instance.linearSpeed > RENDERING_LINEAR_SPEED_THRESHOLD || forceRefresh) {
         instance.matrix.compose(instance.position, instance.rotation, INITIAL_SCALE);
         meshes.forEach(mesh => {
             mesh.setMatrixAt(instance.index, instance.matrix);
             mesh.instanceMatrix.needsUpdate = true;
         });
     }
+}
+
+function isFlat(instance) {
+    const eulerRotation = TEMP_EULER.setFromQuaternion(instance.rotation);
+    return (
+        Math.abs(eulerRotation.x) < MAX_ANGLE_FLAT ||
+        Math.abs(eulerRotation.x - Math.PI) < MAX_ANGLE_FLAT ||
+        Math.abs(eulerRotation.x + Math.PI) < MAX_ANGLE_FLAT) && (
+            Math.abs(eulerRotation.z) < MAX_ANGLE_FLAT ||
+            Math.abs(eulerRotation.z - Math.PI) < MAX_ANGLE_FLAT ||
+            Math.abs(eulerRotation.z + Math.PI) < MAX_ANGLE_FLAT
+        );
 }
