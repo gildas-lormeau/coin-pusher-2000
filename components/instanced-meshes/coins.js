@@ -24,7 +24,7 @@ const DENSITY = 1;
 const MODEL_PATH = "./../assets/coin.glb";
 const SPAWN_TIME_DELTA = 60;
 const RENDERING_LINEAR_SPEED_THRESHOLD = 0.00002;
-const SLEEP_LINEAR_SPEED_THRESHOLD = 0.000000005;
+const SLEEP_LINEAR_SPEED_THRESHOLD = 0.0000002;
 const TEMP_EULER = new Euler(0, 0, 0, "XYZ");
 const MAX_ANGLE_FLAT = Math.PI / 4;
 

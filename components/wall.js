@@ -42,6 +42,7 @@ export default class {
         glassMesh.receiveShadow = true;
         glassMesh.position.set(...POSITION_GLASS);
         this.#scene.addObject(glassMesh);
+        const wallBody = this.#scene.createFixedBody();
         this.#scene.createCuboidCollider({
             width: WIDTH_WALL,
             height: HEIGHT_WALL,
@@ -49,7 +50,7 @@ export default class {
             friction: FRICTION,
             restitution: RESTITUTION,
             position: POSITION_WALL,
-        });
+        }, wallBody);
         this.#scene.createCuboidCollider({
             width: WIDTH_GLASS,
             height: HEIGHT_GLASS,
@@ -57,7 +58,7 @@ export default class {
             friction: FRICTION,
             restitution: RESTITUTION,
             position: POSITION_GLASS,
-        });
+        }, wallBody);
         this.#scene.createCuboidCollider({
             width: .05,
             height: HEIGHT_GLASS,
@@ -65,7 +66,7 @@ export default class {
             friction: FRICTION,
             restitution: RESTITUTION,
             position: [POSITION_GLASS[0] - WIDTH_GLASS / 2 - .025, POSITION_GLASS[1], POSITION_GLASS[2]],
-        });
+        }, wallBody);
         this.#scene.createCuboidCollider({
             width: .05,
             height: HEIGHT_GLASS,
@@ -73,7 +74,7 @@ export default class {
             friction: FRICTION,
             restitution: RESTITUTION,
             position: [POSITION_GLASS[0] + WIDTH_GLASS / 2 + .025, POSITION_GLASS[1], POSITION_GLASS[2]],
-        });
+        }, wallBody);
         this.#scene.createCuboidCollider({
             width: WIDTH_WALL,
             height: .05,
@@ -81,12 +82,12 @@ export default class {
             friction: FRICTION,
             restitution: RESTITUTION,
             position: [POSITION_GLASS[0], POSITION_GLASS[1] + HEIGHT_GLASS / 2 + .025, POSITION_GLASS[2]],
-        });
-        initiliazeWallObstacles({ scene: this.#scene });
+        }, wallBody);
+        initiliazeWallObstacles({ scene: this.#scene, wallBody });
     }
 };
 
-function initiliazeWallObstacles({ scene }) {
+function initiliazeWallObstacles({ scene, wallBody }) {
     const spacing = 0.075;
     const startX = (-OBSTACLE_COLS * OBSTACLE_SPACING / 2) + (OBSTACLE_SPACING / 2);
     for (let col = 0; col < OBSTACLE_COLS; col++) {
@@ -120,6 +121,6 @@ function initiliazeWallObstacles({ scene }) {
             restitution,
             position: [x, y, OBSTACLE_POSITION_Z],
             rotation: [Math.PI / 2, Math.PI / 4, 0],
-        });
+        }, wallBody);
     }
 }
