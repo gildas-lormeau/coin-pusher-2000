@@ -30,7 +30,6 @@
         banner.onanimationend = event => {
             const animationName = event.target.style.getPropertyValue("animation-name").split(",").pop().trim();
             if (animationName == event.animationName) {
-                console.log("Animation ended:", animationName);
                 updateBannerAnimation();
             }
         };
