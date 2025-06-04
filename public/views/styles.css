@@ -44,45 +44,59 @@ section {
 
 @keyframes rotate-x {
     from {
-        transform: rotateX(0deg);
+        rotate: none
     }
 
     to {
-        transform: rotateX(360deg);
+        rotate: x 1turn;
     }
 }
 
 @keyframes rotate-y {
     from {
-        transform: rotateY(0deg);
+        rotate: none;
     }
 
     to {
-        transform: rotateY(360deg);
+        rotate: y 1turn;
     }
 }
 
 @keyframes rotate-z {
     from {
-        transform: rotateZ(0deg);
+        rotate: none;
     }
 
     to {
-        transform: rotateZ(360deg);
+        rotate: z 1turn;
     }
 }
 
-@keyframes scale {
+@keyframes scale-down {
     from {
-        transform: scale(1);
+        scale: 1;
     }
 
     50% {
-        transform: scale(0);
+        scale: .25;
     }
 
     to {
-        transform: scale(1);
+        scale: 1;
+    }
+}
+
+@keyframes scale-up {
+    from {
+        scale: 1;
+    }
+
+    50% {
+        scale: 2;
+    }
+
+    to {
+        scale: 1;
     }
 }
 
@@ -120,45 +134,45 @@ section {
 
 @keyframes shake-x {
     from {
-        transform: translateX(0);
+        translate: 0;
     }
 
     25% {
-        transform: translateX(-25%);
+        translate: -25% 0;
     }
 
     50% {
-        transform: translateX(25%);
+        translate: 25% 0;
     }
 
     75% {
-        transform: translateX(-25%);
+        translate: -25% 0;
     }
 
     to {
-        transform: translateX(0);
+        translate: 0;
     }
 }
 
 @keyframes shake-y {
     from {
-        transform: translateY(0);
+        translate: 0,
     }
 
     25% {
-        transform: translateY(-100%);
+        translate: 0 -50%;
     }
 
     50% {
-        transform: translateY(100%);
+        translate: 0 50%;
     }
 
     75% {
-        transform: translateY(-100%);
+        translate: 0 -50%;
     }
 
     to {
-        transform: translateY(0);
+        translate: 0;
     }
 }
 

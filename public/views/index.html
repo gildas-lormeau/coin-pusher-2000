@@ -21,17 +21,14 @@
     </main>
 
     <script>
-        const animationNames = ["rotate-x", "rotate-y", "rotate-z", "scale", "fade-in-out", "skew", "shake-x", "shake-y", "grayscale", "blur", "contrast", "hue-rotate"];
-        let animationIndex = 0;
+
         const banner = document.querySelector(".banner");
         const demoModeSection = document.querySelector(".demo-mode");
         const runModeSection = document.querySelector(".run-mode");
         const randomIndicesBag = new Set();
-
-        banner.style.setProperty("animation-name", animationNames[getRandomIndex(animationNames.length)]);
+        banner.style.setProperty("animation-name", getRandomAnimationName());
         banner.onanimationend = () => {
-            const animationName = animationNames[getRandomIndex(animationNames.length)];
-            banner.style.setProperty("animation-name", animationName);
+            banner.style.setProperty("animation-name", getRandomAnimationName());
         };
 
         demoModeSection.style.display = "none";
@@ -53,6 +50,17 @@
             }
         };
         parent.postMessage({}, "*");
+
+        function getRandomAnimationName() {
+            const animationNames = ["rotate-x", "rotate-y", "rotate-z", "scale-down", "scale-up", "fade-in-out", "skew", "shake-x", "shake-y", "grayscale", "blur", "contrast", "hue-rotate"];
+            let animationIndex = 0;
+            let selectedAnimationNames = [];
+            const animationCount = Math.floor(Math.random() * 4) + 1;
+            for (let indexRandomAnimation = 0; indexRandomAnimation < animationCount; indexRandomAnimation++) {
+                selectedAnimationNames.push(animationNames[getRandomIndex(animationNames.length)]);
+            }
+            return selectedAnimationNames.join(", ");
+        }
 
         function getRandomIndex(max) {
             let index;
