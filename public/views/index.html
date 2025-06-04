@@ -21,8 +21,18 @@
     </main>
 
     <script>
+        const animationNames = ["rotate-x", "rotate-y", "rotate-z", "scale", "fade-in-out", "skew", "shake-x", "shake-y", "grayscale", "blur", "contrast", "hue-rotate"];
+        let animationIndex = 0;
+        const banner = document.querySelector(".banner");
         const demoModeSection = document.querySelector(".demo-mode");
         const runModeSection = document.querySelector(".run-mode");
+        const randomIndicesBag = new Set();
+
+        banner.style.setProperty("animation-name", animationNames[getRandomIndex(animationNames.length)]);
+        banner.onanimationend = () => {
+            const animationName = animationNames[getRandomIndex(animationNames.length)];
+            banner.style.setProperty("animation-name", animationName);
+        };
 
         demoModeSection.style.display = "none";
         runModeSection.style.display = "none";
@@ -42,8 +52,19 @@
                 runModeSection.querySelector(".content").textContent = "";
             }
         };
-        console.log("Main page loaded");
         parent.postMessage({}, "*");
+
+        function getRandomIndex(max) {
+            let index;
+            do {
+                index = Math.floor(Math.random() * max);
+            } while (randomIndicesBag.has(index));
+            randomIndicesBag.add(index);
+            if (randomIndicesBag.size >= max) {
+                randomIndicesBag.clear();
+            }
+            return index;
+        }
     </script>
 </body>
 

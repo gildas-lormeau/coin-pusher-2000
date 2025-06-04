@@ -36,16 +36,184 @@ section {
 
 .banner {
     max-width: 95%;
-    animation: rotate 5s ease-in-out infinite;
+    animation-duration: 5s;
+    animation-timing-function: ease-in-out;
+    animation-delay: 1s;
     transform-origin: center;
 }
 
-@keyframes rotate {
+@keyframes rotate-x {
     from {
         transform: rotateX(0deg);
     }
 
     to {
         transform: rotateX(360deg);
+    }
+}
+
+@keyframes rotate-y {
+    from {
+        transform: rotateY(0deg);
+    }
+
+    to {
+        transform: rotateY(360deg);
+    }
+}
+
+@keyframes rotate-z {
+    from {
+        transform: rotateZ(0deg);
+    }
+
+    to {
+        transform: rotateZ(360deg);
+    }
+}
+
+@keyframes scale {
+    from {
+        transform: scale(1);
+    }
+
+    50% {
+        transform: scale(0);
+    }
+
+    to {
+        transform: scale(1);
+    }
+}
+
+@keyframes fade-in-out {
+    from {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes skew {
+    from {
+        transform: skew(0deg, 0deg);
+    }
+
+    33% {
+        transform: skew(20deg, 20deg);
+    }
+
+    66% {
+        transform: skew(-20deg, -20deg);
+    }
+
+    to {
+        transform: skew(0deg, 0deg);
+    }
+}
+
+@keyframes shake-x {
+    from {
+        transform: translateX(0);
+    }
+
+    25% {
+        transform: translateX(-25%);
+    }
+
+    50% {
+        transform: translateX(25%);
+    }
+
+    75% {
+        transform: translateX(-25%);
+    }
+
+    to {
+        transform: translateX(0);
+    }
+}
+
+@keyframes shake-y {
+    from {
+        transform: translateY(0);
+    }
+
+    25% {
+        transform: translateY(-100%);
+    }
+
+    50% {
+        transform: translateY(100%);
+    }
+
+    75% {
+        transform: translateY(-100%);
+    }
+
+    to {
+        transform: translateY(0);
+    }
+}
+
+@keyframes grayscale {
+    from {
+        filter: grayscale(0);
+    }
+
+    50% {
+        filter: grayscale(100%);
+    }
+
+    to {
+        filter: grayscale(0);
+    }
+}
+
+@keyframes blur {
+    from {
+        filter: blur(0);
+    }
+
+    50% {
+        filter: blur(5px);
+    }
+
+    to {
+        filter: blur(0);
+    }
+}
+
+@keyframes contrast {
+    from {
+        filter: contrast(1);
+    }
+
+    50% {
+        filter: contrast(2);
+    }
+
+    to {
+        filter: contrast(1);
+    }
+}
+
+@keyframes hue-rotate {
+    from {
+        filter: hue-rotate(0deg);
+    }
+
+    50% {
+        filter: hue-rotate(180deg);
+    }
+
+    to {
+        filter: hue-rotate(0deg);
     }
 }
