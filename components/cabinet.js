@@ -98,7 +98,6 @@ export default class {
                 this.#coinRoller.triggerCoin();
             },
             onPressBonusButton: () => {
-                this.#state.coinsInPool = 100;
                 this.#runs.start();
             }
         });
