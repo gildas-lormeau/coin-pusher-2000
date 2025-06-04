@@ -27,7 +27,13 @@
         const runModeSection = document.querySelector(".run-mode");
         const randomIndicesBag = new Set();
         updateBannerAnimation();
-        banner.onanimationend = () => updateBannerAnimation();
+        banner.onanimationend = event => {
+            const animationName = event.target.style.getPropertyValue("animation-name").split(",").pop().trim();
+            if (animationName == event.animationName) {
+                console.log("Animation ended:", animationName);
+                updateBannerAnimation();
+            }
+        };
 
         demoModeSection.style.display = "none";
         runModeSection.style.display = "none";
@@ -63,27 +69,28 @@
         }
 
         function getRandomAnimationName() {
-            const animationNames = ["rotate-x", "rotate-y", "rotate-z", "scale-down", "scale-up", "fade-in-out", "skew", "shake-x", "shake-y", "grayscale", "blur", "contrast", "hue-rotate"];
+            const transformAnimationNames = ["rotate-x", "rotate-y", "rotate-z", "scale-x", "scale-y", "scale-xy", "skew-1", "skew-2", "skew-3", "shake-x", "shake-y",];
+            const filterAnimationNames = ["fade-in-out", "grayscale", "contrast", "hue-rotate"];
             let animationIndex = 0;
             let selectedAnimationNames = [];
             const animationCount = Math.floor(Math.random() * 4) + 1;
-            for (let indexRandomAnimation = 0; indexRandomAnimation < animationCount; indexRandomAnimation++) {
-                selectedAnimationNames.push(animationNames[getRandomIndex(animationNames.length)]);
+            const selectedTransformAnimationNames = [];
+            const selectedFilterAnimationNames = [];
+            for (let indexRandomAnimation = 0; indexRandomAnimation < Math.floor(Math.random() * 4) + 2; indexRandomAnimation++) {
+                const randomIndex = Math.floor(Math.random() * transformAnimationNames.length);
+                if (!selectedTransformAnimationNames.includes(transformAnimationNames[randomIndex])) {
+                    selectedTransformAnimationNames.push(transformAnimationNames[randomIndex]);
+                }
             }
-            return selectedAnimationNames.join(", ");
+            for (let indexRandomAnimation = 0; indexRandomAnimation < Math.floor(Math.random() * 2) + 1; indexRandomAnimation++) {
+                const randomIndex = Math.floor(Math.random() * filterAnimationNames.length);
+                if (!selectedFilterAnimationNames.includes(filterAnimationNames[randomIndex])) {
+                    selectedFilterAnimationNames.push(filterAnimationNames[randomIndex]);
+                }
+            }
+            return [...selectedTransformAnimationNames, ...selectedFilterAnimationNames].join(",");
         }
 
-        function getRandomIndex(max) {
-            let index;
-            do {
-                index = Math.floor(Math.random() * max);
-            } while (randomIndicesBag.has(index));
-            randomIndicesBag.add(index);
-            if (randomIndicesBag.size >= max) {
-                randomIndicesBag.clear();
-            }
-            return index;
-        }
     </script>
 </body>
 
