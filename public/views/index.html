@@ -26,10 +26,8 @@
         const demoModeSection = document.querySelector(".demo-mode");
         const runModeSection = document.querySelector(".run-mode");
         const randomIndicesBag = new Set();
-        banner.style.setProperty("animation-name", getRandomAnimationName());
-        banner.onanimationend = () => {
-            banner.style.setProperty("animation-name", getRandomAnimationName());
-        };
+        updateBannerAnimation();
+        banner.onanimationend = () => updateBannerAnimation();
 
         demoModeSection.style.display = "none";
         runModeSection.style.display = "none";
@@ -50,6 +48,19 @@
             }
         };
         parent.postMessage({}, "*");
+
+        function updateBannerAnimation() {
+            const animationName = getRandomAnimationName();
+            banner.style.animation = "none";
+            void banner.offsetWidth;
+            banner.style.animation = "";
+            banner.style.setProperty("animation-name", animationName);
+            if (Math.random() < 0.5) {
+                banner.style.setProperty("animation-direction", "reverse");
+            } else {
+                banner.style.setProperty("animation-direction", "normal");
+            }
+        }
 
         function getRandomAnimationName() {
             const animationNames = ["rotate-x", "rotate-y", "rotate-z", "scale-down", "scale-up", "fade-in-out", "skew", "shake-x", "shake-y", "grayscale", "blur", "contrast", "hue-rotate"];
