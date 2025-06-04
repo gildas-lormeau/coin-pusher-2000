@@ -1,17 +1,40 @@
-body {
+body,
+main,
+section {
     display: flex;
-    margin: 0;
+    flex: 1;
+}
+
+body,
+main {
     flex-direction: column;
     align-items: center;
     justify-content: center;
+}
+
+body,
+main,
+section {
+    width: 100%;
+}
+
+body {
+    display: flex;
+    margin: 0;
     height: 100vh;
     font-family: Arial, sans-serif;
     font-size: 32px;
     background-color: #101010;
-    color: #f1f1f1;
+    color: #949494;
 }
 
-img {
+section {
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.banner {
     max-width: 95%;
     animation: rotate 5s ease-in-out infinite;
     transform-origin: center;

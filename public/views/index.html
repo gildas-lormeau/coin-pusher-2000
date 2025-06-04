@@ -9,7 +9,42 @@
 </head>
 
 <body>
-    <img src="../assets/top-banner.png" alt="Top Banner" class="top-banner">
+    <main>
+        <section class="demo-mode">
+            <img src="../assets/top-banner.png" alt="Top Banner" class="banner">
+        </section>
+        <section class="run-mode">
+            <h2 class="title"></h2>
+            <div class="content">
+            </div>
+        </section>
+    </main>
+
+    <script>
+        const demoModeSection = document.querySelector(".demo-mode");
+        const runModeSection = document.querySelector(".run-mode");
+
+        demoModeSection.style.display = "none";
+        runModeSection.style.display = "none";
+        onmessage = ({ data }) => {
+            if (data.type == "showDemoMode") {
+                runModeSection.style.display = "none";
+                demoModeSection.style.display = "flex";
+            }
+            if (data.type == "showRunStart") {
+                demoModeSection.style.display = "none";
+                runModeSection.style.display = "flex";
+                runModeSection.querySelector(".title").textContent = data.description;
+                runModeSection.querySelector(".content").textContent = data.content;
+            }
+            if (data.type == "showRunComplete") {
+                runModeSection.querySelector(".title").textContent = "Run Complete";
+                runModeSection.querySelector(".content").textContent = "";
+            }
+        };
+        console.log("Main page loaded");
+        parent.postMessage({}, "*");
+    </script>
 </body>
 
 </html>

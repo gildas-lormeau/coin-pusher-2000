@@ -13,6 +13,7 @@ import Excavator from "./excavator.js";
 import Tower from "./tower.js";
 import CoinRoller from "./coin-roller.js";
 import Screen from "./screen.js";
+import Runs from "./runs.js";
 
 const RESTITUTION = 0;
 const MIN_POSITION_Y_OBJECTS = -1;
@@ -73,6 +74,7 @@ export default class {
     #tower;
     #coinRoller;
     #screen;
+    #runs;
 
     async initialize() {
         const mesh = await initializeModel({
@@ -96,7 +98,8 @@ export default class {
                 this.#coinRoller.triggerCoin();
             },
             onPressBonusButton: () => {
-                Coins.dropCoins({ count: 50 });
+                this.#state.coinsInPool = 100;
+                this.#runs.start();
             }
         });
         await this.#controlPanel.initialize();
@@ -203,6 +206,8 @@ export default class {
         await this.#coinRoller.initialize();
         this.#screen = new Screen({ scene: this.#scene });
         await this.#screen.initialize();
+        this.#runs = new Runs({ state: this.#state, screen: this.#screen });
+        this.#runs.initialize();
     }
 
     update(time) {
@@ -217,6 +222,7 @@ export default class {
         this.#tower.update(time);
         this.#coinRoller.update(time);
         this.#screen.update();
+        this.#runs.update();
         this.dynamicBodies.forEach(({ object, objects }) => {
             if (object.position.y < MIN_POSITION_Y_OBJECTS) {
                 console.warn("object recycled", object, structuredClone(object.position), structuredClone(object.rotation));
@@ -266,7 +272,8 @@ export default class {
             reelsBox: this.#reelsBox.save(),
             excavator: this.#excavator.save(),
             tower: this.#tower.save(),
-            coinRoller: this.#coinRoller.save()
+            coinRoller: this.#coinRoller.save(),
+            runs: this.#runs.save()
         };
     }
 
@@ -296,6 +303,7 @@ export default class {
         this.#excavator.load(cabinet.excavator);
         this.#tower.load(cabinet.tower);
         this.#coinRoller.load(cabinet.coinRoller);
+        this.#runs.load(cabinet.runs);
     }
 
     #getObject(userData) {

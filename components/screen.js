@@ -29,12 +29,16 @@ export default class {
 
     async initialize() {
         const { screenPosition, screenRotation } = await initializeModel({ scene: this.#scene });
-        this.#window.src = "views/index.html";
         this.#css3DObject = new CSS3DObject(this.#window);
         this.#css3DObject.position.copy(screenPosition);
         this.#css3DObject.rotation.copy(screenRotation);
         this.#css3DObject.scale.set(0.001, 0.001, 0.001);
         this.#scene.css3DScene.add(this.#css3DObject);
+        return new Promise(resolve => {
+            addEventListener("message", () => resolve(), { once: true });
+            this.#window.src = "views/index.html";
+            this.update();
+        });
     }
 
     update() {
@@ -53,6 +57,27 @@ export default class {
             this.#css3DRenderer.setSize(width, height);
         }
     }
+
+    showDemoMode() {
+        this.#window.contentWindow.postMessage({
+            type: "showDemoMode"
+        }, "*");
+    }
+
+    showRunStart(data) {
+        this.#window.contentWindow.postMessage({
+            type: "showRunStart",
+            ...data
+        }, "*");
+    }
+
+    showRunComplete(data) {
+        this.#window.contentWindow.postMessage({
+            type: "showRunComplete",
+            ...data
+        }, "*");
+    }
+
 }
 
 async function initializeModel({ scene }) {
