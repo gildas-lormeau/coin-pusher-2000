@@ -222,7 +222,7 @@ export default class {
         this.#tower.update(time);
         this.#coinRoller.update(time);
         this.#screen.update();
-        this.#runs.update();
+        this.#runs.update(time);
         this.dynamicBodies.forEach(({ object, objects }) => {
             if (object.position.y < MIN_POSITION_Y_OBJECTS) {
                 console.warn("object recycled", object, structuredClone(object.position), structuredClone(object.rotation));

@@ -17894,7 +17894,9 @@
             "pendingShots": 0
         },
         "runs": {
-            "state": -1
+            "state": "runs-idle",
+            "step": -1,
+            "timeRunCompleted": -1
         }
     }
 }
