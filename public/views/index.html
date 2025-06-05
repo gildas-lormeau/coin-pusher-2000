@@ -51,7 +51,9 @@
                 }
             }
             if (data.type == "showRunStart") {
-                backgroundCanvasController.abort();
+                if (backgroundCanvasController) {
+                    backgroundCanvasController.abort();
+                }
                 backgroundCanvas.getContext("2d").clearRect(0, 0, backgroundCanvas.width, backgroundCanvas.height);
                 demoModeSection.style.display = "none";
                 runModeSection.style.display = "flex";
