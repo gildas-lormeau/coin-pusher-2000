@@ -55,19 +55,19 @@
         parent.postMessage({}, "*");
 
         function updateBannerAnimation() {
-            const animationName = getRandomAnimationName();
+            const {
+                name: animationName,
+                direction: animationDirection
+            } = getRandomAnimationProperties();
             banner.style.animation = "none";
             void banner.offsetWidth;
             banner.style.animation = "";
             banner.style.setProperty("animation-name", animationName);
-            if (Math.random() < 0.5) {
-                banner.style.setProperty("animation-direction", "reverse");
-            } else {
-                banner.style.setProperty("animation-direction", "normal");
-            }
+            banner.style.setProperty("animation-direction", animationDirection);
+
         }
 
-        function getRandomAnimationName() {
+        function getRandomAnimationProperties() {
             const transformAnimationNames = ["rotate-x", "rotate-y", "rotate-z", "scale-x", "scale-y", "scale-xy", "skew-1", "skew-2", "skew-3", "shake-x", "shake-y",];
             const filterAnimationNames = ["fade-in-out", "grayscale", "contrast", "hue-rotate"];
             let animationIndex = 0;
@@ -75,19 +75,25 @@
             const animationCount = Math.floor(Math.random() * 4) + 1;
             const selectedTransformAnimationNames = [];
             const selectedFilterAnimationNames = [];
+            const selectedAnimationDirections = [];
             for (let indexRandomAnimation = 0; indexRandomAnimation < Math.floor(Math.random() * 4) + 2; indexRandomAnimation++) {
                 const randomIndex = Math.floor(Math.random() * transformAnimationNames.length);
                 if (!selectedTransformAnimationNames.includes(transformAnimationNames[randomIndex])) {
                     selectedTransformAnimationNames.push(transformAnimationNames[randomIndex]);
+                    selectedAnimationDirections.push(Math.random() < 0.5 ? "reverse" : "normal");
                 }
             }
             for (let indexRandomAnimation = 0; indexRandomAnimation < Math.floor(Math.random() * 2) + 1; indexRandomAnimation++) {
                 const randomIndex = Math.floor(Math.random() * filterAnimationNames.length);
                 if (!selectedFilterAnimationNames.includes(filterAnimationNames[randomIndex])) {
                     selectedFilterAnimationNames.push(filterAnimationNames[randomIndex]);
+                    selectedAnimationDirections.push(Math.random() < 0.5 ? "reverse" : "normal");
                 }
             }
-            return [...selectedTransformAnimationNames, ...selectedFilterAnimationNames].join(",");
+            return {
+                name: [...selectedTransformAnimationNames, ...selectedFilterAnimationNames].join(","),
+                direction: selectedAnimationDirections.join(",")
+            };
         }
 
     </script>
