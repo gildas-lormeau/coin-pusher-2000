@@ -10,6 +10,7 @@
 
 <body>
     <main>
+        <canvas class="background-canvas"></canvas>
         <section class="demo-mode">
             <img src="../assets/top-banner.png" alt="Top Banner" class="banner">
         </section>
@@ -22,6 +23,9 @@
 
     <script>
 
+        const backgroundCanvas = document.querySelector(".background-canvas");
+        backgroundCanvas.width = window.innerWidth;
+        backgroundCanvas.height = window.innerHeight;
         const banner = document.querySelector(".banner");
         const demoModeSection = document.querySelector(".demo-mode");
         const runModeSection = document.querySelector(".run-mode");
@@ -36,12 +40,18 @@
 
         demoModeSection.style.display = "none";
         runModeSection.style.display = "none";
+        let backgroundCanvasController;
         onmessage = ({ data }) => {
             if (data.type == "showDemoMode") {
                 runModeSection.style.display = "none";
                 demoModeSection.style.display = "flex";
+                if (!backgroundCanvasController) {
+                    backgroundCanvasController = displayStars(backgroundCanvas);
+                }
             }
             if (data.type == "showRunStart") {
+                backgroundCanvasController.abort();
+                backgroundCanvas.getContext("2d").clearRect(0, 0, backgroundCanvas.width, backgroundCanvas.height);
                 demoModeSection.style.display = "none";
                 runModeSection.style.display = "flex";
                 runModeSection.querySelector(".title").textContent = data.description;
@@ -96,6 +106,61 @@
             };
         }
 
+        function displayStars(canvas) {
+            const stars = [];
+            const { width, height } = canvas;
+            const canvasContext = canvas.getContext("2d");
+            const abortController = new AbortController();
+            const { signal } = abortController;
+            const initialCenterX = width / 2;
+            const initialCenterY = height / 2;
+            const maxDistanceX = width / 8;
+            const maxDistanceY = height / 8;
+            let centerX = initialCenterX;
+            let centerY = initialCenterY;
+            for (let i = 0; i < Math.random() * 250 + 300; i++) {
+                stars.push(createStar());
+            }
+            requestAnimationFrame(update);
+            return abortController;
+
+            function createStar() {
+                let x, y;
+                do {
+                    x = Math.random() * width;
+                    y = Math.random() * height;
+                } while (Math.hypot(x - centerX, y - centerY) < 3);
+                return {
+                    x,
+                    y,
+                    z: Math.random() * width,
+                    opacity: Math.random(),
+                    speed: Math.random() * 2 + 3,
+                    size: Math.random() * 2 + 1
+                };
+            }
+
+            function update(time) {
+                canvasContext.clearRect(0, 0, width, height);
+                for (let star of stars) {
+                    star.z -= star.speed;
+                    if (star.z <= 0) {
+                        Object.assign(star, createStar());
+                        star.z = width;
+                    }
+                    const perspective = width / star.z;
+                    const size = (1 - 1 / perspective) * star.size;
+                    canvasContext.fillStyle = `rgba(255, 255, 255, ${star.opacity})`;
+                    canvasContext.fillRect((star.x - centerX) * perspective + centerX, (star.y - centerY) * perspective + centerY, size, size);
+                }
+                const timeInSeconds = time / 1000;
+                centerX = initialCenterX + Math.sin(timeInSeconds) * maxDistanceX;
+                centerY = initialCenterY + Math.cos(timeInSeconds) * maxDistanceY;
+                if (!signal.aborted) {
+                    requestAnimationFrame(update);
+                }
+            }
+        }
     </script>
 </body>
 
