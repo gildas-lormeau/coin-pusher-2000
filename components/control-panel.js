@@ -1,5 +1,5 @@
 import { Vector3 } from "three";
-import DropButtons from "./instanced-meshes/drop-buttons.js";
+import Buttons from "./instanced-meshes/buttons.js";
 
 const BUTTONS_POSITION = [0, 0.16125, 1.25];
 const BUTTONS_ROTATION = [2 * Math.PI + Math.PI / 10, 0, 0];
@@ -10,17 +10,17 @@ export default class {
 
     #onPressDropButton;
     #onPressActionButton;
-    #onPressBonusButton;
+    #onPressStartButton;
 
-    constructor({ onPressDropButton, onPressActionButton, onPressBonusButton }) {
+    constructor({ onPressDropButton, onPressActionButton, onPressStartButton }) {
         this.#onPressDropButton = onPressDropButton;
         this.#onPressActionButton = onPressActionButton;
-        this.#onPressBonusButton = onPressBonusButton;
+        this.#onPressStartButton = onPressStartButton;
     }
 
     async initialize() {
         for (let indexButton = 0; indexButton < BUTTONS_POSITION_X.length; indexButton++) {
-            DropButtons.addButton({
+            Buttons.addButton({
                 type: 0,
                 color: 0,
                 position: new Vector3(BUTTONS_POSITION_X[indexButton], BUTTONS_POSITION[1], BUTTONS_POSITION[2]),
@@ -28,19 +28,19 @@ export default class {
                 onPress: () => this.#onPressDropButton(indexButton)
             });
         }
-        DropButtons.addButton({
-            type: 1,
+        Buttons.addButton({
+            type: 2,
             color: 0,
             position: new Vector3(ALT_BUTTONS_POSITION_X[0], BUTTONS_POSITION[1], BUTTONS_POSITION[2]),
             rotation: new Vector3().fromArray(BUTTONS_ROTATION),
             onPress: () => this.#onPressActionButton()
         });
-        DropButtons.addButton({
+        Buttons.addButton({
             type: 1,
             color: 0,
             position: new Vector3(ALT_BUTTONS_POSITION_X[1], BUTTONS_POSITION[1], BUTTONS_POSITION[2]),
             rotation: new Vector3().fromArray(BUTTONS_ROTATION),
-            onPress: () => this.#onPressBonusButton()
+            onPress: () => this.#onPressStartButton()
         });
     }
 
@@ -49,6 +49,6 @@ export default class {
     }
 
     get interactiveObjects() {
-        return DropButtons.interactiveObjects;
+        return Buttons.interactiveObjects;
     }
 }

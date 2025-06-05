@@ -9,8 +9,8 @@ const LIGHT_COLOR = 0xffaa00;
 const LIGHT_DISTANCE = 0.03;
 const LIGHT_DECAY = .1;
 const LIGHT_POSITION_Y = 0.00725;
-const MODEL_PATH = "./../assets/drop-button.glb";
-const TYPES = 2;
+const MODEL_PATH = "./../assets/buttons.glb";
+const TYPES = 3;
 const COLORS = [
     { color: 0xffffff, background: 0xff0000 }
 ];
@@ -129,20 +129,28 @@ async function initializeModel({ scene }) {
     const materials = [];
     const geometries = [];
     for (let color = 0; color < MAX_COLORS; color++) {
-        const mesh = meshes[0];
-        const colorMaterial = mesh.children[1].material.clone();
-        colorMaterial.color.setHex(COLORS[color].color);
-        const backgroundMaterial = mesh.children[2].material.clone();
-        backgroundMaterial.color.setHex(COLORS[color].background);
+        debugger;
+        const dropButtonMesh = meshes[0];
+        const dropButtonColorMaterial = dropButtonMesh.children[1].material.clone();
+        dropButtonColorMaterial.color.setHex(COLORS[color].color);
+        const dropButtonBackgroundMaterial = dropButtonMesh.children[2].material.clone();
+        dropButtonBackgroundMaterial.color.setHex(COLORS[color].background);
+        const startButtonMesh = meshes[2];
+        const startButtonColorMaterial = startButtonMesh.children[0].material.clone();
+        startButtonColorMaterial.color.setHex(COLORS[color].color);
+        const startButtonBackgroundMaterial = startButtonMesh.children[1].material.clone();
+        startButtonBackgroundMaterial.color.setHex(COLORS[color].background);
         const defaultMesh = meshes[1];
-        const backgroundMaterialDefault = defaultMesh.children[1].material.clone();
-        backgroundMaterialDefault.color.setHex(COLORS[color].background);
+        const defaultButtonBackgroundMaterial = defaultMesh.children[1].material.clone();
+        defaultButtonBackgroundMaterial.color.setHex(COLORS[color].background);
         materials.push([
-            [mesh.children[0].material, colorMaterial, backgroundMaterial],
-            [mesh.children[0].material, backgroundMaterialDefault]
+            [dropButtonMesh.children[0].material, dropButtonColorMaterial, dropButtonBackgroundMaterial],
+            [startButtonMesh.children[0].material, startButtonColorMaterial, startButtonBackgroundMaterial],
+            [defaultMesh.children[0].material, defaultButtonBackgroundMaterial]
         ]);
         geometries.push([
-            [mesh.children[0].geometry, mesh.children[1].geometry, mesh.children[2].geometry],
+            [dropButtonMesh.children[0].geometry, dropButtonMesh.children[1].geometry, dropButtonMesh.children[2].geometry],
+            [startButtonMesh.children[0].geometry, startButtonMesh.children[1].geometry, startButtonMesh.children[2].geometry],
             [defaultMesh.children[0].geometry, defaultMesh.children[1].geometry]
         ]);
     }

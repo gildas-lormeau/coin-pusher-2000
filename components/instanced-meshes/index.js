@@ -1,7 +1,7 @@
 import Cards from "./cards.js";
 import Coins from "./coins.js";
 import Tokens from "./tokens.js";
-import DropButtons from "./drop-buttons.js";
+import Buttons from "./buttons.js";
 import Digits from "./digits.js";
 
 export default class {
@@ -10,7 +10,7 @@ export default class {
             Cards.initialize({ scene }),
             Coins.initialize({ scene }),
             Tokens.initialize({ scene }),
-            DropButtons.initialize({ scene }),
+            Buttons.initialize({ scene }),
             Digits.initialize({ scene })
         ]);
     }
@@ -19,7 +19,7 @@ export default class {
         Cards.update();
         Coins.update(time);
         Tokens.update();
-        DropButtons.update(time);
+        Buttons.update(time);
         Digits.update();
     }
 }

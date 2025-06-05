@@ -97,7 +97,7 @@ export default class {
             onPressActionButton: () => {
                 this.#coinRoller.triggerCoin();
             },
-            onPressBonusButton: () => {
+            onPressStartButton: () => {
                 this.#runs.start();
             }
         });
