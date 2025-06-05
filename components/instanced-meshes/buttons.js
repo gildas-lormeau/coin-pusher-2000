@@ -4,7 +4,9 @@ const MAX_INSTANCES = 8;
 const INITIAL_SCALE = new Vector3(1, 1, 1);
 const BUTTON_PRESS_DEPTH = -0.005;
 const BUTTON_RELEASE_DELAY = 75;
-const LIGHT_INTENSITY = .5;
+const BLINK_DELAY = 250;
+const LIGHT_INTENSITY_ON = 35;
+const LIGHT_INTENSITY_OFF = 1;
 const LIGHT_COLOR = 0xffaa00;
 const LIGHT_DISTANCE = 0.03;
 const LIGHT_DECAY = .1;
@@ -39,7 +41,9 @@ export default class {
                 if (!instance.isPressing) {
                     instance.isPressing = true;
                 }
-                instance.onPress();
+                if (instance.enabled) {
+                    instance.onPress();
+                }
             }
         });
         this.#instances = [];
@@ -69,17 +73,40 @@ export default class {
                         if (elapsedTime < BUTTON_RELEASE_DELAY) {
                             const offsetY = new Vector3(0, BUTTON_PRESS_DEPTH, 0);
                             const interpolationFactor = elapsedTime / BUTTON_RELEASE_DELAY;
-                            bulbLight.intensity = interpolationFactor * LIGHT_INTENSITY;
                             const offset = offsetY.multiplyScalar(interpolationFactor);
                             offset.applyQuaternion(instance.initialRotation);
                             const newPosition = instance.initialPosition.clone().add(offset);
                             instance.buttonPosition.copy(newPosition);
+                            if (instance.enabled) {
+                                bulbLight.intensity = interpolationFactor * LIGHT_INTENSITY_ON;
+                            }
                         } else {
-                            bulbLight.intensity = LIGHT_INTENSITY;
+                            bulbLight.intensity = LIGHT_INTENSITY_OFF;
                             instance.isPressing = false;
                             instance.pressStartTime = undefined;
                             instance.buttonPosition.copy(instance.initialPosition);
                         }
+                    }
+                }
+                if (instance.isBlinking) {
+                    if (instance.blinkStartTime === undefined) {
+                        instance.blinkStartTime = time;
+                    } else {
+                        const elapsedTime = time - instance.blinkStartTime;
+                        if (elapsedTime >= BLINK_DELAY) {
+                            const bulbLight = this.#bulbLights[color][type][instance.index];
+                            instance.blinkStartTime = time;
+                            instance.blinkingOn = !instance.blinkingOn;
+                            if (instance.blinkingOn) {
+                                bulbLight.intensity = LIGHT_INTENSITY_ON;
+                            } else {
+                                bulbLight.intensity = LIGHT_INTENSITY_OFF;
+                            }
+                        }
+                    }
+                    if (!instance.blinkingOn && !instance.enabled) {
+                        instance.isBlinking = false;
+                        instance.blinkStartTime = undefined;
                     }
                 }
             }
@@ -103,13 +130,25 @@ export default class {
     static addButton({ type, color, position, rotation, onPress }) {
         const instance = this.#instances[color][type].find(instance => !instance.used);
         instance.used = true;
+        instance.enabled = true;
         instance.initialPosition = position;
         instance.initialRotation = rotation;
         instance.onPress = onPress;
         const bulbLight = this.#bulbLights[color][type][instance.index];
         bulbLight.visible = true;
+        bulbLight.intensity = LIGHT_INTENSITY_OFF;
         initializePosition({ instance, position, rotation, bulbLight });
         return instance;
+    }
+
+    static enable({ type, color, index }, enabled) {
+        const instance = this.#instances[color][type].find(instance => instance.index === index);
+        instance.enabled = enabled;
+    }
+
+    static blink({ type, color, index }, active) {
+        const instance = this.#instances[color][type].find(instance => instance.index === index);
+        instance.isBlinking = active;
     }
 
     static get interactiveObjects() {
@@ -195,7 +234,7 @@ function createInstances({ scene, instances, bulbLights }) {
             bulbLights[color][type] = [];
             for (let indexButton = instances[color][type].length; indexButton < MAX_INSTANCES; indexButton++) {
                 createInstance({ type, color, instances });
-                const bulbLight = new PointLight(LIGHT_COLOR, LIGHT_INTENSITY, LIGHT_DISTANCE, LIGHT_DECAY);
+                const bulbLight = new PointLight(LIGHT_COLOR, LIGHT_INTENSITY_ON, LIGHT_DISTANCE, LIGHT_DECAY);
                 bulbLight.castShadow = false;
                 bulbLights[color][type][indexButton] = bulbLight;
                 bulbLight.visible = false;

@@ -98,6 +98,7 @@ export default class {
                 this.#coinRoller.triggerCoin();
             },
             onPressStartButton: () => {
+                this.#controlPanel.disableStartButton();
                 this.#runs.start();
             }
         });
@@ -125,6 +126,7 @@ export default class {
                 } else if (random < .5) {
                     this.#excavator.pick();
                 } else if (random < .75) {
+                    this.#controlPanel.enableActionButton();
                     this.#coinRoller.shootCoin();
                 } else {
                     this.#tower.shootCoins();
@@ -197,9 +199,13 @@ export default class {
             scene: this.#scene,
             onInitializeCoin: ({ position, rotation }) => Coins.depositCoin({ position, rotation }),
             onGetCoin: coinData => Coins.getCoin(coinData),
-            onRecycleCoin: coin => Coins.recycle(coin),
-            onBonusWon(bonus) {
+            onRecycleCoin: coin => {
+                Coins.recycle(coin);
+                this.#controlPanel.disableActionButton();
+            },
+            onBonusWon: bonus => {
                 Coins.dropCoins({ count: Math.pow(bonus + 1, 2) * 5 });
+                this.#controlPanel.disableActionButton();
             }
         });
         await this.#coinRoller.initialize();
