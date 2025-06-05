@@ -129,7 +129,6 @@ async function initializeModel({ scene }) {
     const materials = [];
     const geometries = [];
     for (let color = 0; color < MAX_COLORS; color++) {
-        debugger;
         const dropButtonMesh = meshes[0];
         const dropButtonColorMaterial = dropButtonMesh.children[1].material.clone();
         dropButtonColorMaterial.color.setHex(COLORS[color].color);
