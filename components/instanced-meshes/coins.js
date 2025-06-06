@@ -18,15 +18,16 @@ const SOFT_CCD_PREDICTION = 0.1;
 const ADDITIONAL_SOLVER_ITERATIONS = 1;
 const ANGULAR_DAMPING = 0.5;
 const LINEAR_DAMPING = 0.5;
-const FRICTION = 0.2;
 const RESTITUTION = 0;
-const DENSITY = 1;
 const MODEL_PATH = "./../assets/coin.glb";
 const SPAWN_TIME_DELTA = 60;
 const RENDERING_LINEAR_SPEED_THRESHOLD = 0.00002;
 const SLEEP_LINEAR_SPEED_THRESHOLD = 0.0000002;
 const TEMP_EULER = new Euler(0, 0, 0, "XYZ");
 const MAX_ANGLE_FLAT = Math.PI / 4;
+
+let friction = 0.2;
+let density = 1;
 
 export default class {
 
@@ -182,6 +183,28 @@ export default class {
             });
         });
     }
+
+    static get friction() {
+        return friction;
+    }
+
+    static set friction(value) {
+        friction = value;
+        this.#instances.forEach(instance => {
+            instance.body.collider(0).setFriction(value);
+        });
+    }
+
+    static get density() {
+        return density;
+    }
+
+    static set density(value) {
+        density = value;
+        this.#instances.forEach(instance => {
+            instance.body.collider(0).setDensity(value);
+        });
+    }
 }
 
 async function initializeModel({ scene }) {
@@ -235,9 +258,9 @@ function createInstance({ scene, instances }) {
         userData: { objectType: TYPE, index },
         radius: RADIUS,
         height: DEPTH,
-        friction: FRICTION,
+        friction: friction,
         restitution: RESTITUTION,
-        density: DENSITY
+        density: density
     }, body);
     const instance = {
         objectType: TYPE,
