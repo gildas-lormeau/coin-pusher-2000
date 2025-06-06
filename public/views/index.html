@@ -70,42 +70,62 @@
         function updateBannerAnimation() {
             const {
                 name: animationName,
-                direction: animationDirection
+                direction: animationDirection,
+                composition: animationComposition,
+                timingFunction: animationTimingFunction,
+                origin: transformOrigin
             } = getRandomAnimationProperties();
             banner.style.animation = "none";
             void banner.offsetWidth;
             banner.style.animation = "";
             banner.style.setProperty("animation-name", animationName);
             banner.style.setProperty("animation-direction", animationDirection);
+            banner.style.setProperty("animation-composition", animationComposition);
+            banner.style.setProperty("animation-timing-function", animationTimingFunction);
+            banner.style.setProperty("transform-origin", transformOrigin);
 
         }
 
         function getRandomAnimationProperties() {
-            const transformAnimationNames = ["rotate-x", "rotate-y", "rotate-z", "scale-x", "scale-y", "scale-xy", "skew-1", "skew-2", "skew-3", "shake-x", "shake-y",];
-            const filterAnimationNames = ["fade-in-out", "grayscale", "contrast", "hue-rotate"];
-            let animationIndex = 0;
+            const transformAnimationNames = ["rotate-x", "rotate-y", "rotate-z", "scale-x", "scale-y", "scale-xy", "skew-1", "skew-2", "skew-3", "shake-x", "shake-y", "shake-xy-1", "shake-xy-2"];
+            const filterAnimationNames = ["fade-in-out", "grayscale", "contrast", "hue-rotate", "sepia"];
+            const compositionNames = ["replace", "accumulate", "add"];
+            const timingFunctions = ["ease-in-out", "cubic-bezier(0.45, 0, 0.55, 1)"];
+            const directions = ["normal", "reverse"];
+            const origins = ["50% 50%", "35% 35%", "85% 85%", "35% 85%", "85% 35%"];
             let selectedAnimationNames = [];
             const animationCount = Math.floor(Math.random() * 4) + 1;
-            const selectedTransformAnimationNames = [];
-            const selectedFilterAnimationNames = [];
-            const selectedAnimationDirections = [];
-            for (let indexRandomAnimation = 0; indexRandomAnimation < Math.floor(Math.random() * 4) + 2; indexRandomAnimation++) {
+            const selectedTransforms = [];
+            const selectedFilters = [];
+            const selectedDirections = [];
+            const selectedCompositions = [];
+            const selectedTimingFunctions = [];
+            const selectedOrigins = [];
+            for (let indexRandomAnimation = 0; indexRandomAnimation < Math.floor(Math.random() * 5) + 2; indexRandomAnimation++) {
                 const randomIndex = Math.floor(Math.random() * transformAnimationNames.length);
-                if (!selectedTransformAnimationNames.includes(transformAnimationNames[randomIndex])) {
-                    selectedTransformAnimationNames.push(transformAnimationNames[randomIndex]);
-                    selectedAnimationDirections.push(Math.random() < 0.5 ? "reverse" : "normal");
+                if (!selectedTransforms.includes(transformAnimationNames[randomIndex])) {
+                    selectedTransforms.push(transformAnimationNames[randomIndex]);
+                    selectedDirections.push(directions[Math.floor(Math.random() * directions.length)]);
+                    selectedCompositions.push(compositionNames[Math.floor(Math.random() * compositionNames.length)]);
+                    selectedTimingFunctions.push(timingFunctions[Math.floor(Math.random() * timingFunctions.length)]);
+                    selectedOrigins.push(origins[Math.floor(Math.random() * origins.length)]);
                 }
             }
             for (let indexRandomAnimation = 0; indexRandomAnimation < Math.floor(Math.random() * 2) + 1; indexRandomAnimation++) {
                 const randomIndex = Math.floor(Math.random() * filterAnimationNames.length);
-                if (!selectedFilterAnimationNames.includes(filterAnimationNames[randomIndex])) {
-                    selectedFilterAnimationNames.push(filterAnimationNames[randomIndex]);
-                    selectedAnimationDirections.push(Math.random() < 0.5 ? "reverse" : "normal");
+                if (!selectedFilters.includes(filterAnimationNames[randomIndex])) {
+                    selectedFilters.push(filterAnimationNames[randomIndex]);
+                    selectedDirections.push(directions[Math.floor(Math.random() * directions.length)]);
+                    selectedCompositions.push(compositionNames[Math.floor(Math.random() * compositionNames.length)]);
+                    selectedTimingFunctions.push(timingFunctions[Math.floor(Math.random() * timingFunctions.length)]);
                 }
             }
             return {
-                name: [...selectedTransformAnimationNames, ...selectedFilterAnimationNames].join(","),
-                direction: selectedAnimationDirections.join(",")
+                name: [...selectedTransforms, ...selectedFilters].join(","),
+                direction: selectedDirections.join(","),
+                composition: selectedCompositions.join(","),
+                timingFunction: selectedTimingFunctions.join(","),
+                origin: selectedOrigins.join(",")
             };
         }
 

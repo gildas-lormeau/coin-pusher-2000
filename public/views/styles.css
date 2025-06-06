@@ -49,9 +49,7 @@ section {
 .banner {
     max-width: 95%;
     animation-duration: 8s;
-    animation-timing-function: ease-in-out;
-    animation-composition: compose, add;
-    transform-origin: center;
+    transform-origin: 50% 50%;
 }
 
 .background-canvas {
@@ -176,21 +174,6 @@ section {
     }
 }
 
-
-@keyframes fade-in-out {
-    from {
-        opacity: 1;
-    }
-
-    50% {
-        opacity: 0.25;
-    }
-
-    to {
-        opacity: 1;
-    }
-}
-
 @keyframes skew-1 {
     from {
         transform: skew(0deg, 0deg);
@@ -289,6 +272,51 @@ section {
     }
 }
 
+@keyframes shake-xy-1 {
+    from {
+        translate: 0;
+    }
+
+    25% {
+        translate: -50% -75%;
+    }
+
+    50% {
+        translate: 50% 75%;
+    }
+
+    75% {
+        translate: -50% -75%;
+    }
+
+    to {
+        translate: 0;
+    }
+    
+}
+
+@keyframes shake-xy-2 {
+    from {
+        translate: 0;
+    }
+
+    25% {
+        translate: 50% -75%;
+    }
+
+    50% {
+        translate: -50% 75%;
+    }
+
+    75% {
+        translate: 50% -75%;
+    }
+
+    to {
+        translate: 0;
+    }
+}
+
 @keyframes grayscale {
     from {
         filter: grayscale(0);
@@ -328,5 +356,88 @@ section {
 
     to {
         filter: hue-rotate(0deg);
+    }
+}
+
+@keyframes sepia {
+    from {
+        filter: sepia(0);
+    }
+
+    50% {
+        filter: sepia(1);
+    }
+
+    to {
+        filter: sepia(0);
+    }
+    
+}
+
+@keyframes fade-in-out {
+    from {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.1;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes origin-1 {
+    from {
+        transform-origin: 50% 50%;
+    }
+
+    33% {
+        transform-origin: 55% 45%;
+    }
+
+    66% {
+        transform-origin: 45% 55%;
+    }
+
+    to {
+        transform-origin: 50% 50%;
+    }
+}
+
+@keyframes origin-2 {
+    from {
+        transform-origin: 50% 50%;
+    }
+
+    33% {
+        transform-origin: 45% 55%;
+    }
+
+    66% {
+        transform-origin: 55% 55%;
+    }
+
+    to {
+        transform-origin: 50% 50%;
+    }
+}
+
+@keyframes origin-3 {
+    from {
+        transform-origin: 50% 50%;
+    }
+
+    33% {
+        transform-origin: 45% 55%;
+    }
+
+    66% {
+        transform-origin: 55% 45%;
+    }
+
+    to {
+        transform-origin: 50% 50%;
     }
 }
