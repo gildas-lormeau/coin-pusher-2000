@@ -84,7 +84,12 @@ export default class {
             DEBUG_HIDE_CABINET: this.DEBUG_HIDE_CABINET
         });
         this.#mesh = mesh;
-        await InstancedMeshes.initialize({ scene: this.#scene });
+        await InstancedMeshes.initialize({ 
+            scene: this.#scene,
+            onSpawnedCoin: (instance) => {
+                Coins.enableCcd(instance);
+            }
+        });
         const wall = new Wall({ scene: this.#scene });
         wall.initialize();
         this.#controlPanel = new ControlPanel({
@@ -118,6 +123,9 @@ export default class {
         this.#collisionsDetector.initialize();
         this.#sensorGate = new SensorGate({
             scene: this.#scene,
+            onCoinFallen: (instance) => {
+                Coins.enableCcd(instance);
+            },
             onBonusWon: () => {
                 const random = Math.random();
                 if (random < .25) {

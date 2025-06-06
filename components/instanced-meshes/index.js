@@ -5,10 +5,10 @@ import Buttons from "./buttons.js";
 import Digits from "./digits.js";
 
 export default class {
-    static async initialize({ scene }) {
+    static async initialize({ scene, onSpawnedCoin }) {
         await Promise.all([
             Cards.initialize({ scene }),
-            Coins.initialize({ scene }),
+            Coins.initialize({ scene, onSpawnedCoin }),
             Tokens.initialize({ scene }),
             Buttons.initialize({ scene }),
             Digits.initialize({ scene })

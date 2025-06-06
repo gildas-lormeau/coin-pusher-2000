@@ -41,13 +41,15 @@ const SENSOR_STATES = {
 
 export default class {
 
-    constructor({ scene, onBonusWon }) {
+    constructor({ scene, onBonusWon, onCoinFallen }) {
         this.#scene = scene;
         this.#onBonusWon = onBonusWon;
+        this.#onCoinFallen = onCoinFallen;
     }
 
     #scene;
     #onBonusWon;
+    #onCoinFallen;
     #materials;
     #collider;
     #sensor = {
@@ -91,7 +93,11 @@ export default class {
             sensor: true,
             userData: {
                 objectType: TYPE,
-                onIntersect: userData => onCoinIntersect({ userData, sensor: this.#sensor })
+                onIntersect: userData => onCoinIntersect({ 
+                    userData, 
+                    sensor: this.#sensor,
+                    onCoinFallen: this.#onCoinFallen
+                })
             }
         });
     }
@@ -153,10 +159,11 @@ export default class {
     }
 }
 
-function onCoinIntersect({ sensor, userData }) {
+function onCoinIntersect({ sensor, userData, onCoinFallen }) {
     if (userData.objectType === Coins.TYPE) {
         const coin = Coins.getCoin(userData);
         if (coin) {
+            onCoinFallen(coin);
             const positionX = coin.position.x;
             if (positionX > MIN_POSITION_X && positionX < MAX_POSITION_X) {
                 const indexLetter = Math.floor((positionX + MAX_POSITION_X) / SLOT_WIDTH);
