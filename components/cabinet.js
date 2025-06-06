@@ -51,15 +51,17 @@ export default class {
             const object = this.#getObject(userData);
             if (object) {
                 recycleObject(object);
-                if (object.objectType === Coins.TYPE) {
-                    this.#state.score++;
-                    this.#state.coinsInPool++;
-                }
-                if (object.objectType === Tokens.TYPE) {
-                    this.#state.score += 5;
-                }
-                if (object.objectType === Cards.TYPE) {
-                    this.#state.score += 10;
+                if (this.#runs.started) {
+                    if (object.objectType === Coins.TYPE) {
+                        this.#state.score++;
+                        this.#state.coinsInPool++;
+                    }
+                    if (object.objectType === Tokens.TYPE) {
+                        this.#state.score += 5;
+                    }
+                    if (object.objectType === Cards.TYPE) {
+                        this.#state.score += 10;
+                    }
                 }
             }
         }
@@ -84,7 +86,7 @@ export default class {
             DEBUG_HIDE_CABINET: this.DEBUG_HIDE_CABINET
         });
         this.#mesh = mesh;
-        await InstancedMeshes.initialize({ 
+        await InstancedMeshes.initialize({
             scene: this.#scene,
             onSpawnedCoin: (instance) => {
                 Coins.enableCcd(instance);
@@ -129,7 +131,6 @@ export default class {
             onBonusWon: () => {
                 const random = Math.random();
                 if (random < .25) {
-                    this.#state.score += 10;
                     this.#reelsBox.spinReels();
                 } else if (random < .5) {
                     this.#excavator.pick();

@@ -85,6 +85,10 @@ export default class {
             }
         }
     }
+
+    get started() {
+        return this.#run.state !== RUNS_STATES.IDLE && this.#run.state !== RUNS_STATES.STARTING_RUNS;
+    }
 }
 
 function updateRunsState({ run, state, currentRun, time }) {
