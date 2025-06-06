@@ -3,7 +3,7 @@ import { Vector3, Quaternion, Matrix4, Euler, InstancedMesh } from "three";
 const TYPE = "coin";
 const MAX_INSTANCES = 1024;
 const RADIUS = 0.03;
-const DEPTH = 0.0065;
+const DEPTH = 0.007;
 const INIIAL_POSITION_DELTA_X = .025;
 const INITIAL_POSITION_MIN_DELTA_X = 0.001;
 const INITIAL_POSITIONS_X = [-0.1125, 0, 0.1125];
@@ -21,14 +21,14 @@ const LINEAR_DAMPING = 0.5;
 const RESTITUTION = 0;
 const MODEL_PATH = "./../assets/coin.glb";
 const SPAWN_TIME_DELTA = 60;
-const RENDERING_LINEAR_MIN_SPEED = 0.00001;
+const RENDERING_LINEAR_MIN_SPEED = 0.0000001;
 const SLEEP_LINEAR_MAX_SPEED = 0.001;
 const TEMP_EULER = new Euler(0, 0, 0, "XYZ");
 const MAX_ANGLE_FLAT = Math.PI / 4;
 const ANGVEL_HISTORY_LENGTH = 10;
 const ANGVEL_HISTORY_MIN_LENGTH = 6;
-const ANGVEL_MIN = 0.001;
-const ANGVEL_MIN_AMPLITUDE = 0.01;
+const ANGVEL_MAX = 0.1;
+const ANGVEL_MAX_AMPLITUDE = 0.5;
 const MIN_OSCILLATIONS = 1;
 const MIN_SLEEP_CANDIDATE_FRAMES = 10;
 
@@ -382,7 +382,7 @@ function findOscillation(axis, history) {
     for (let i = 1; i < history.length; i++) {
         const value = history[i][axis];
         const sign = Math.sign(value);
-        if (sign !== 0 && sign !== lastSign && Math.abs(value) > ANGVEL_MIN) {
+        if (sign !== 0 && sign !== lastSign && Math.abs(value) < ANGVEL_MAX) {
             signChanges++;
             lastSign = sign;
         }
@@ -393,5 +393,5 @@ function findOscillation(axis, history) {
             max = value;
         }
     }
-    return signChanges >= MIN_OSCILLATIONS && (max - min) > ANGVEL_MIN_AMPLITUDE;
+    return signChanges >= MIN_OSCILLATIONS && (max - min) < ANGVEL_MAX_AMPLITUDE;
 }
