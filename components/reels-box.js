@@ -107,6 +107,7 @@ export default class {
             reel.rotation = reelsBox.reels[indexReel].rotation;
             reel.targetIndex = reelsBox.reels[indexReel].targetIndex;
             reel.targetRotation = reelsBox.reels[indexReel].targetRotation;
+            reel.mesh.rotation.x = reel.rotation
         });
     }
 }
