@@ -1,6 +1,6 @@
 import { Vector3, Quaternion, Matrix4, Euler, InstancedMesh, PointLight } from "three";
 
-const MAX_INSTANCES = 8;
+const MAX_INSTANCES = 3;
 const INITIAL_SCALE = new Vector3(1, 1, 1);
 const BUTTON_PRESS_DEPTH = -0.005;
 const BUTTON_RELEASE_DELAY = 75;
@@ -42,7 +42,7 @@ export default class {
                     instance.isPressing = true;
                 }
                 if (instance.enabled) {
-                    instance.onPress();
+                    this.onPress(instance);
                 }
             }
         });
@@ -65,8 +65,6 @@ export default class {
                         instance.pressStartTime = time;
                         object.getMatrixAt(instance.index, matrix);
                         matrix.decompose(position, rotation, scale);
-                        instance.initialPosition = position.clone();
-                        instance.initialRotation = rotation.clone();
                     } else {
                         const bulbLight = this.#bulbLights[color][type][instance.index];
                         const elapsedTime = time - instance.pressStartTime;
@@ -127,13 +125,46 @@ export default class {
         }
     }
 
-    static addButton({ type, color, position, rotation, onPress }) {
+    static load(buttons) {
+        buttons.forEach((colorButtons, color) => {
+            colorButtons.forEach((typeButtons, type) => {
+                typeButtons.forEach((button, indexButton) => {
+                    const instance = this.#instances[color][type][indexButton];
+                    instance.used = true;
+                    instance.enabled = button.enabled;
+                    instance.isPressing = button.isPressing;
+                    instance.isBlinking = button.isBlinking;
+                    instance.blinkStartTime = button.blinkStartTime;
+                    instance.blinkingOn = button.blinkingOn;
+                    instance.pressStartTime = button.pressStartTime;
+                    instance.buttonPosition.fromArray(button.position);
+                });
+            });
+        });
+    }
+
+    static save() {
+        return this.#instances.map(colorInstances => {
+            return colorInstances.map(typeInstances => {
+                return typeInstances.map(instance => {
+                    return {
+                        enabled: instance.enabled,
+                        isPressing: instance.isPressing,
+                        isBlinking: instance.isBlinking,
+                        blinkStartTime: instance.blinkStartTime,
+                        blinkingOn: instance.blinkingOn,
+                        pressStartTime: instance.pressStartTime,
+                        position: instance.buttonPosition.toArray()
+                    };
+                });
+            });
+        });
+    }
+
+    static addButton({ type, color, position, rotation }) {
         const instance = this.#instances[color][type].find(instance => !instance.used);
         instance.used = true;
         instance.enabled = true;
-        instance.initialPosition = position;
-        instance.initialRotation = rotation;
-        instance.onPress = onPress;
         const bulbLight = this.#bulbLights[color][type][instance.index];
         bulbLight.visible = true;
         bulbLight.intensity = LIGHT_INTENSITY_OFF;
@@ -253,8 +284,16 @@ function createInstance({ type, color, instances }) {
         position: new Vector3(),
         buttonPosition: new Vector3(),
         rotation: new Quaternion(),
+        initialPosition: new Vector3(),
+        initialRotation: new Quaternion(),
         matrix: new Matrix4(),
-        used: false
+        used: false,
+        enabled: false,
+        isPressing: false,
+        isBlinking: false,
+        blinkStartTime: undefined,
+        blinkingOn: false,
+        pressStartTime: undefined
     };
     instances[color][type].push(instance);
     return instance;
@@ -263,6 +302,8 @@ function createInstance({ type, color, instances }) {
 function initializePosition({ instance, position, rotation, bulbLight }) {
     instance.position.fromArray([position.x, position.y, position.z]);
     instance.rotation.setFromEuler(new Euler(rotation.x, rotation.y, rotation.z));
+    instance.initialPosition.fromArray([position.x, position.y, position.z]);
+    instance.initialRotation.setFromEuler(new Euler(rotation.x, rotation.y, rotation.z));
     instance.buttonPosition.fromArray([position.x, position.y, position.z]);
     bulbLight.position.fromArray([position.x, position.y + LIGHT_POSITION_Y, position.z,]);
     bulbLight.rotation.set(rotation.x, rotation.y, rotation.z);

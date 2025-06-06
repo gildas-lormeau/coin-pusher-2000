@@ -27,8 +27,7 @@ export default class {
                 type: 0,
                 color: 0,
                 position: new Vector3(BUTTONS_POSITION_X[indexButton], BUTTONS_POSITION[1], BUTTONS_POSITION[2]),
-                rotation: new Vector3().fromArray(BUTTONS_ROTATION),
-                onPress: () => this.#onPressDropButton(indexButton)
+                rotation: new Vector3().fromArray(BUTTONS_ROTATION)
             });
             Buttons.enable(this.#dropButtons[indexButton], false);
         }
@@ -36,18 +35,30 @@ export default class {
             type: 2,
             color: 0,
             position: new Vector3(ALT_BUTTONS_POSITION_X[0], BUTTONS_POSITION[1], BUTTONS_POSITION[2]),
-            rotation: new Vector3().fromArray(BUTTONS_ROTATION),
-            onPress: () => this.#onPressActionButton()
+            rotation: new Vector3().fromArray(BUTTONS_ROTATION)
         });
         Buttons.enable(this.#actionButton, false);
         this.#startButton = Buttons.addButton({
             type: 1,
             color: 0,
             position: new Vector3(ALT_BUTTONS_POSITION_X[1], BUTTONS_POSITION[1], BUTTONS_POSITION[2]),
-            rotation: new Vector3().fromArray(BUTTONS_ROTATION),
-            onPress: () => this.#onPressStartButton()
+            rotation: new Vector3().fromArray(BUTTONS_ROTATION)
         });
+        Buttons.onPress = instance => {
+            if (instance === this.#startButton) {
+                this.#onPressStartButton();
+            } else if (this.#dropButtons.includes(instance)) {
+                const index = this.#dropButtons.indexOf(instance);
+                this.#onPressDropButton(index);
+            } else if (instance === this.#actionButton) {
+                this.#onPressActionButton();
+            }
+        };
         Buttons.blink(this.#startButton, true);
+    }
+
+    update(time) {
+        // do nothing
     }
 
     setDropButtonsOn() {
@@ -71,9 +82,6 @@ export default class {
         Buttons.enable(this.#actionButton, false);
     }
 
-    update(time) {
-        // do nothing
-    }
 
     get interactiveObjects() {
         return Buttons.interactiveObjects;

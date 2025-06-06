@@ -266,12 +266,11 @@ export default class {
     async save() {
         const sensorCollidersHandles = {};
         this.#sensorColliders.forEach((collider, key) => sensorCollidersHandles[key] = collider.handle);
-        return {
+        const data = {};
+        InstancedMeshes.save(data);
+        Object.assign(data, {
             sensorCollidersHandles,
             scene: await this.#scene.save(),
-            coins: Coins.save(),
-            tokens: Tokens.save(),
-            cards: Cards.save(),
             pusher: this.#pusher.save(),
             sensorGate: this.#sensorGate.save(),
             reelsBox: this.#reelsBox.save(),
@@ -279,7 +278,8 @@ export default class {
             tower: this.#tower.save(),
             coinRoller: this.#coinRoller.save(),
             runs: this.#runs.save()
-        };
+        });
+        return data;
     }
 
     async load(cabinet) {
@@ -299,9 +299,7 @@ export default class {
                 }
             }
         });
-        Coins.load(cabinet.coins);
-        Tokens.load(cabinet.tokens);
-        Cards.load(cabinet.cards);
+        InstancedMeshes.load(cabinet);
         await this.#pusher.load(cabinet.pusher);
         this.#sensorGate.load(cabinet.sensorGate);
         this.#reelsBox.load(cabinet.reelsBox);

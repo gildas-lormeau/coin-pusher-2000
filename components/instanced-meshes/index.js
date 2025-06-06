@@ -22,4 +22,19 @@ export default class {
         Buttons.update(time);
         Digits.update();
     }
+
+    static load(data) {
+        Cards.load(data.cards);
+        Coins.load(data.coins);
+        Tokens.load(data.tokens);
+        Buttons.load(data.buttons);
+    }
+
+    static save(data) {
+        data.cards = Cards.save();
+        data.coins = Coins.save();
+        data.tokens = Tokens.save();
+        data.buttons = Buttons.save();
+    }    
+
 }
