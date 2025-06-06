@@ -21,7 +21,7 @@ export default class {
 
     static #state = {
         score: 0,
-        coinsInPool: 20,
+        coinsInPool: 0,
         time: 0
     };
     static #cabinet;
