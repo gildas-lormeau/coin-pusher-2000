@@ -19,7 +19,7 @@ const OBSTACLE_SPACING = 0.075;
 const OBSTACLE_ROWS = 6;
 const OBSTACLE_COLS = 7;
 const OBSTACLE_FRICTION = 0;
-const OBSTACLE_RESTITUTION = 0.1;
+const OBSTACLE_RESTITUTION = 0;
 const BOTTOM_OBSTACLE_FRICTION = 0.75;
 const BOTTOM_OBSTACLE_RESTITUTION = 0;
 const OBSTACLE_COLOR = "#555";
@@ -91,14 +91,14 @@ function initiliazeWallObstacles({ scene, wallBody }) {
     const spacing = 0.075;
     const startX = (-OBSTACLE_COLS * OBSTACLE_SPACING / 2) + (OBSTACLE_SPACING / 2);
     for (let col = 0; col < OBSTACLE_COLS; col++) {
-        initializeObstacle(startX - OBSTACLE_SPACING / 2, OBSTACLE_START_Y - OBSTACLE_SPACING, col, -1, OBSTACLE_RADIUS / 2, OBSTACLE_SPACING, BOTTOM_OBSTACLE_FRICTION, BOTTOM_OBSTACLE_RESTITUTION);
+        initializeObstacle(startX - OBSTACLE_SPACING / 2, OBSTACLE_START_Y - OBSTACLE_SPACING, col, -1, OBSTACLE_RADIUS / 2, BOTTOM_OBSTACLE_FRICTION, BOTTOM_OBSTACLE_RESTITUTION);
     }
     for (let col = 0; col < OBSTACLE_COLS; col++) {
-        initializeObstacle(startX - spacing / 2, OBSTACLE_START_Y - OBSTACLE_SPACING / 2, col, -1, OBSTACLE_RADIUS / 2, OBSTACLE_SPACING, BOTTOM_OBSTACLE_FRICTION, BOTTOM_OBSTACLE_RESTITUTION);
+        initializeObstacle(startX - spacing / 2, OBSTACLE_START_Y - OBSTACLE_SPACING / 2, col, -1, OBSTACLE_RADIUS / 2, BOTTOM_OBSTACLE_FRICTION, BOTTOM_OBSTACLE_RESTITUTION);
     }
     for (let row = 0; row < OBSTACLE_ROWS; row++) {
         for (let col = 0; col < (row % 2 === 0 ? OBSTACLE_COLS : OBSTACLE_COLS - 1); col++) {
-            initializeObstacle(startX, OBSTACLE_START_Y, col, row, OBSTACLE_RADIUS, spacing, OBSTACLE_FRICTION, OBSTACLE_RESTITUTION);
+            initializeObstacle(startX, OBSTACLE_START_Y, col, row, OBSTACLE_RADIUS, OBSTACLE_FRICTION, OBSTACLE_RESTITUTION);
         }
     }
 
