@@ -93,8 +93,8 @@ export default class {
             sensor: true,
             userData: {
                 objectType: TYPE,
-                onIntersect: userData => onCoinIntersect({ 
-                    userData, 
+                onIntersect: userData => onCoinIntersect({
+                    userData,
                     sensor: this.#sensor,
                     onCoinFallen: this.#onCoinFallen
                 })
@@ -148,7 +148,11 @@ export default class {
         this.#collider = this.#scene.worldColliders.get(sensorGate.colliderHandle);
         this.#collider.userData = {
             objectType: TYPE,
-            onIntersect: userData => onCoinIntersect({ sensor: this.#sensor, userData })
+            onIntersect: userData => onCoinIntersect({
+                sensor: this.#sensor,
+                userData,
+                onCoinFallen: this.#onCoinFallen
+            })
         };
         this.#sensor.state = Symbol.for(sensorGate.sensor.state);
         this.#sensor.letters.forEach((letter, indexLetter) => {
