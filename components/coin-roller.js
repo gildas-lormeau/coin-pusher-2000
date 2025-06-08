@@ -1,4 +1,4 @@
-import { Vector3 } from "three";
+import { Vector3, MeshPhongMaterial } from "three";
 
 const SPEED = .001;
 const SPEED_TRAP = .002;
@@ -24,6 +24,15 @@ const MIN_TRAP_POSITION = 0.0001;
 const MAX_TRAP_POSITION = 0.25 - MIN_TRAP_POSITION;
 const MIN_DOORS_POSITION = 0;
 const MAX_DOORS_POSITION = 0.03;
+const LIGHT_PREFIX_NAME = "light-";
+const LIGHTS_COLOR = 0xFFFFFF;
+const LIGHTS_OPACITY = 1;
+const LIGHTS_EMISSIVE_COLOR = 0xFF00FF;
+const LIGHTS_MIN_INTENSITY = 0;
+const LIGHTS_MAX_INTENSITY = 2.5;
+const LIGHTS_REMANENCE_DURATION = 500;
+const LIGHTS_HEAD_SIZE = 8;
+const LIGHTS_SPEED_DELAY = 50;
 
 const COIN_ROLLER_STATES = {
     IDLE: Symbol.for("coin-roller-idle"),
@@ -51,12 +60,17 @@ export default class {
     #onGetCoin;
     #initPosition;
     #sensorColliders = new Map();
+    #lightsMaterials = [];
     #coinRoller = {
         state: COIN_ROLLER_STATES.IDLE,
         pendingShots: 0,
         timeActive: -1,
         timeMovingCoin: -1,
-        timeOpeningTrap: -1
+        timeOpeningTrap: -1,
+        lights: [],
+        lightsHeadIndex: -1,
+        lightsDirection: 1,
+        timeLightsRefresh: -1
     };
 
     constructor({ scene, onInitializeCoin, onRecycleCoin, onBonusWon, onGetCoin }) {
@@ -80,17 +94,23 @@ export default class {
 
     async initialize() {
         const scene = this.#scene;
-        const { parts, initPosition } = await initializeModel({
+        const { parts, lightsMaterials, initPosition } = await initializeModel({
             scene,
             sensorColliders: this.#sensorColliders
         });
         this.#initPosition = initPosition;
+        this.#lightsMaterials = lightsMaterials;
         initializeColliders({
             scene,
             parts,
             sensorColliders: this.#sensorColliders,
             onBonusWon: this.#onBonusWon,
             onCoinLost: this.#onCoinLost
+        });
+        initializeLights({
+            scene,
+            lightsMaterials,
+            lights: this.#coinRoller.lights
         });
         parts.forEach(({ body, meshes }) => {
             meshes.forEach(({ data }) => this.#scene.addObject(data));
@@ -109,7 +129,11 @@ export default class {
             coinRoller: this.#coinRoller,
             time
         });
-        const { parts, state, launcher, trap, coin, doors } = this.#coinRoller;
+        updateLightsState({
+            coinRoller: this.#coinRoller,
+            time
+        });
+        const { parts, state, launcher, trap, coin, doors, lights } = this.#coinRoller;
         if (state !== COIN_ROLLER_STATES.IDLE) {
             parts.forEach(({ meshes, body }) => {
                 meshes.forEach(({ data }) => {
@@ -137,6 +161,14 @@ export default class {
                 coin.body.setEnabledRotations(true, true, true);
                 coin.body.applyImpulse(COIN_IMPULSE);
             }
+            lights.forEach((light, index) => {
+                const material = this.#lightsMaterials[index];
+                if (light.on) {
+                    material.emissiveIntensity = light.intensity;
+                } else {
+                    material.emissiveIntensity = 0;
+                }
+            });
         }
     }
 
@@ -183,6 +215,14 @@ export default class {
             timeMovingCoin: this.#coinRoller.timeMovingCoin,
             timeOpeningTrap: this.#coinRoller.timeOpeningTrap,
             pendingShots: this.#coinRoller.pendingShots,
+            lights: this.#coinRoller.lights.map(light => ({
+                on: light.on,
+                intensity: light.intensity,
+                lastVisited: light.lastVisited
+            })),
+            lightsHeadIndex: this.#coinRoller.lightsHeadIndex,
+            lightsDirection: this.#coinRoller.lightsDirection,
+            timeLightsRefresh: this.#coinRoller.timeLightsRefresh
         };
     }
 
@@ -226,6 +266,14 @@ export default class {
         if (coinRoller.coin) {
             this.#coinRoller.coin = this.#onGetCoin(coinRoller.coin);
         }
+        this.#coinRoller.lights = coinRoller.lights.map(light => ({
+            on: light.on,
+            intensity: light.intensity,
+            lastVisited: light.lastVisited
+        }));
+        this.#coinRoller.lightsHeadIndex = coinRoller.lightsHeadIndex;
+        this.#coinRoller.lightsDirection = coinRoller.lightsDirection;
+        this.#coinRoller.timeLightsRefresh = coinRoller.timeLightsRefresh;
     }
 }
 
@@ -234,6 +282,8 @@ function updateCoinRollerState({ coinRoller, time }) {
         case COIN_ROLLER_STATES.IDLE:
             break;
         case COIN_ROLLER_STATES.ACTIVATING:
+            coinRoller.timeLightsRefresh = time;
+            coinRoller.lightsHeadIndex = 0;
             coinRoller.state = COIN_ROLLER_STATES.OPENING_DOORS;
             break;
         case COIN_ROLLER_STATES.OPENING_DOORS:
@@ -306,6 +356,9 @@ function updateCoinRollerState({ coinRoller, time }) {
             coinRoller.doors.position -= SPEED_DOORS;
             if (coinRoller.doors.position < MIN_DOORS_POSITION) {
                 coinRoller.doors.position = 0;
+                coinRoller.timeLightsRefresh = -1;
+                coinRoller.lightsHeadIndex = -1;
+                coinRoller.lightsDirection = 1;
                 coinRoller.state = COIN_ROLLER_STATES.PREPARING_IDLE;
             }
             break;
@@ -314,6 +367,47 @@ function updateCoinRollerState({ coinRoller, time }) {
             break;
         default:
             break;
+    }
+}
+function updateLightsState({ coinRoller, time }) {
+    const { lights, lightsHeadIndex, lightsDirection } = coinRoller;
+    const lightsCount = lights.length;
+    const headSize = LIGHTS_HEAD_SIZE;
+    const remanenceDuration = LIGHTS_REMANENCE_DURATION;
+    if (coinRoller.state === COIN_ROLLER_STATES.IDLE || coinRoller.state === COIN_ROLLER_STATES.CLOSING_DOORS) {
+        lights.forEach(light => {
+            light.on = false;
+            light.intensity = 0;
+            light.lastVisited = -1;
+        });
+    } else if (coinRoller.timeLightsRefresh !== -1) {
+        const elapsedTime = time - coinRoller.timeLightsRefresh;
+        if (elapsedTime > LIGHTS_SPEED_DELAY) {
+            coinRoller.timeLightsRefresh = time;
+            coinRoller.lightsHeadIndex += lightsDirection;
+            if (coinRoller.lightsHeadIndex > lightsCount) {
+                coinRoller.lightsDirection = -1;
+                coinRoller.lightsHeadIndex = lightsCount - 1;
+            } else if (coinRoller.lightsHeadIndex < 0) {
+                coinRoller.lightsDirection = 1;
+                coinRoller.lightsHeadIndex = 0;
+            }
+        }
+        lights.forEach((light, index) => {
+            const minIndex = lightsDirection > 0 ? lightsHeadIndex - headSize : lightsHeadIndex;
+            const maxIndex = lightsDirection > 0 ? lightsHeadIndex : lightsHeadIndex + headSize;
+            if (index >= minIndex && index <= maxIndex) {
+                light.on = true;
+                light.intensity = LIGHTS_MAX_INTENSITY;
+                light.lastVisited = time;
+            } else if (light.lastVisited > -1 && time - light.lastVisited < remanenceDuration) {
+                const elapsedTime = time - light.lastVisited;
+                light.intensity = Math.max(LIGHTS_MIN_INTENSITY, LIGHTS_MAX_INTENSITY * (1 - elapsedTime / remanenceDuration));
+            } else {
+                light.on = false;
+                light.intensity = 0;
+            }
+        });
     }
 }
 
@@ -329,6 +423,7 @@ async function initializeModel({ scene }) {
     const model = await scene.loadModel(MODEL_PATH);
     const mesh = model.scene;
     const parts = new Map();
+    const lightsMaterials = [];
     const initPosition = new Vector3();
     mesh.traverse((child) => {
         if (child.isMesh) {
@@ -359,6 +454,16 @@ async function initializeModel({ scene }) {
                 partData.meshes.push({
                     data: child
                 });
+                if (child.material.name.startsWith(LIGHT_PREFIX_NAME)) {
+                    const indexLight = parseInt(child.material.name.substring(LIGHT_PREFIX_NAME.length));
+                    lightsMaterials[indexLight - 1] = child.material = new MeshPhongMaterial({
+                        color: LIGHTS_COLOR,
+                        transparent: true,
+                        opacity: LIGHTS_OPACITY,
+                        emissive: LIGHTS_EMISSIVE_COLOR,
+                        emissiveIntensity: 0
+                    });
+                }
             }
         } else if (child.name == INIT_POSITION) {
             initPosition.copy(child.position);
@@ -366,6 +471,7 @@ async function initializeModel({ scene }) {
     });
     return {
         parts,
+        lightsMaterials,
         initPosition
     };
 };
@@ -418,5 +524,15 @@ function initializeColliders({ scene, parts, sensorColliders, onBonusWon, onCoin
                 }
             }
         });
+    });
+}
+
+function initializeLights({ lightsMaterials, lights }) {
+    lightsMaterials.forEach((_, indexMaterial) => {
+        lights[indexMaterial] = {
+            on: false,
+            intensity: 0,
+            lastVisited: -1
+        };
     });
 }
