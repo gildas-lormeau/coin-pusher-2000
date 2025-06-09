@@ -1,10 +1,15 @@
-import { Quaternion, Vector3 } from "three";
+import { Quaternion, Vector3, SpotLight } from "three";
 const MODEL_PATH = "./../assets/excavator.glb";
+const Y_AXIS = new Vector3(0, 1, 0);
 const RESTITUTION = 0;
 const BASE_PART_NAME = "base";
 const TRAP_PART_NAME = "trap-excavator";
+const BEACON_LIGHT_BULB_NAME = "beacon-light-bulb";
+const BEACON_LIGHT_MIRROR_NAME = "beacon-light-mirror";
+const BEACON_LIGHT_BASE_NAME = "beacon-light-base";
 const PLATFORM = "rotating-platform";
 const DROP_POSITION = "drop-position";
+const BEACON_LIGHT_POSITION = "beacon-light-position";
 const JOINT_PLATFORM = "joint-rotating-platform";
 const JOINT_ARM_PLATFORM = "joint-arm-rotating-platform";
 const JOINT_ARMS = "joint-arms";
@@ -17,6 +22,17 @@ const DELAY_PICK_WAIT = 1000;
 const MOTOR_STIFFNESS = 50000;
 const MOTOR_DAMPING = 20000;
 const SENSOR_HEIGHT = 0.1;
+const BEACON_LIGHT_ANGLE = Math.PI / 3;
+const BEACON_LIGHT_DISTANCE = 0.5;
+const BEACON_LIGHT_INTENSITY_ON = 0.25;
+const BEACON_LIGHT_COLOR = 0xffbfa1;
+const BEACON_LIGHT_PENUMBRA = 0.5;
+const BEACON_LIGHT_DECAY = 0.1;
+const BEACON_LIGHT_INTENSITY_OFF = 0;
+const BEACON_LIGHT_BULB_INTENSITY_ON = 10;
+const BEACON_LIGHT_OPACITY_OFF = 0.3;
+const BEACON_LIGHT_OPACITY_ON = 1;
+const BEACON_LIGHT_BULB_SPEED = 0.06;
 
 const EXCAVATOR_STATES = {
     IDLE: Symbol.for("excavator-idle"),
@@ -42,14 +58,14 @@ export default class {
     #onRecycleObject;
     #onGetObject;
     #dropPosition;
+    #beaconLight;
+    #beaconLightPosition;
     #trapSensor;
     #excavator = {
         state: EXCAVATOR_STATES.IDLE,
         pendingPicks: 0,
         timePick: -1,
-        timeDrop: -1,
-        timeMovingUp: -1,
-        delayMovingUp: -1
+        beaconLightAngle: 0
     };
 
     constructor({ scene, onPick, onGetObject, onRecycleObject }) {
@@ -61,10 +77,14 @@ export default class {
 
     async initialize() {
         const scene = this.#scene;
-        const { parts, joints, dropPosition } = await initializeModel({
-            scene
-        });
+        const {
+            parts,
+            joints,
+            dropPosition,
+            beaconLightPosition
+        } = await initializeModel({ scene });
         this.#dropPosition = dropPosition;
+        this.#beaconLightPosition = beaconLightPosition;
         const { trapSensor } = initializeColliders({
             scene,
             parts,
@@ -87,6 +107,16 @@ export default class {
         this.#platformArmJoint.joint.configureMotor(0, 1, MOTOR_STIFFNESS, MOTOR_DAMPING);
         this.#armsJoint.joint.configureMotor(0, 3.7, MOTOR_STIFFNESS, MOTOR_DAMPING);
         this.#jawsJoint.joint.configureMotor(0, 0, 1, 0);
+        this.#beaconLight = new SpotLight(
+            BEACON_LIGHT_COLOR,
+            BEACON_LIGHT_INTENSITY_OFF,
+            BEACON_LIGHT_DISTANCE,
+            BEACON_LIGHT_ANGLE,
+            BEACON_LIGHT_PENUMBRA,
+            BEACON_LIGHT_DECAY);
+        this.#beaconLight.position.copy(this.#beaconLightPosition);
+        this.#scene.addObject(this.#beaconLight);
+        this.#scene.addObject(this.#beaconLight.target);
     }
 
     update(time) {
@@ -111,6 +141,7 @@ export default class {
             data.position.copy(body.translation());
             data.quaternion.copy(body.rotation());
         }));
+        const lightBulbMaterial = this.#beaconLightBulb.meshes[0].data.material;
         if (state !== EXCAVATOR_STATES.IDLE) {
             if (state === EXCAVATOR_STATES.PICKING) {
                 this.#onPick(this.#dropPosition);
@@ -126,6 +157,24 @@ export default class {
             if (state === EXCAVATOR_STATES.CLOSING_JAWS_AFTER_DROPPING) {
                 this.#platform.body.setEnabledRotations(false, false, false);
             }
+            lightBulbMaterial.emissiveIntensity = BEACON_LIGHT_BULB_INTENSITY_ON;
+            lightBulbMaterial.opacity = BEACON_LIGHT_OPACITY_ON;
+            this.#beaconLight.intensity = BEACON_LIGHT_INTENSITY_ON;
+            const beaconLightRotation = new Quaternion().setFromAxisAngle(Y_AXIS, this.#excavator.beaconLightAngle);
+            this.#beaconLightMirror.body.setNextKinematicTranslation(new Vector3(0, 0, 0)
+                .sub(this.#beaconLightPosition)
+                .applyQuaternion(beaconLightRotation)
+                .add(this.#beaconLightPosition));
+            this.#beaconLightMirror.body.setNextKinematicRotation(beaconLightRotation);
+            this.#beaconLight.target.position.set(
+                this.#beaconLight.position.x + Math.sin(this.#excavator.beaconLightAngle),
+                this.#beaconLight.position.y,
+                this.#beaconLight.position.z + Math.cos(this.#excavator.beaconLightAngle)
+            );
+        } else {
+            lightBulbMaterial.emissiveIntensity = BEACON_LIGHT_INTENSITY_OFF;
+            lightBulbMaterial.opacity = BEACON_LIGHT_OPACITY_OFF;
+            this.#beaconLight.intensity = BEACON_LIGHT_INTENSITY_OFF;
         }
     }
 
@@ -147,8 +196,7 @@ export default class {
             state: this.#excavator.state.description,
             pendingPicks: this.#excavator.pendingPicks,
             timePick: this.#excavator.timePick,
-            timeMovingUp: this.#excavator.timeMovingUp,
-            delayMovingUp: this.#excavator.delayMovingUp,
+            beaconLightAngle: this.#excavator.beaconLightAngle,
             joints,
             parts,
             trapSensorHandle: this.#trapSensor.handle
@@ -178,8 +226,7 @@ export default class {
         this.#excavator.state = Symbol.for(excavator.state);
         this.#excavator.pendingPicks = excavator.pendingPicks;
         this.#excavator.timePick = excavator.timePick;
-        this.#excavator.timeMovingUp = excavator.timeMovingUp;
-        this.#excavator.delayMovingUp = excavator.delayMovingUp;
+        this.#excavator.beaconLightAngle = excavator.beaconLightAngle;
         this.#excavator.joints.forEach((jointData, name) => {
             const loadedJoint = excavator.joints[name];
             if (loadedJoint) {
@@ -247,6 +294,14 @@ export default class {
     get #platform() {
         return this.#excavator.parts.get(PLATFORM);
     }
+
+    get #beaconLightBulb() {
+        return this.#excavator.parts.get(BEACON_LIGHT_BULB_NAME);
+    }
+
+    get #beaconLightMirror() {
+        return this.#excavator.parts.get(BEACON_LIGHT_MIRROR_NAME);
+    }
 }
 
 function updateExcavatorState({ excavator, joints, time }) {
@@ -292,22 +347,18 @@ function updateExcavatorState({ excavator, joints, time }) {
             platformArmJoint.joint.configureMotor(.5, 1, MOTOR_STIFFNESS, MOTOR_DAMPING);
             armsJoint.joint.configureMotor(-.2, 4, MOTOR_STIFFNESS, MOTOR_DAMPING);
             excavator.state = EXCAVATOR_STATES.MOVING_UP;
-            excavator.timeMovingUp = time;
             break;
         case EXCAVATOR_STATES.MOVING_UP:
             // console.log("=> moving up", getAngle(platformArmJoint), getAngle(armsJoint));
             if (getAngle(platformArmJoint) > .5) {
                 platformJoint.joint.configureMotor(-2, -3, MOTOR_STIFFNESS, MOTOR_STIFFNESS);
                 excavator.state = EXCAVATOR_STATES.MOVING_TO_DROP_ZONE;
-                excavator.delayMovingUp = time - excavator.timeMovingUp;
-                excavator.timeMovingUp = -1;
             }
             break;
         case EXCAVATOR_STATES.MOVING_TO_DROP_ZONE:
-            // console.log("=> moving to drop zone", getAngle(platformJoint), excavator.delayMovingUp);
+            // console.log("=> moving to drop zone", getAngle(platformJoint));
             if (getAngle(platformJoint) < -2) {
                 platformArmJoint.joint.configureMotor(-.3, 1, MOTOR_STIFFNESS, MOTOR_DAMPING);
-                excavator.delayMovingUp = -1;
                 armsJoint.joint.configureMotor(.9, 8, MOTOR_STIFFNESS, MOTOR_DAMPING);
                 excavator.state = EXCAVATOR_STATES.EXTENDING_ARMS;
             }
@@ -351,7 +402,8 @@ function updateExcavatorState({ excavator, joints, time }) {
             if (getAngle(platformArmJoint) < .1 && getAngle(armsJoint) > -.1) {
                 if (excavator.pendingPicks > 0) {
                     excavator.state = EXCAVATOR_STATES.OPENING_JAWS;
-                } else {
+                } else if (excavator.beaconLightAngle > 0 && excavator.beaconLightAngle < BEACON_LIGHT_BULB_SPEED) {
+                    excavator.beaconLightAngle = 0;
                     jaw1Joint.joint.configureMotor(0, 2.5, MOTOR_STIFFNESS, MOTOR_DAMPING);
                     jaw2Joint.joint.configureMotor(0, -2.5, MOTOR_STIFFNESS, MOTOR_DAMPING);
                     jaw3Joint.joint.configureMotor(0, 2.5, MOTOR_STIFFNESS, MOTOR_DAMPING);
@@ -367,6 +419,9 @@ function updateExcavatorState({ excavator, joints, time }) {
             }
             break;
         default:
+    }
+    if (excavator.state !== EXCAVATOR_STATES.IDLE && excavator.state !== EXCAVATOR_STATES.PREPARING_IDLE) {
+        excavator.beaconLightAngle = (excavator.beaconLightAngle + BEACON_LIGHT_BULB_SPEED) % (2 * Math.PI);
     }
 }
 
@@ -388,6 +443,7 @@ async function initializeModel({ scene }) {
     const parts = new Map();
     const joints = new Map();
     const dropPosition = new Vector3();
+    const beaconLightPosition = new Vector3();
     mesh.traverse((child) => {
         if (child.isMesh) {
             child.castShadow = true;
@@ -411,7 +467,7 @@ async function initializeModel({ scene }) {
                     vertices,
                     indices
                 });
-            } else {
+            } else if (name !== BEACON_LIGHT_BULB_NAME) {
                 const name = child.userData.name;
                 const partData = getPart(parts, name);
                 partData.meshes.push({
@@ -428,12 +484,15 @@ async function initializeModel({ scene }) {
             });
         } else if (child.name == DROP_POSITION) {
             dropPosition.copy(child.position);
+        } else if (child.name === BEACON_LIGHT_POSITION) {
+            beaconLightPosition.copy(child.position);
         }
     });
     return {
         parts,
         joints,
-        dropPosition
+        dropPosition,
+        beaconLightPosition
     };
 };
 
@@ -452,7 +511,12 @@ function initializeColliders({ scene, parts, joints, onRecycleObject }) {
     let trapSensor;
     parts.forEach((partData, name) => {
         const { meshes, friction } = partData;
-        const body = partData.body = name === BASE_PART_NAME || name === TRAP_PART_NAME ? scene.createFixedBody() : scene.createDynamicBody();
+        const body = partData.body =
+            name === BASE_PART_NAME || name === TRAP_PART_NAME || name === BEACON_LIGHT_BASE_NAME ?
+                scene.createFixedBody() :
+                name === BEACON_LIGHT_MIRROR_NAME ?
+                    scene.createKinematicBody() :
+                    scene.createDynamicBody();
         body.setEnabled(false);
         meshes.forEach(meshData => {
             if (meshData.sensor) {
