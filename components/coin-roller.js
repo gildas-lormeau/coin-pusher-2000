@@ -26,7 +26,6 @@ const MIN_DOORS_POSITION = 0;
 const MAX_DOORS_POSITION = 0.03;
 const LIGHT_PREFIX_NAME = "light-";
 const LIGHTS_COLOR = 0xFFFFFF;
-const LIGHTS_OPACITY = 1;
 const LIGHTS_EMISSIVE_COLOR = 0xFF00FF;
 const LIGHTS_MIN_INTENSITY = 0;
 const LIGHTS_MAX_INTENSITY = 2.5;
@@ -458,8 +457,6 @@ async function initializeModel({ scene }) {
                     const indexLight = parseInt(child.material.name.substring(LIGHT_PREFIX_NAME.length));
                     lightsMaterials[indexLight - 1] = child.material = new MeshPhongMaterial({
                         color: LIGHTS_COLOR,
-                        transparent: true,
-                        opacity: LIGHTS_OPACITY,
                         emissive: LIGHTS_EMISSIVE_COLOR,
                         emissiveIntensity: 0
                     });
