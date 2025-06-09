@@ -81,10 +81,14 @@ export default class {
                     linearVelocity.x * linearVelocity.x +
                     linearVelocity.y * linearVelocity.y +
                     linearVelocity.z * linearVelocity.z;
+                const isSleeping = instance.body.isSleeping();
                 if (instance.pendingImpulse && instance.body.mass() > 0) {
                     instance.body.applyImpulse(instance.pendingImpulse, true);
                     instance.pendingImpulse = null;
-                } else if (!instance.body.isSleeping()) {
+                } else if (isSleeping) {
+                    instance.sleepCandidateFrames = 0;
+                    instance.angularVelocityHistory = [];
+                } else if (!isSleeping) {
                     const angularVelocity = instance.body.angvel();
                     instance.angularVelocityHistory.push({ x: angularVelocity.x, z: angularVelocity.z });
                     if (instance.angularVelocityHistory.length > ANGVEL_HISTORY_LENGTH) {
@@ -93,8 +97,7 @@ export default class {
                     if (
                         instance.linearSpeed < SLEEP_LINEAR_MAX_SPEED &&
                         isFlat(instance) &&
-                        isOscillating(instance.angularVelocityHistory) &&
-                        !instance.body.isSleeping()
+                        isOscillating(instance.angularVelocityHistory)
                     ) {
                         instance.sleepCandidateFrames++;
                         if (instance.sleepCandidateFrames > MIN_SLEEP_CANDIDATE_FRAMES) {
@@ -198,7 +201,7 @@ export default class {
                 rotation: new Quaternion().fromArray(instance.rotation),
                 used: instance.used,
                 body,
-                angularVelocityHistory: instance.angularVelocityHistory || [],
+                angularVelocityHistory: instance.angularVelocityHistory,
                 sleepCandidateFrames: instance.sleepCandidateFrames || 0,
                 pendingImpulse: instance.pendingImpulse ? new Vector3().fromArray(instance.pendingImpulse) : null,
             };
