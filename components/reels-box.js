@@ -118,6 +118,10 @@ export default class {
                 rotation: reel.rotation,
                 targetIndex: reel.targetIndex,
                 targetRotation: reel.targetRotation
+            })),
+            lights: this.#reelsBox.lights.map(light => ({
+                intensity: light.intensity,
+                timeRefresh: light.timeRefresh
             }))
         };
     }
@@ -134,6 +138,10 @@ export default class {
             reel.targetIndex = reelsBox.reels[indexReel].targetIndex;
             reel.targetRotation = reelsBox.reels[indexReel].targetRotation;
             this.#reelsMeshes[indexReel].rotation.x = reel.rotation;
+        });
+        this.#reelsBox.lights.forEach((light, indexLight) => {
+            light.intensity = reelsBox.lights[indexLight].intensity;
+            light.timeRefresh = reelsBox.lights[indexLight].timeRefresh;
         });
     }
 }
