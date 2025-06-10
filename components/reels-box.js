@@ -1,3 +1,5 @@
+import { MeshPhongMaterial } from "three";
+
 const MAX_ITEMS = 8;
 const REEL_MIN_SPEED = Math.PI / 20;
 const REEL_MAX_SPEED = Math.PI / 10;
@@ -7,6 +9,14 @@ const REEL_MAX_TURN_COUNT = 10;
 const REEL_MIN_TURN_COUNT = 3;
 const REEL_ON_WON_DELAY = 1000;
 const MODEL_PATH = "./../assets/reels-box.glb";
+const REEL_PREFIX_NAME = "reel-";
+const LIGHT_PREFIX_NAME = "light-";
+const LIGHTS_COLOR = 0xfbd04a;
+const LIGHTS_EMISSIVE_COLOR = 0xfbd04a;
+const LIGHTS_MIN_INTENSITY = 0;
+const LIGHTS_MAX_INTENSITY = 1.5;
+const LIGHTS_DELAY_ON = 100;
+const LIGHTS_DELAY_OFF = 250;
 const REELS_BOX_STATES = {
     IDLE: Symbol.for("reels-box-idle"),
     ACTIVATING: Symbol.for("reels-box-activating"),
@@ -30,6 +40,8 @@ export default class {
     }
 
     #scene;
+    #lightsMaterials;
+    #reelsMeshes;
     #onBonusWon;
     #reelsBox = {
         state: REELS_BOX_STATES.IDLE,
@@ -54,22 +66,36 @@ export default class {
             rotation: 0,
             targetIndex: -1,
             targetRotation: -1
-        }]
+        }],
+        lights: []
     };
 
     async initialize() {
-        await initializeModel({ scene: this.#scene, reels: this.#reelsBox.reels });
+        const scene = this.#scene;
+        const { reelsMeshes, lightsMaterials } = await initializeModel({ scene });
+        this.#reelsMeshes = reelsMeshes;
+        this.#lightsMaterials = lightsMaterials;
+        initializeLights({
+            scene,
+            lightsMaterials,
+            lights: this.#reelsBox.lights
+        });
     }
 
     update(time) {
-        updateReelsBoxState({ reelsBox: this.#reelsBox, time });
-        const { state, reels } = this.#reelsBox;
+        const reelsBox = this.#reelsBox;
+        const { state, reels, lights } = reelsBox;
+        updateReelsBoxState({ reelsBox, time });
+        updateLightsState({ reelsBox, time });
         reels.forEach(reel => updateReelState({ reel }));
         if (state !== REELS_BOX_STATES.IDLE) {
-            reels.forEach(reel => reel.mesh.rotation.x = reel.rotation);
+            reels.forEach((reel, indexReel) => this.#reelsMeshes[indexReel].rotation.x = reel.rotation);
             if (state === REELS_BOX_STATES.SETTLED) {
                 this.#onBonusWon(reels.map(reel => reel.index));
             }
+            lights.forEach((light, indexLight) => {
+                this.#lightsMaterials[indexLight].emissiveIntensity = light.intensity;
+            });
         }
     }
 
@@ -107,7 +133,7 @@ export default class {
             reel.rotation = reelsBox.reels[indexReel].rotation;
             reel.targetIndex = reelsBox.reels[indexReel].targetIndex;
             reel.targetRotation = reelsBox.reels[indexReel].targetRotation;
-            reel.mesh.rotation.x = reel.rotation
+            this.#reelsMeshes[indexReel].rotation.x = reel.rotation;
         });
     }
 }
@@ -190,17 +216,63 @@ function updateReelState({ reel }) {
     }
 }
 
-async function initializeModel({ scene, reels }) {
-    const sensorGateModel = await scene.loadModel(MODEL_PATH);
-    sensorGateModel.scene.traverse(child => {
+function updateLightsState({ reelsBox, time }) {
+    const { state, lights } = reelsBox;
+    if (state === REELS_BOX_STATES.ACTIVATING) {
+        lights.forEach(light => {
+            light.intensity = LIGHTS_MIN_INTENSITY;
+            light.timeRefresh = time;
+        });
+    } else if (state === REELS_BOX_STATES.IDLE) {
+        lights.forEach(light => {
+            light.intensity = LIGHTS_MIN_INTENSITY;
+            light.timeRefresh = -1;
+        });
+    } else {
+        lights.forEach(light => {
+            if (light.intensity == LIGHTS_MIN_INTENSITY && time - light.timeRefresh > LIGHTS_DELAY_ON) {
+                light.intensity = LIGHTS_MAX_INTENSITY;
+                light.timeRefresh = time;
+            } else if (time - light.timeRefresh > LIGHTS_DELAY_OFF) {
+                light.intensity = LIGHTS_MIN_INTENSITY;
+                light.timeRefresh = time;
+            }
+        });
+    }
+}
+
+async function initializeModel({ scene }) {
+    const reelsMeshes = [];
+    const lightsMaterials = [];
+    const model = await scene.loadModel(MODEL_PATH);
+    model.scene.traverse(child => {
         if (child.isMesh) {
-            child.castShadow = true;
-            child.receiveShadow = true;
+            if (child.material.name.startsWith(LIGHT_PREFIX_NAME)) {
+                const indexLight = parseInt(child.material.name.substring(LIGHT_PREFIX_NAME.length));
+                lightsMaterials[indexLight - 1] = child.material = new MeshPhongMaterial({
+                    color: LIGHTS_COLOR,
+                    emissive: LIGHTS_EMISSIVE_COLOR,
+                    emissiveIntensity: LIGHTS_MIN_INTENSITY
+                });
+            }
+            if (child.name.startsWith(REEL_PREFIX_NAME)) {
+                const indexReel = parseInt(child.name.substring(REEL_PREFIX_NAME.length));
+                reelsMeshes[indexReel - 1] = child;
+            }
         }
     });
-    const mesh = sensorGateModel.scene;
-    for (let indexReel = 0; indexReel < reels.length; indexReel++) {
-        reels[indexReel].mesh = mesh.children[indexReel + 1];
-    }
-    scene.addObject(mesh);
+    scene.addObject(model.scene);
+    return {
+        reelsMeshes,
+        lightsMaterials
+    };
+}
+
+function initializeLights({ lightsMaterials, lights }) {
+    lightsMaterials.forEach((_, indexMaterial) => {
+        lights[indexMaterial] = {
+            intensity: LIGHTS_MIN_INTENSITY,
+            timeRefresh: -1
+        };
+    });
 }
