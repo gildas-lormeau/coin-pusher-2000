@@ -458,7 +458,7 @@ async function initializeModel({ scene }) {
                     lightsMaterials[indexLight - 1] = child.material = new MeshPhongMaterial({
                         color: LIGHTS_COLOR,
                         emissive: LIGHTS_EMISSIVE_COLOR,
-                        emissiveIntensity: 0
+                        emissiveIntensity: LIGHTS_MIN_INTENSITY
                     });
                 }
             }
