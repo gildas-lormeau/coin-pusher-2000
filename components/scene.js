@@ -1,4 +1,4 @@
-import { Quaternion, Vector3, Euler, Scene, Color, WebGLRenderer, VSMShadowMap, PMREMGenerator, DirectionalLight, AmbientLight, SRGBColorSpace, ACESFilmicToneMapping } from "three";
+import { Quaternion, Vector3, Euler, Scene, Color, WebGLRenderer, VSMShadowMap, PMREMGenerator, LinearToneMapping, DirectionalLight, AmbientLight, SRGBColorSpace } from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
 import { EXRLoader } from "three/examples/jsm/loaders/EXRLoader";
 import { World, RigidBodyDesc, ColliderDesc, TriMeshFlags, JointData } from "@dimforge/rapier3d";
@@ -78,7 +78,7 @@ export default class {
         this.#scene.environmentIntensity = ENVIRONMENT_INTENSITY;
         this.#scene.castShadow = true;
         this.#scene.receiveShadow = true;
-        this.#renderer.toneMapping = ACESFilmicToneMapping;
+        this.#renderer.toneMapping = LinearToneMapping;
         this.#renderer.toneMappingExposure = TONE_MAPPING_EXPOSURE;
         this.#renderer.outputColorSpace = SRGBColorSpace;
         this.#renderer.setSize(innerWidth, innerHeight);
