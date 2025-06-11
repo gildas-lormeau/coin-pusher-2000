@@ -27,9 +27,10 @@ const TEMP_EULER = new Euler(0, 0, 0, "XYZ");
 const MAX_ANGLE_FLAT = Math.PI / 4;
 const ANGVEL_HISTORY_LENGTH = 10;
 const ANGVEL_HISTORY_MIN_LENGTH = 6;
-const ANGVEL_MAX_AMPLITUDE = Math.PI / 32;
-const MIN_OSCILLATIONS = 1;
-const MIN_SLEEP_CANDIDATE_FRAMES = 10;
+const ANGVEL_MAX_AMPLITUDE = Math.PI / 360;
+const ANGVEL_MAX_AMPLITUDE_SQUARED = Math.pow(ANGVEL_MAX_AMPLITUDE, 2);
+const MIN_OSCILLATIONS = 2;
+const MIN_SLEEP_CANDIDATE_FRAMES = 5;
 
 let friction = 0.2;
 let density = 1;
@@ -93,8 +94,12 @@ export default class {
                     if (instance.angularVelocityHistory.length > ANGVEL_HISTORY_LENGTH) {
                         instance.angularVelocityHistory.shift();
                     }
+                    const angularVelocityAbsX = Math.abs(angularVelocity.x);
+                    const angularVelocityAbsZ = Math.abs(angularVelocity.z);
                     if (
                         instance.linearSpeed < SLEEP_LINEAR_MAX_SPEED &&
+                        angularVelocityAbsX < ANGVEL_MAX_AMPLITUDE &&
+                        angularVelocityAbsZ < ANGVEL_MAX_AMPLITUDE &&
                         isFlat(instance) &&
                         isOscillating(instance.angularVelocityHistory)
                     ) {
@@ -160,6 +165,8 @@ export default class {
 
     static recycle(instance) {
         instance.used = false;
+        instance.angularVelocityHistory = [];
+        instance.sleepCandidateFrames = 0;
         instance.body.setEnabled(false);
         initializePosition({ instance, hidden: true });
         update({
@@ -184,8 +191,8 @@ export default class {
                 rotation: instance.rotation.toArray(),
                 used: instance.used,
                 bodyHandle: this.#instances[instance.index].body.handle,
-                angularVelocityHistory: instance.angularVelocityHistory,
-                sleepCandidateFrames: instance.sleepCandidateFrames,
+                angularVelocityHistory: instance.used ? instance.angularVelocityHistory : [],
+                sleepCandidateFrames: instance.used ? instance.sleepCandidateFrames : 0,
                 pendingImpulse: instance.pendingImpulse ? instance.pendingImpulse.toArray() : null
             };
         });
@@ -394,5 +401,5 @@ function findOscillation(history) {
             max = value;
         }
     }
-    return signChanges >= MIN_OSCILLATIONS && (max - min) < ANGVEL_MAX_AMPLITUDE;
+    return signChanges >= MIN_OSCILLATIONS && (max - min) < ANGVEL_MAX_AMPLITUDE_SQUARED;
 }
