@@ -7,16 +7,18 @@ const REEL_ACCELERATION = Math.PI / 90;
 const REEL_DECELERATION = Math.PI / 60;
 const REEL_MAX_TURN_COUNT = 10;
 const REEL_MIN_TURN_COUNT = 3;
-const REEL_ON_WON_DELAY = 1000;
+const REEL_ON_WON_DELAY = 1500;
 const MODEL_PATH = "./../assets/reels-box.glb";
 const REEL_PREFIX_NAME = "reel-";
 const LIGHT_PREFIX_NAME = "light-";
+const LIGHTS_OPACITY_OFF = 0.2;
+const LIGHTS_OPACITY_ON = 1.0;
 const LIGHTS_COLOR = 0xfbd04a;
 const LIGHTS_EMISSIVE_COLOR = 0xfbd04a;
-const LIGHTS_MIN_INTENSITY = -.2;
+const LIGHTS_MIN_INTENSITY = 0;
 const LIGHTS_MAX_INTENSITY = 1.5;
-const LIGHTS_DELAY_BLINKING = 100;
-const LIGHTS_DELAY_ROTATING = 200;
+const LIGHTS_DELAY_BLINKING = 50;
+const LIGHTS_DELAY_ROTATING = 150;
 const REELS_BOX_STATES = {
     IDLE: Symbol.for("reels-box-idle"),
     ACTIVATING: Symbol.for("reels-box-activating"),
@@ -111,6 +113,7 @@ export default class {
         if (lights.state !== LIGHTS_STATES.IDLE) {
             lights.bulbs.forEach((bulb, indexBulb) => {
                 this.#lightBulbsMaterials[indexBulb].emissiveIntensity = bulb.intensity;
+                this.#lightBulbsMaterials[indexBulb].opacity = bulb.opacity;
             });
         }
     }
@@ -261,35 +264,25 @@ function updateLightsState({ reelsBox, time }) {
             if (time - reelsBox.lights.timeRefresh > LIGHTS_DELAY_ROTATING) {
                 reelsBox.lights.headIndex = (reelsBox.lights.headIndex + 1) % 3;
                 reelsBox.lights.bulbs.forEach((bulb, indexBulb) => {
-                    if (indexBulb % 3 === reelsBox.lights.headIndex || (indexBulb + 1) % 3 === reelsBox.lights.headIndex) {
-                        bulb.intensity = LIGHTS_MAX_INTENSITY;
-                    } else {
-                        bulb.intensity = LIGHTS_MIN_INTENSITY;
-                    }
+                    enableBulb(bulb, indexBulb % 3 === reelsBox.lights.headIndex || (indexBulb + 1) % 3 === reelsBox.lights.headIndex);
                 });
                 reelsBox.lights.timeRefresh = time;
             }
             break;
         case LIGHTS_STATES.STARTING_BLINKING:
-            reelsBox.lights.bulbs.forEach(bulb => bulb.intensity = LIGHTS_MIN_INTENSITY);
+            reelsBox.lights.bulbs.forEach((bulb, indexBulb) => enableBulb(bulb, indexBulb % 2 === 0));
             reelsBox.lights.headIndex = 0;
             reelsBox.lights.timeRefresh = -1;
             reelsBox.lights.state = LIGHTS_STATES.BLINKING;
             break;
         case LIGHTS_STATES.BLINKING:
             if (time - reelsBox.lights.timeRefresh > LIGHTS_DELAY_BLINKING) {
-                reelsBox.lights.bulbs.forEach(bulb => {
-                    if (bulb.intensity == LIGHTS_MIN_INTENSITY) {
-                        bulb.intensity = LIGHTS_MAX_INTENSITY;
-                    } else {
-                        bulb.intensity = LIGHTS_MIN_INTENSITY;
-                    }
-                });
+                reelsBox.lights.bulbs.forEach(bulb => enableBulb(bulb, bulb.intensity === LIGHTS_MIN_INTENSITY));
                 reelsBox.lights.timeRefresh = time;
             }
             break;
         case LIGHTS_STATES.STOPPING_BLINKING:
-            reelsBox.lights.bulbs.forEach(bulb => bulb.intensity = LIGHTS_MIN_INTENSITY);
+            reelsBox.lights.bulbs.forEach(bulb => enableBulb(bulb, false));
             reelsBox.lights.timeRefresh = -1;
             reelsBox.lights.state = LIGHTS_STATES.PREPARING_IDLE;
             break;
@@ -311,7 +304,9 @@ async function initializeModel({ scene }) {
                 lightsMaterials[indexLight - 1] = child.material = new MeshPhongMaterial({
                     color: LIGHTS_COLOR,
                     emissive: LIGHTS_EMISSIVE_COLOR,
-                    emissiveIntensity: LIGHTS_MIN_INTENSITY
+                    emissiveIntensity: LIGHTS_MIN_INTENSITY,
+                    opacity: LIGHTS_OPACITY_OFF,
+                    transparent: true
                 });
             }
             if (child.name.startsWith(REEL_PREFIX_NAME)) {
@@ -331,7 +326,18 @@ function initializeLights({ lightsMaterials, lights }) {
     lightsMaterials.forEach((_, indexMaterial) => {
         lights.bulbs[indexMaterial] = {
             intensity: LIGHTS_MIN_INTENSITY,
+            opacity: LIGHTS_OPACITY_OFF,
             timeRefresh: -1
         };
     });
+}
+
+function enableBulb(bulb, enabled) {
+    if (enabled) {
+        bulb.intensity = LIGHTS_MAX_INTENSITY;
+        bulb.opacity = LIGHTS_OPACITY_ON;
+    } else {
+        bulb.intensity = LIGHTS_MIN_INTENSITY;
+        bulb.opacity = LIGHTS_OPACITY_OFF;
+    }
 }

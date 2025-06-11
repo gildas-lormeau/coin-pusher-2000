@@ -220,29 +220,11 @@ function createInstance({ scene, type, instances }) {
         width: RADIUS * 1.4,
         height: DEPTH * 1.1,
         depth: RADIUS * 1.4,
-        friction: FRICTION / 3,
+        friction: FRICTION,
         restitution: RESTITUTION,
-        density: DENSITY / 3
-    }, body);
-    scene.createCuboidCollider({
-        userData: {},
-        width: RADIUS * 1.4,
-        height: DEPTH * 1.1,
-        depth: RADIUS * 1.4,
-        friction: FRICTION / 3,
-        restitution: RESTITUTION,
-        density: DENSITY / 3,
-        rotation: new Vector3(0, Math.PI / 2, 0),
+        density: DENSITY
     }, body);
     const index = instances[type].length;
-    scene.createCylinderCollider({
-        userData: { objectType: TYPE, type, index },
-        radius: RADIUS,
-        height: DEPTH,
-        friction: FRICTION / 3,
-        restitution: RESTITUTION,
-        density: DENSITY / 3
-    }, body);
     const instance = {
         objectType: TYPE,
         index,

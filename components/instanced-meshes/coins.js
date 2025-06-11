@@ -27,8 +27,7 @@ const TEMP_EULER = new Euler(0, 0, 0, "XYZ");
 const MAX_ANGLE_FLAT = Math.PI / 4;
 const ANGVEL_HISTORY_LENGTH = 10;
 const ANGVEL_HISTORY_MIN_LENGTH = 6;
-const ANGVEL_MAX = 0.1;
-const ANGVEL_MAX_AMPLITUDE = 0.5;
+const ANGVEL_MAX_AMPLITUDE = Math.PI / 32;
 const MIN_OSCILLATIONS = 1;
 const MIN_SLEEP_CANDIDATE_FRAMES = 10;
 
@@ -90,7 +89,7 @@ export default class {
                     instance.angularVelocityHistory = [];
                 } else if (!isSleeping) {
                     const angularVelocity = instance.body.angvel();
-                    instance.angularVelocityHistory.push({ x: angularVelocity.x, z: angularVelocity.z });
+                    instance.angularVelocityHistory.push(angularVelocity.x * angularVelocity.z);
                     if (instance.angularVelocityHistory.length > ANGVEL_HISTORY_LENGTH) {
                         instance.angularVelocityHistory.shift();
                     }
@@ -374,18 +373,17 @@ function isFlat(instance) {
 }
 
 function isOscillating(history) {
-    return history.length > ANGVEL_HISTORY_MIN_LENGTH &&
-        (findOscillation("x", history) || findOscillation("z", history));
+    return history.length > ANGVEL_HISTORY_MIN_LENGTH && findOscillation(history);
 }
 
-function findOscillation(axis, history) {
-    let lastSign = Math.sign(history[0][axis]);
+function findOscillation(history) {
+    let lastSign = Math.sign(history[0]);
     let signChanges = 0;
-    let min = history[0][axis], max = history[0][axis];
+    let min = history[0], max = history[0];
     for (let i = 1; i < history.length; i++) {
-        const value = history[i][axis];
+        const value = history[i];
         const sign = Math.sign(value);
-        if (sign !== 0 && sign !== lastSign && Math.abs(value) < ANGVEL_MAX) {
+        if (sign !== 0 && sign !== lastSign) {
             signChanges++;
             lastSign = sign;
         }
