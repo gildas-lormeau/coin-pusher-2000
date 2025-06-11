@@ -277,7 +277,7 @@ function updateLightsState({ reelsBox, time }) {
             reelsBox.lights.state = LIGHTS_STATES.BLINKING;
             break;
         case LIGHTS_STATES.BLINKING:
-            if (time - reelsBox.lights.timeRefresh > LIGHTS_DELAY_BLINKING_ON) {
+            if (time - reelsBox.lights.timeRefresh > LIGHTS_DELAY_BLINKING) {
                 reelsBox.lights.bulbs.forEach(bulb => {
                     if (bulb.intensity == LIGHTS_MIN_INTENSITY) {
                         bulb.intensity = LIGHTS_MAX_INTENSITY;
