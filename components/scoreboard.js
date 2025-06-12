@@ -2,15 +2,15 @@ import DigitsPanel from "./digits-panel.js";
 
 const DIGITS_COUNT_SCORE = 6;
 const COLOR_SCORE = 2;
-const POSITION_SCORE = [0.5, 0.9, -0.32];
+const POSITION_SCORE = [-0.1, 1.11, -0.31];
 const ROTATION_SCORE = [0, 0, 0];
 const DIGITS_COUNT_COINS_IN_POOL = 6;
 const COLOR_COINS_IN_POOL = 0;
-const POSITION_COINS_IN_POOL = [0.5, 0.75, -0.32];
-const ROTATION_COINS_IN_POOL = [0, 0, 0];
+const POSITION_COINS = [0.6, 1.11, -0.31];
+const ROTATION_COINS = [0, 0, 0];
 const DIGITS_COUNT_COINS_IN_PLAY = 3;
 const COLOR_COINS_IN_PLAY = 1;
-const POSITION_COINS_IN_PLAY = [-0.95, 0.29, 0.67];
+const POSITION_COINS_IN_PLAY = [-0.95, 0.3, 0.7];
 const ROTATION_COINS_IN_PLAY = [-Math.PI / 2, 0, 0];
 
 export default class {
@@ -39,8 +39,8 @@ export default class {
         await this.#score.initialize();
         this.#coinsInPool = new DigitsPanel({
             scene: this.#scene,
-            position: POSITION_COINS_IN_POOL,
-            rotation: ROTATION_COINS_IN_POOL,
+            position: POSITION_COINS,
+            rotation: ROTATION_COINS,
             digitsCount: DIGITS_COUNT_COINS_IN_POOL,
             color: COLOR_COINS_IN_POOL
         });
