@@ -87,7 +87,6 @@ export default class {
                     instance.pendingImpulse = null;
                 } else if (isSleeping) {
                     instance.sleepCandidateFrames = 0;
-                    instance.angularVelocityHistory = [];
                 } else if (!isSleeping) {
                     const angularVelocity = instance.body.angvel();
                     instance.angularVelocityHistory.push(angularVelocity.x * angularVelocity.z);
