@@ -255,12 +255,6 @@ function updateLetterState({ letter, time }) {
 
 async function initializeModel({ scene }) {
     const sensorGateModel = await scene.loadModel(MODEL_PATH);
-    sensorGateModel.scene.traverse(child => {
-        if (child.isMesh) {
-            child.castShadow = true;
-            child.receiveShadow = true;
-        }
-    });
     const mesh = sensorGateModel.scene.children[0];
     const materials = [];
     for (let indexLetter = 0; indexLetter < LETTERS_COUNT; indexLetter++) {

@@ -193,12 +193,6 @@ function updatePusherPosition({ pusher, time }) {
 
 async function initializeModel({ scene, pusher }) {
     const model = await scene.loadModel(MODEL_PATH);
-    model.scene.traverse((child) => {
-        if (child.isMesh) {
-            child.castShadow = true;
-            child.receiveShadow = true;
-        }
-    });
     pusher.platform.mesh = model.scene.children[0];
     pusher.door.mesh = model.scene.children[1];
     scene.addObject(pusher.platform.mesh);

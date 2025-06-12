@@ -256,12 +256,6 @@ export default class {
 
 async function initializeModel({ scene }) {
     const model = await scene.loadModel(MODEL_PATH);
-    model.scene.traverse((child) => {
-        if (child.isMesh) {
-            child.castShadow = true;
-            child.receiveShadow = true;
-        }
-    });
     const mesh = model.scene.children[0];
     const baseColorMaterial = mesh.children[0].material;
     const colorMaterial = mesh.children[1].material;
@@ -279,8 +273,6 @@ function initializeInstancedMeshes({ scene, materials, geometries }) {
     const meshes = [];
     for (let indexMaterial = 0; indexMaterial < materials.length; indexMaterial++) {
         const mesh = new InstancedMesh(geometries[indexMaterial], materials[indexMaterial], MAX_INSTANCES);
-        mesh.castShadow = true;
-        mesh.receiveShadow = true;
         scene.addObject(mesh);
         meshes.push(mesh);
     }

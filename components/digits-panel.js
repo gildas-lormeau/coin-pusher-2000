@@ -49,8 +49,6 @@ export default class {
             new BoxGeometry(panelWidth + 2 * BORDER_WIDTH, BORDER_WIDTH, Digits.DEPTH),
             borderMaterial
         );
-        topBorderMesh.castShadow = true;
-        topBorderMesh.receiveShadow = true;
         topBorderMesh.position.set(
             panelWidth / 2 - Digits.WIDTH / 2,
             Digits.HEIGHT / 2 + BORDER_WIDTH / 2,
@@ -60,8 +58,6 @@ export default class {
             new BoxGeometry(panelWidth + 2 * BORDER_WIDTH, BORDER_WIDTH, Digits.DEPTH),
             borderMaterial
         );
-        bottomBorderMesh.castShadow = true;
-        bottomBorderMesh.receiveShadow = true;
         bottomBorderMesh.position.set(
             panelWidth / 2 - Digits.WIDTH / 2,
             -Digits.HEIGHT / 2 - BORDER_WIDTH / 2,
@@ -71,8 +67,6 @@ export default class {
             new BoxGeometry(BORDER_WIDTH, Digits.HEIGHT, Digits.DEPTH),
             borderMaterial
         );
-        leftBorderMesh.castShadow = true;
-        leftBorderMesh.receiveShadow = true;
         leftBorderMesh.position.set(
             -BORDER_WIDTH / 2 - Digits.WIDTH / 2,
             0,
@@ -82,8 +76,6 @@ export default class {
             new BoxGeometry(BORDER_WIDTH, Digits.HEIGHT, Digits.DEPTH),
             borderMaterial
         );
-        rightBorderMesh.castShadow = true;
-        rightBorderMesh.receiveShadow = true;
         rightBorderMesh.position.set(
             panelWidth + BORDER_WIDTH / 2 - Digits.WIDTH / 2,
             0,
@@ -93,8 +85,6 @@ export default class {
         bordersGroup.add(bottomBorderMesh);
         bordersGroup.add(leftBorderMesh);
         bordersGroup.add(rightBorderMesh);
-        bordersGroup.castShadow = true;
-        bordersGroup.receiveShadow = true;
         this.#scene.addObject(bordersGroup);
         bordersGroup.position.fromArray(this.#position);
         bordersGroup.rotation.fromArray([this.#rotation[0], this.#rotation[1], this.#rotation[2]]);

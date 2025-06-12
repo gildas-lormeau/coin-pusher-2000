@@ -354,8 +354,6 @@ async function initializeModel({ scene, sensorListeners, sensorColliders, DEBUG_
     const body = scene.createFixedBody();
     mesh.traverse((child) => {
         if (child.isMesh) {
-            child.castShadow = true;
-            child.receiveShadow = true;
             const userData = child.material.userData;
             if (userData.collider || userData.sensor) {
                 const name = child.material.name;

@@ -426,8 +426,6 @@ async function initializeModel({ scene }) {
     const initPosition = new Vector3();
     mesh.traverse((child) => {
         if (child.isMesh) {
-            child.castShadow = true;
-            child.receiveShadow = true;
             const { material, geometry } = child;
             const userData = material.userData;
             if (userData.collider || userData.sensor) {

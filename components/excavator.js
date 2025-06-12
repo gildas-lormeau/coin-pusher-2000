@@ -446,8 +446,6 @@ async function initializeModel({ scene }) {
     const beaconLightPosition = new Vector3();
     mesh.traverse((child) => {
         if (child.isMesh) {
-            child.castShadow = true;
-            child.receiveShadow = true;
             const { material, geometry } = child;
             const userData = material.userData;
             const name = userData.name;

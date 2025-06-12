@@ -38,8 +38,6 @@ export default class {
             opacity: OPACITY
         });
         const glassMesh = new Mesh(glassGeometry, glassMaterial);
-        glassMesh.castShadow = true;
-        glassMesh.receiveShadow = true;
         glassMesh.position.set(...POSITION_GLASS);
         this.#scene.addObject(glassMesh);
         const wallBody = this.#scene.createFixedBody();
@@ -108,8 +106,6 @@ function initiliazeWallObstacles({ scene, wallBody }) {
         const obstacleGeometry = new CylinderGeometry(obstacleRadius, obstacleRadius, OBSTACLE_HEIGHT, 8);
         const obstacleMaterial = new MeshStandardMaterial({ color: OBSTACLE_COLOR });
         const obstacleMesh = new Mesh(obstacleGeometry, obstacleMaterial);
-        obstacleMesh.castShadow = true;
-        obstacleMesh.receiveShadow = true;
         obstacleMesh.position.set(x, y, OBSTACLE_POSITION_Z);
         obstacleMesh.rotation.set(Math.PI / 2, Math.PI / 4, 0);
         scene.addObject(obstacleMesh);

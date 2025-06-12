@@ -1,4 +1,4 @@
-import { Quaternion, Vector3, Euler, Scene, Color, WebGLRenderer, VSMShadowMap, PMREMGenerator, LinearToneMapping, DirectionalLight, AmbientLight, SRGBColorSpace } from "three";
+import { Quaternion, Vector3, Euler, Scene, Color, WebGLRenderer, VSMShadowMap, PMREMGenerator, DirectionalLight, AmbientLight, SRGBColorSpace, ACESFilmicToneMapping } from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
 import { EXRLoader } from "three/examples/jsm/loaders/EXRLoader";
 import { World, RigidBodyDesc, ColliderDesc, TriMeshFlags, JointData } from "@dimforge/rapier3d";
@@ -9,7 +9,6 @@ const NUM_ADDITIONAL_FRICTION_ITERATIONS = 1;
 const NUM_INTERNAL_PGS_ITERATIONS = 3;
 const TIMESTEP = 1 / 60;
 const ANTIALIAS = true;
-const PRESERVE_DRAWING_BUFFER = true;
 const POWER_PREFERENCE = "high-performance";
 const SHADOW_MAP_TYPE = VSMShadowMap;
 const GRAVITY_FORCE = new Vector3(0, -9.81, 0);
@@ -63,7 +62,6 @@ export default class {
     #css3DScene = new Scene();
     #renderer = new WebGLRenderer({
         antialias: ANTIALIAS,
-        preserveDrawingBuffer: PRESERVE_DRAWING_BUFFER,
         powerPreference: POWER_PREFERENCE
     });
     #world = new World(GRAVITY_FORCE);
@@ -76,9 +74,7 @@ export default class {
             texture => resolve(pmremGenerator.fromEquirectangular(texture).texture), undefined, reject));
         this.#scene.background = new Color(BACKGROUND_COLOR);
         this.#scene.environmentIntensity = ENVIRONMENT_INTENSITY;
-        this.#scene.castShadow = true;
-        this.#scene.receiveShadow = true;
-        this.#renderer.toneMapping = LinearToneMapping;
+        this.#renderer.toneMapping = ACESFilmicToneMapping;
         this.#renderer.toneMappingExposure = TONE_MAPPING_EXPOSURE;
         this.#renderer.outputColorSpace = SRGBColorSpace;
         this.#renderer.setSize(innerWidth, innerHeight);
@@ -199,6 +195,12 @@ export default class {
     }
 
     addObject(object) {
+        object.traverse((child) => {
+            if (child.isMesh) {
+                child.castShadow = true;
+                child.receiveShadow = true;
+            }
+        });
         this.#scene.add(object);
     }
 
