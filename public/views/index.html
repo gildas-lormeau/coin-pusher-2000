@@ -53,6 +53,7 @@
             if (data.type == "showRunStart") {
                 if (backgroundCanvasController) {
                     backgroundCanvasController.abort();
+                    backgroundCanvasController = null;
                 }
                 backgroundCanvas.getContext("2d").clearRect(0, 0, backgroundCanvas.width, backgroundCanvas.height);
                 demoModeSection.style.display = "none";
