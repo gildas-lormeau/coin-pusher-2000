@@ -516,7 +516,6 @@ function initializeColliders({ scene, parts, joints, onRecycleObject }) {
     let trapSensor;
     parts.forEach((partData, name) => {
         const { meshes, sensor, friction, restitution, fixed, kinematic, light } = partData;
-        debugger;
         const body = partData.body = fixed ? scene.createFixedBody() : kinematic ? scene.createKinematicBody() : scene.createDynamicBody();
         body.setEnabled(false);
         meshes.forEach(meshData => {
