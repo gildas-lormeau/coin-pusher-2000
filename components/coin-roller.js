@@ -7,7 +7,6 @@ const DISTANCE = 0.13;
 const DISTANCE_TRAP = 0.25;
 const START_ANGLE = -Math.PI / 2;
 const MODEL_PATH = "./../assets/coin-roller.glb";
-const RESTITUTION = 0.5;
 const LAUNCHER_PART_NAME = "launcher";
 const TRAP_PART_NAME = "trap";
 const DOORS_PART_NAME = "doors";
@@ -24,7 +23,6 @@ const MIN_TRAP_POSITION = 0.0001;
 const MAX_TRAP_POSITION = 0.25 - MIN_TRAP_POSITION;
 const MIN_DOORS_POSITION = 0;
 const MAX_DOORS_POSITION = 0.03;
-const LIGHT_PREFIX_NAME = "light-";
 const LIGHTS_COLOR = 0xFFFFFF;
 const LIGHTS_EMISSIVE_COLOR = 0xFF00FF;
 const LIGHTS_MIN_INTENSITY = 0;
@@ -440,6 +438,9 @@ async function initializeModel({ scene }) {
                 }
                 const partData = getPart(parts, name);
                 partData.sensor = userData.sensor;
+                partData.friction = userData.friction;
+                partData.restitution = userData.restitution;
+                partData.kinematic = userData.kinematic;
                 partData.meshes.push({
                     data: child,
                     vertices,
@@ -451,9 +452,8 @@ async function initializeModel({ scene }) {
                 partData.meshes.push({
                     data: child
                 });
-                if (child.material.name.startsWith(LIGHT_PREFIX_NAME)) {
-                    const indexLight = parseInt(child.material.name.substring(LIGHT_PREFIX_NAME.length));
-                    lightsMaterials[indexLight - 1] = child.material = new MeshPhongMaterial({
+                if (child.userData.light) {
+                    lightsMaterials[child.userData.index] = child.material = new MeshPhongMaterial({
                         color: LIGHTS_COLOR,
                         emissive: LIGHTS_EMISSIVE_COLOR,
                         emissiveIntensity: LIGHTS_MIN_INTENSITY
@@ -484,9 +484,9 @@ function getPart(parts, name) {
 
 function initializeColliders({ scene, parts, sensorColliders, onBonusWon, onCoinLost }) {
     parts.forEach((partData, name) => {
-        const { meshes, friction, sensor } = partData;
+        const { meshes, friction, restitution, sensor, kinematic } = partData;
         let body;
-        if (name === LAUNCHER_PART_NAME || name === TRAP_PART_NAME || name === DOORS_PART_NAME) {
+        if (kinematic) {
             body = partData.body = scene.createKinematicBody();
             partData.position = 0;
         } else {
@@ -500,7 +500,7 @@ function initializeColliders({ scene, parts, sensorColliders, onBonusWon, onCoin
                     vertices,
                     indices,
                     friction,
-                    restitution: RESTITUTION,
+                    restitution,
                     sensor,
                     userData: {
                         objectType: name,

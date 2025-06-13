@@ -1,12 +1,8 @@
 import { Quaternion, Vector3, SpotLight } from "three";
 const MODEL_PATH = "./../assets/excavator.glb";
 const Y_AXIS = new Vector3(0, 1, 0);
-const RESTITUTION = 0;
-const BASE_PART_NAME = "base";
-const TRAP_PART_NAME = "trap-excavator";
 const BEACON_LIGHT_BULB_NAME = "beacon-light-bulb";
 const BEACON_LIGHT_MIRROR_NAME = "beacon-light-mirror";
-const BEACON_LIGHT_BASE_NAME = "beacon-light-base";
 const PLATFORM = "rotating-platform";
 const DROP_POSITION = "drop-position";
 const BEACON_LIGHT_POSITION = "beacon-light-position";
@@ -459,18 +455,23 @@ async function initializeModel({ scene }) {
                     indices.push(index.getX(indexVertex));
                 }
                 const partData = getPart(parts, name);
+                partData.sensor = userData.sensor;
+                partData.friction = userData.friction;
+                partData.restitution = userData.restitution;
+                partData.fixed = userData.fixed;
+                partData.kinematic = userData.kinematic;
                 partData.meshes.push({
                     data: child,
-                    sensor: userData.sensor,
                     vertices,
                     indices
                 });
-            } else if (name !== BEACON_LIGHT_BULB_NAME) {
+            } else {
                 const name = child.userData.name;
                 const partData = getPart(parts, name);
                 partData.meshes.push({
                     data: child
                 });
+                partData.light = userData.light;
             }
         } else if (child.userData.joint) {
             const { userData, position } = child;
@@ -508,13 +509,8 @@ function getPart(parts, name) {
 function initializeColliders({ scene, parts, joints, onRecycleObject }) {
     let trapSensor;
     parts.forEach((partData, name) => {
-        const { meshes, friction } = partData;
-        const body = partData.body =
-            name === BASE_PART_NAME || name === TRAP_PART_NAME || name === BEACON_LIGHT_BASE_NAME ?
-                scene.createFixedBody() :
-                name === BEACON_LIGHT_MIRROR_NAME ?
-                    scene.createKinematicBody() :
-                    scene.createDynamicBody();
+        const { meshes, friction, restitution, fixed, kinematic } = partData;
+        const body = partData.body = fixed ? scene.createFixedBody() : kinematic ? scene.createKinematicBody() : scene.createDynamicBody();
         body.setEnabled(false);
         meshes.forEach(meshData => {
             if (meshData.sensor) {
@@ -546,7 +542,7 @@ function initializeColliders({ scene, parts, joints, onRecycleObject }) {
                     vertices,
                     indices,
                     friction,
-                    restitution: RESTITUTION
+                    restitution
                 }, body);
             }
         });

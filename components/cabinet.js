@@ -392,7 +392,7 @@ async function initializeModel({ scene, sensorListeners, sensorColliders, DEBUG_
                         vertices: new Float32Array(vertices),
                         indices: new Uint16Array(indices),
                         friction: userData.friction,
-                        restitution: RESTITUTION,
+                        restitution: userData.restitution,
                         sensor: userData.sensor,
                         userData: userData.sensor ? {
                             objectType: name,

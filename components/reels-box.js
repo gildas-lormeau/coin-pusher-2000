@@ -299,19 +299,16 @@ async function initializeModel({ scene }) {
     const model = await scene.loadModel(MODEL_PATH);
     model.scene.traverse(child => {
         if (child.isMesh) {
-            if (child.material.name.startsWith(LIGHT_PREFIX_NAME)) {
-                const indexLight = parseInt(child.material.name.substring(LIGHT_PREFIX_NAME.length));
-                lightsMaterials[indexLight - 1] = child.material = new MeshPhongMaterial({
+            if (child.userData.reel) {
+                reelsMeshes[child.userData.index] = child;
+            } else if (child.material.userData.light) {
+                lightsMaterials[child.material.userData.index] = child.material = new MeshPhongMaterial({
                     color: LIGHTS_COLOR,
                     emissive: LIGHTS_EMISSIVE_COLOR,
                     emissiveIntensity: LIGHTS_MIN_INTENSITY,
                     opacity: LIGHTS_OPACITY_OFF,
                     transparent: true
                 });
-            }
-            if (child.name.startsWith(REEL_PREFIX_NAME)) {
-                const indexReel = parseInt(child.name.substring(REEL_PREFIX_NAME.length));
-                reelsMeshes[indexReel - 1] = child;
             }
         }
     });

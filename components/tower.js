@@ -1,8 +1,6 @@
 import { Quaternion, Vector3 } from "three";
 
 const MODEL_PATH = "./../assets/tower.glb";
-const RESTITUTION = 0;
-const BASE_PART_NAME = "base";
 const STAND_PART_NAME = "stand";
 const TURRET_PART_NAME = "turret";
 const INIT_POSITION_PART_NAME = "init-position";
@@ -196,6 +194,9 @@ async function initializeModel({ scene }) {
                     indices.push(index.getX(indexVertex));
                 }
                 const partData = getPart(parts, name);
+                partData.friction = userData.friction;
+                partData.restitution = userData.restitution;
+                partData.fixed = userData.fixed;
                 partData.meshes.push({
                     data: child,
                     vertices,
@@ -233,8 +234,8 @@ function getPart(parts, name) {
 
 function initializeColliders({ scene, parts }) {
     parts.forEach((partData, name) => {
-        const { meshes, friction } = partData;
-        const body = partData.body = name === BASE_PART_NAME ? scene.createFixedBody() : scene.createKinematicBody();
+        const { meshes, friction, restitution, fixed } = partData;
+        const body = partData.body = fixed ? scene.createFixedBody() : scene.createKinematicBody();
         meshes.forEach(meshData => {
             const { vertices, indices } = meshData;
             if (vertices && indices) {
@@ -242,7 +243,7 @@ function initializeColliders({ scene, parts }) {
                     vertices,
                     indices,
                     friction,
-                    restitution: RESTITUTION
+                    restitution
                 }, body);
             }
         });
