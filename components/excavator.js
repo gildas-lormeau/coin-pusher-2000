@@ -466,6 +466,7 @@ async function initializeModel({ scene }) {
                 partData.restitution = userData.restitution;
                 partData.fixed = userData.fixed;
                 partData.kinematic = userData.kinematic;
+                partData.contactSkin = userData.contactSkin;
                 partData.meshes.push({
                     data: child,
                     vertices,
@@ -515,7 +516,7 @@ function getPart(parts, name) {
 function initializeColliders({ scene, parts, joints, onRecycleObject }) {
     let trapSensor;
     parts.forEach((partData, name) => {
-        const { meshes, sensor, friction, restitution, fixed, kinematic, light } = partData;
+        const { meshes, sensor, friction, restitution, fixed, kinematic, light, contactSkin } = partData;
         const body = partData.body = fixed ? scene.createFixedBody() : kinematic ? scene.createKinematicBody() : scene.createDynamicBody();
         body.setEnabled(false);
         meshes.forEach(meshData => {
@@ -532,12 +533,13 @@ function initializeColliders({ scene, parts, joints, onRecycleObject }) {
                     }, body);
                 } else if (meshData.vertices) {
                     const { vertices, indices } = meshData;
-                    scene.createTrimeshCollider({
+                    const collider = scene.createTrimeshCollider({
                         vertices,
                         indices,
                         friction,
                         restitution
                     }, body);
+                    collider.setContactSkin(contactSkin);
                 }
             }
         });
