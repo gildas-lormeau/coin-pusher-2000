@@ -358,7 +358,6 @@ async function initializeModel({ scene, sensorListeners, sensorColliders, DEBUG_
             if (collider || sensor) {
                 const name = child.material.name;
                 const index = child.geometry.index;
-                debugger;
                 if (sensor) {
                     const collider = scene.createCuboidColliderFromBoundingBox({
                         mesh: child,
