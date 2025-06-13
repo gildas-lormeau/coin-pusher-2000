@@ -11,8 +11,8 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@dimforge/rapier3d": "^0.17.0",
-    "three": "^0.176.0"
+    "@dimforge/rapier3d": "^0.17.3",
+    "three": "^0.177.0"
   },
   "devDependencies": {
     "vite": "^6.3.5",
