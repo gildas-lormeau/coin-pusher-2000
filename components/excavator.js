@@ -240,9 +240,10 @@ export default class {
     }
 
     pick() {
-        this.#excavator.pendingPicks++;
         if (this.#excavator.state === EXCAVATOR_STATES.IDLE) {
             this.#excavator.state = EXCAVATOR_STATES.ACTIVATING;
+        } else {
+            this.#excavator.pendingPicks++;
         }
     }
 
@@ -390,14 +391,14 @@ function updateExcavatorState({ excavator, joints, time }) {
                 platformArmJoint.joint.configureMotor(0, 1, MOTOR_STIFFNESS, MOTOR_DAMPING);
                 armsJoint.joint.configureMotor(0, 3.7, MOTOR_STIFFNESS, MOTOR_DAMPING);
                 excavator.state = EXCAVATOR_STATES.CLOSING_JAWS_AFTER_DROPPING;
-                excavator.pendingPicks--;
             }
             break;
         case EXCAVATOR_STATES.CLOSING_JAWS_AFTER_DROPPING:
             // console.log("=> dropping", getAngle(platformArmJoint), getAngle(armsJoint));
             if (getAngle(platformArmJoint) < .1 && getAngle(armsJoint) > -.1) {
                 if (excavator.pendingPicks > 0) {
-                    excavator.state = EXCAVATOR_STATES.OPENING_JAWS;
+                    excavator.pendingPicks--;
+                    excavator.state = EXCAVATOR_STATES.ACTIVATING;
                 } else if (excavator.beaconLightAngle > 0 && excavator.beaconLightAngle < BEACON_LIGHT_BULB_SPEED) {
                     excavator.beaconLightAngle = 0;
                     jaw1Joint.joint.configureMotor(0, 2.5, MOTOR_STIFFNESS, MOTOR_DAMPING);
@@ -411,7 +412,12 @@ function updateExcavatorState({ excavator, joints, time }) {
         case EXCAVATOR_STATES.PREPARING_IDLE:
             // console.log("=> preparing idle", getAngle(jaw1Joint), getAngle(jaw2Joint), getAngle(jaw3Joint), getAngle(jaw4Joint));
             if (getAngle(jaw1Joint) > -.01 && getAngle(jaw2Joint) < .01 && getAngle(jaw3Joint) > -.01 && getAngle(jaw4Joint) < .01) {
-                excavator.state = EXCAVATOR_STATES.IDLE;
+                if (excavator.pendingPicks > 0) {
+                    excavator.pendingPicks--;
+                    excavator.state = EXCAVATOR_STATES.ACTIVATING;
+                } else {
+                    excavator.state = EXCAVATOR_STATES.IDLE;
+                }
             }
             break;
         default:
