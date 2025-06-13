@@ -320,14 +320,18 @@ function updateCoinRollerState({ coinRoller, time }) {
             }
             break;
         case COIN_ROLLER_STATES.OPENING_TRAP:
-            updateLauncherPosition({ coinRoller, time });
+            if (coinRoller.launcher.position >= MIN_LAUNCHER_POSITION) {
+                updateLauncherPosition({ coinRoller, time });
+            }
             updateTrapPosition({ coinRoller, time });
             if (coinRoller.trap.position > MAX_TRAP_POSITION) {
                 coinRoller.state = COIN_ROLLER_STATES.CLOSING_TRAP;
             }
             break;
         case COIN_ROLLER_STATES.CLOSING_TRAP:
-            updateLauncherPosition({ coinRoller, time });
+            if (coinRoller.launcher.position >= MIN_LAUNCHER_POSITION) {
+                updateLauncherPosition({ coinRoller, time });
+            }
             updateTrapPosition({ coinRoller, time });
             if (coinRoller.trap.position < MIN_TRAP_POSITION) {
                 coinRoller.trap.position = 0;
@@ -336,8 +340,9 @@ function updateCoinRollerState({ coinRoller, time }) {
             }
             break;
         case COIN_ROLLER_STATES.MOVING_LAUNCHER_TO_BASE:
-            updateLauncherPosition({ coinRoller, time });
-            if (coinRoller.launcher.position < MIN_LAUNCHER_POSITION) {
+            if (coinRoller.launcher.position >= MIN_LAUNCHER_POSITION) {
+                updateLauncherPosition({ coinRoller, time });
+            } else {
                 coinRoller.launcher.position = 0;
                 coinRoller.timeMovingCoin = -1;
                 coinRoller.timeActive = -1;
