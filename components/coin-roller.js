@@ -452,8 +452,8 @@ async function initializeModel({ scene }) {
                 partData.meshes.push({
                     data: child
                 });
-                if (child.userData.light) {
-                    lightsMaterials[child.userData.index] = child.material = new MeshPhongMaterial({
+                if (child.material.userData.light) {
+                    lightsMaterials[child.material.userData.index] = child.material = new MeshPhongMaterial({
                         color: LIGHTS_COLOR,
                         emissive: LIGHTS_EMISSIVE_COLOR,
                         emissiveIntensity: LIGHTS_MIN_INTENSITY
