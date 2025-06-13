@@ -509,41 +509,31 @@ function getPart(parts, name) {
 function initializeColliders({ scene, parts, joints, onRecycleObject }) {
     let trapSensor;
     parts.forEach((partData, name) => {
-        const { meshes, friction, restitution, fixed, kinematic } = partData;
+        const { meshes, sensor, friction, restitution, fixed, kinematic, light } = partData;
+        debugger;
         const body = partData.body = fixed ? scene.createFixedBody() : kinematic ? scene.createKinematicBody() : scene.createDynamicBody();
         body.setEnabled(false);
         meshes.forEach(meshData => {
-            if (meshData.sensor) {
-                const child = meshData.data;
-                child.geometry.computeBoundingBox();
-                const bbox = child.geometry.boundingBox;
-                const worldMatrix = child.matrixWorld;
-                worldMatrix.decompose(child.position, child.quaternion, child.scale);
-                const width = bbox.max.x - bbox.min.x;
-                const height = SENSOR_HEIGHT;
-                const depth = bbox.max.z - bbox.min.z;
-                const minX = bbox.min.x;
-                const minZ = bbox.min.z;
-                const collider = scene.createCuboidCollider({
-                    width: width,
-                    height: height,
-                    depth: depth,
-                    sensor: true,
-                    position: [minX + width / 2, bbox.min.y - height / 2, minZ + depth / 2],
-                    userData: {
-                        objectType: name,
-                        onIntersect: userData => onRecycleObject(userData)
-                    }
-                }, body);
-                trapSensor = collider;
-            } else if (meshData.vertices) {
-                const { vertices, indices } = meshData;
-                scene.createTrimeshCollider({
-                    vertices,
-                    indices,
-                    friction,
-                    restitution
-                }, body);
+            if (!light) {
+                if (sensor) {
+                    trapSensor = scene.createCuboidColliderFromBoundingBox({
+                        mesh: meshData.data,
+                        height: SENSOR_HEIGHT,
+                        userData: {
+                            objectType: name,
+                            onIntersect: onRecycleObject
+                        },
+                        sensor
+                    }, body);
+                } else if (meshData.vertices) {
+                    const { vertices, indices } = meshData;
+                    scene.createTrimeshCollider({
+                        vertices,
+                        indices,
+                        friction,
+                        restitution
+                    }, body);
+                }
             }
         });
     });

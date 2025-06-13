@@ -125,6 +125,27 @@ export default class {
         return collider;
     }
 
+    createCuboidColliderFromBoundingBox({ mesh, height, userData, sensor }, body) {
+        mesh.geometry.computeBoundingBox();
+        const boundingBox = mesh.geometry.boundingBox;
+        const worldMatrix = mesh.matrixWorld;
+        worldMatrix.decompose(mesh.position, mesh.quaternion, mesh.scale);
+        const width = boundingBox.max.x - boundingBox.min.x;
+        const depth = boundingBox.max.z - boundingBox.min.z;
+        const minX = boundingBox.min.x;
+        const minY = boundingBox.min.y;
+        const minZ = boundingBox.min.z;
+        const collider = this.createCuboidCollider({
+            width,
+            height,
+            depth,
+            sensor,
+            position: [minX + width / 2, minY - height / 2, minZ + depth / 2],
+            userData
+        }, body);
+        return collider;
+    }
+
     createTrimeshCollider({ vertices, indices, userData, position, rotation, sensor, friction, restitution, density }, body = this.createFixedBody()) {
         const colliderDesc = ColliderDesc.trimesh(vertices, indices, TriMeshFlags.ORIENTED | TriMeshFlags.FIX_INTERNAL_EDGES);
         if (position !== undefined) {
