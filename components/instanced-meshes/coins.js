@@ -28,7 +28,6 @@ const MAX_ANGLE_FLAT = Math.PI / 4;
 const ANGVEL_HISTORY_LENGTH = 10;
 const ANGVEL_HISTORY_MIN_LENGTH = 6;
 const ANGVEL_MAX_AMPLITUDE = Math.PI / 360;
-const ANGVEL_MAX_AMPLITUDE_SQUARED = Math.pow(ANGVEL_MAX_AMPLITUDE, 2);
 const MIN_OSCILLATIONS = 2;
 const MIN_SLEEP_CANDIDATE_FRAMES = 5;
 
@@ -82,6 +81,9 @@ export default class {
                     linearVelocity.y * linearVelocity.y +
                     linearVelocity.z * linearVelocity.z;
                 const isSleeping = instance.body.isSleeping();
+                if (instance.angularVelocityHistory.length > ANGVEL_HISTORY_LENGTH) {
+                    instance.angularVelocityHistory.shift();
+                }
                 if (instance.pendingImpulse && instance.body.mass() > 0) {
                     instance.body.applyImpulse(instance.pendingImpulse, true);
                     instance.pendingImpulse = null;
@@ -89,14 +91,11 @@ export default class {
                     instance.sleepCandidateFrames = 0;
                 } else if (!isSleeping) {
                     const angularVelocity = instance.body.angvel();
-                    instance.angularVelocityHistory.push(angularVelocity.x * angularVelocity.z);
-                    if (instance.angularVelocityHistory.length > ANGVEL_HISTORY_LENGTH) {
-                        instance.angularVelocityHistory.shift();
-                    }
+                    instance.angularVelocityHistory.push([angularVelocity.x, angularVelocity.z]);
                     const angularVelocityAbsX = Math.abs(angularVelocity.x);
                     const angularVelocityAbsZ = Math.abs(angularVelocity.z);
                     if (
-                        instance.linearSpeed < SLEEP_LINEAR_MAX_SPEED &&
+                        instance.linearSpeed && instance.linearSpeed < SLEEP_LINEAR_MAX_SPEED &&
                         angularVelocityAbsX < ANGVEL_MAX_AMPLITUDE &&
                         angularVelocityAbsZ < ANGVEL_MAX_AMPLITUDE &&
                         isFlat(instance) &&
@@ -164,6 +163,7 @@ export default class {
 
     static recycle(instance) {
         instance.used = false;
+        instance.linearSpeed = 0;
         instance.angularVelocityHistory = [];
         instance.sleepCandidateFrames = 0;
         instance.body.setEnabled(false);
@@ -190,8 +190,9 @@ export default class {
                 rotation: instance.rotation.toArray(),
                 used: instance.used,
                 bodyHandle: this.#instances[instance.index].body.handle,
-                angularVelocityHistory: instance.used ? instance.angularVelocityHistory : [],
-                sleepCandidateFrames: instance.used ? instance.sleepCandidateFrames : 0,
+                linearSpeed: instance.linearSpeed,
+                angularVelocityHistory: instance.angularVelocityHistory,
+                sleepCandidateFrames: instance.sleepCandidateFrames,
                 pendingImpulse: instance.pendingImpulse ? instance.pendingImpulse.toArray() : null
             };
         });
@@ -206,8 +207,9 @@ export default class {
                 rotation: new Quaternion().fromArray(instance.rotation),
                 used: instance.used,
                 body,
+                linearSpeed: instance.linearSpeed,
                 angularVelocityHistory: instance.angularVelocityHistory,
-                sleepCandidateFrames: instance.sleepCandidateFrames || 0,
+                sleepCandidateFrames: instance.sleepCandidateFrames,
                 pendingImpulse: instance.pendingImpulse ? new Vector3().fromArray(instance.pendingImpulse) : null,
             };
             for (let indexCollider = 0; indexCollider < body.numColliders(); indexCollider++) {
@@ -256,6 +258,12 @@ export default class {
 
 async function initializeModel({ scene }) {
     const model = await scene.loadModel(MODEL_PATH);
+    model.scene.traverse((child) => {
+        if (child.isMesh) {
+            child.castShadow = true;
+            child.receiveShadow = true;
+        }
+    });
     const mesh = model.scene.children[0];
     const baseColorMaterial = mesh.children[0].material;
     const colorMaterial = mesh.children[1].material;
@@ -273,6 +281,8 @@ function initializeInstancedMeshes({ scene, materials, geometries }) {
     const meshes = [];
     for (let indexMaterial = 0; indexMaterial < materials.length; indexMaterial++) {
         const mesh = new InstancedMesh(geometries[indexMaterial], materials[indexMaterial], MAX_INSTANCES);
+        mesh.castShadow = true;
+        mesh.receiveShadow = true;
         scene.addObject(mesh);
         meshes.push(mesh);
     }
@@ -371,15 +381,16 @@ function isFlat(instance) {
 }
 
 function isOscillating(history) {
-    return history.length > ANGVEL_HISTORY_MIN_LENGTH && findOscillation(history);
+    return history.length > ANGVEL_HISTORY_MIN_LENGTH &&
+        (findOscillation(0, history) || findOscillation(1, history));
 }
 
-function findOscillation(history) {
-    let lastSign = Math.sign(history[0]);
+function findOscillation(axis, history) {
+    let lastSign = Math.sign(history[0][axis]);
     let signChanges = 0;
-    let min = history[0], max = history[0];
+    let min = history[0][axis], max = history[0][axis];
     for (let i = 1; i < history.length; i++) {
-        const value = history[i];
+        const value = history[i][axis];
         const sign = Math.sign(value);
         if (sign !== 0 && sign !== lastSign) {
             signChanges++;
@@ -392,5 +403,5 @@ function findOscillation(history) {
             max = value;
         }
     }
-    return signChanges >= MIN_OSCILLATIONS && (max - min) < ANGVEL_MAX_AMPLITUDE_SQUARED;
+    return signChanges >= MIN_OSCILLATIONS && (max - min) < ANGVEL_MAX_AMPLITUDE;
 }
