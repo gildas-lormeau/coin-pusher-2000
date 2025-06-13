@@ -207,6 +207,7 @@ function createInstance({ scene, type, instances }) {
     body.setAngularDamping(ANGULAR_DAMPING);
     body.setLinearDamping(LINEAR_DAMPING);
     body.setAdditionalSolverIterations(ADDITIONAL_SOLVER_ITERATIONS);
+    const index = instances[type].length;
     scene.createCylinderCollider({
         userData: { objectType: TYPE, type, index },
         radius: RADIUS,
@@ -215,7 +216,6 @@ function createInstance({ scene, type, instances }) {
         restitution: RESTITUTION,
         density: DENSITY
     }, body);
-    const index = instances[type].length;
     const instance = {
         objectType: TYPE,
         index,
