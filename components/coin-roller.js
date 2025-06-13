@@ -8,9 +8,9 @@ const DISTANCE_TRAP = 0.25;
 const START_ANGLE = -Math.PI / 2;
 const MODEL_PATH = "./../assets/coin-roller.glb";
 const LAUNCHER_PART_NAME = "launcher";
-const TRAP_PART_NAME = "trap";
+const TRAP_COVER_PART_NAME = "trap-cover";
 const DOORS_PART_NAME = "doors";
-const TRAP_SENSOR_NAME = "trap-sensor";
+const TRAP_SENSOR_NAME = "trap";
 const INIT_POSITION = "init-position";
 const BONUS_VALUES = ["slot-3", "slot-2", "slot-1"];
 const COIN_IMPULSE_STRENGTH = 0.00003;
@@ -117,7 +117,7 @@ export default class {
         this.#coinRoller.launcher = this.#coinRoller.parts.get(LAUNCHER_PART_NAME);
         this.#coinRoller.launcher.body.setEnabledRotations(false, false, false);
         this.#coinRoller.launcher.body.setEnabledTranslations(false, false, false);
-        this.#coinRoller.trap = this.#coinRoller.parts.get(TRAP_PART_NAME);
+        this.#coinRoller.trap = this.#coinRoller.parts.get(TRAP_COVER_PART_NAME);
         this.#coinRoller.doors = this.#coinRoller.parts.get(DOORS_PART_NAME);
     }
 
@@ -493,32 +493,39 @@ function initializeColliders({ scene, parts, sensorColliders, onBonusWon, onCoin
             body = partData.body = scene.createFixedBody();
         }
         body.setEnabled(false);
+        const vertices = [];
+        const indices = [];
+        let offsetIndex = 0;
         meshes.forEach(meshData => {
-            const { vertices, indices } = meshData;
-            if (vertices && indices) {
-                meshData.collider = scene.createTrimeshCollider({
-                    vertices,
-                    indices,
-                    friction,
-                    restitution,
-                    sensor,
-                    userData: {
-                        objectType: name,
-                        onIntersect: userData => {
-                            if (name === TRAP_SENSOR_NAME) {
-                                onCoinLost();
-                            } else {
-                                onBonusWon(userData, name);
-                            }
-                        }
-                    }
-                }, body);
-                body.setSoftCcdPrediction(.01);
-                if (sensor) {
-                    sensorColliders.set(name, meshData.collider);
-                }
+            if (meshData.vertices) {
+                vertices.push(...meshData.vertices);
+                indices.push(...meshData.indices.map(index => index + offsetIndex));
+                offsetIndex += meshData.indices.length;
             }
         });
+        if (vertices.length > 0) {
+            const collider = scene.createTrimeshCollider({
+                vertices,
+                indices,
+                friction,
+                restitution,
+                sensor,
+                userData: {
+                    objectType: name,
+                    onIntersect: userData => {
+                        if (name === TRAP_SENSOR_NAME) {
+                            onCoinLost();
+                        } else {
+                            onBonusWon(userData, name);
+                        }
+                    }
+                }
+            }, body);
+            body.setSoftCcdPrediction(.01);
+            if (sensor) {
+                sensorColliders.set(name, collider);
+            }
+        }
     });
 }
 

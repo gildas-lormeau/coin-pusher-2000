@@ -17,7 +17,7 @@ import Runs from "./runs.js";
 
 const MIN_POSITION_Y_OBJECTS = -1;
 const MODEL_PATH = "./../assets/cabinet.glb";
-const SENSOR_HEIGHT = 0.1;
+const SENSOR_HEIGHT = 0.2;
 
 export default class {
 
@@ -31,22 +31,21 @@ export default class {
 
     #scene;
     #state;
-    #mesh;
-    #sensorColliders = new Map();
+    #sensorColliders;
     #sensorListeners = {
-        "left-trap-sensor": (userData) => {
+        "left-trap": (userData) => {
             const object = this.#getObject(userData);
             if (object) {
                 recycleObject(object);
             }
         },
-        "right-trap-sensor": (userData) => {
+        "right-trap": (userData) => {
             const object = this.#getObject(userData);
             if (object) {
                 recycleObject(object);
             }
         },
-        "gutter-sensor": (userData) => {
+        "gutter": (userData) => {
             const object = this.#getObject(userData);
             if (object) {
                 recycleObject(object);
@@ -76,15 +75,20 @@ export default class {
     #coinRoller;
     #screen;
     #runs;
+    #parts;
 
     async initialize() {
-        const mesh = await initializeModel({
+        const { parts } = await initializeModel({
             scene: this.#scene,
-            sensorListeners: this.#sensorListeners,
-            sensorColliders: this.#sensorColliders,
             DEBUG_HIDE_CABINET: this.DEBUG_HIDE_CABINET
         });
-        this.#mesh = mesh;
+        this.#parts = parts;
+        const { sensorColliders } = initializeColliders({
+            scene: this.#scene,
+            sensorListeners: this.#sensorListeners,
+            parts
+        });
+        this.#sensorColliders = sensorColliders;
         await InstancedMeshes.initialize({
             scene: this.#scene,
             onSpawnedCoin: (instance) => {
@@ -292,20 +296,25 @@ export default class {
 
     async load(cabinet) {
         await this.#scene.load(cabinet.scene);
-        this.#mesh.traverse((child) => {
-            if (child.isMesh) {
-                const userData = child.material.userData;
-                const objectType = child.material.name;
-                if (userData.sensor) {
-                    const colliderHandle = cabinet.sensorCollidersHandles[objectType];
-                    const collider = this.#scene.worldColliders.get(colliderHandle);
-                    collider.userData = {
-                        objectType: objectType,
-                        onIntersect: this.#sensorListeners[objectType]
-                    };
-                    this.#sensorColliders.set(objectType, collider);
-                }
-            }
+        this.#sensorColliders = new Map();
+        this.#parts.forEach(partData => {
+            partData.meshes.forEach(({ data }) => {
+                data.traverse((child) => {
+                    if (child.isMesh) {
+                        const userData = child.material.userData;
+                        const objectType = child.material.name;
+                        if (userData.sensor) {
+                            const colliderHandle = cabinet.sensorCollidersHandles[objectType];
+                            const collider = this.#scene.worldColliders.get(colliderHandle);
+                            collider.userData = {
+                                objectType,
+                                onIntersect: this.#sensorListeners[objectType]
+                            };
+                            this.#sensorColliders.set(objectType, collider);
+                        }
+                    }
+                });
+            });
         });
         InstancedMeshes.load(cabinet);
         await this.#pusher.load(cabinet.pusher);
@@ -347,50 +356,97 @@ function recycleObject(object) {
     }
 }
 
-async function initializeModel({ scene, sensorListeners, sensorColliders, DEBUG_HIDE_CABINET }) {
+async function initializeModel({ scene, DEBUG_HIDE_CABINET }) {
     const cabinetModel = await scene.loadModel(MODEL_PATH);
     const mesh = cabinetModel.scene;
-    const body = scene.createFixedBody();
+    const parts = new Map();
     mesh.traverse((child) => {
         if (child.isMesh) {
-            const userData = child.material.userData;
-            const { sensor, collider, friction, restitution } = userData;
-            if (collider || sensor) {
-                const name = child.material.name;
-                const index = child.geometry.index;
-                if (sensor) {
-                    const collider = scene.createCuboidColliderFromBoundingBox({
-                        mesh: child,
-                        height: SENSOR_HEIGHT,
-                        userData: {
-                            objectType: name,
-                            onIntersect: sensorListeners[name]
-                        },
-                        sensor
-                    }, body);
-                    sensorColliders.set(name, collider);
-                } else {
-                    const position = child.geometry.attributes.position;
-                    const vertices = [];
-                    const indices = [];
-                    for (let indexVertex = 0; indexVertex < index.count; indexVertex++) {
-                        vertices.push(position.getX(indexVertex), position.getY(indexVertex), position.getZ(indexVertex));
-                        indices.push(index.getX(indexVertex));
-                    }
-                    const collider = scene.createTrimeshCollider({
-                        vertices: new Float32Array(vertices),
-                        indices: new Uint16Array(indices),
-                        friction,
-                        restitution,
-                        sensor
-                    }, body);
-                    collider.setFrictionCombineRule(1);
+            const { material, geometry } = child;
+            const userData = material.userData;
+            const name = userData.name;
+            if (userData.collider || userData.sensor) {
+                const index = geometry.index;
+                const position = geometry.attributes.position;
+                const vertices = [];
+                const indices = [];
+                for (let indexVertex = 0; indexVertex < index.count; indexVertex++) {
+                    vertices.push(position.getX(indexVertex), position.getY(indexVertex), position.getZ(indexVertex));
+                    indices.push(index.getX(indexVertex));
                 }
+                const partData = getPart(parts, name);
+                partData.sensor = userData.sensor;
+                partData.friction = userData.friction;
+                partData.restitution = userData.restitution;
+                partData.meshes.push({
+                    data: child,
+                    vertices,
+                    indices
+                });
+            } else {
+                const name = child.userData.name;
+                const partData = getPart(parts, name);
+                partData.meshes.push({
+                    data: child
+                });
             }
         }
     });
     if (!DEBUG_HIDE_CABINET) {
         scene.addObject(mesh);
     }
-    return mesh;
+    return {
+        parts
+    };
+}
+
+function initializeColliders({ scene, parts, sensorListeners }) {
+    const sensorColliders = new Map();
+    parts.forEach((partData, name) => {
+        const { meshes, sensor, friction, restitution } = partData;
+        const body = scene.createFixedBody();
+        const vertices = [];
+        const indices = [];
+        let offsetIndex = 0;
+        meshes.forEach(meshData => {
+            if (sensor) {
+                const collider = scene.createCuboidColliderFromBoundingBox({
+                    mesh: meshData.data,
+                    height: SENSOR_HEIGHT,
+                    userData: {
+                        objectType: name,
+                        onIntersect: sensorListeners[name]
+                    },
+                    sensor
+                }, body);
+                sensorColliders.set(name, collider);
+            } else if (meshData.vertices) {
+                vertices.push(...meshData.vertices);
+                indices.push(...meshData.indices.map(index => index + offsetIndex));
+                offsetIndex += meshData.indices.length;
+            }
+        });
+        if (vertices.length > 0) {
+            scene.createTrimeshCollider({
+                vertices,
+                indices,
+                friction,
+                restitution
+            }, body);
+        }
+    });
+    return {
+        sensorColliders
+    };
+}
+
+function getPart(parts, name) {
+    let partData;
+    if (!parts.has(name)) {
+        partData = { meshes: [] };
+        parts.set(name, partData);
+    } else {
+        partData = parts.get(name);
+    }
+    return partData;
 }

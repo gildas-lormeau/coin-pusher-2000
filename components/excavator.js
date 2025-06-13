@@ -519,6 +519,9 @@ function initializeColliders({ scene, parts, joints, onRecycleObject }) {
         const { meshes, sensor, friction, restitution, fixed, kinematic, light, contactSkin } = partData;
         const body = partData.body = fixed ? scene.createFixedBody() : kinematic ? scene.createKinematicBody() : scene.createDynamicBody();
         body.setEnabled(false);
+        const vertices = [];
+        const indices = [];
+        let offsetIndex = 0;
         meshes.forEach(meshData => {
             if (!light) {
                 if (sensor) {
@@ -532,17 +535,21 @@ function initializeColliders({ scene, parts, joints, onRecycleObject }) {
                         sensor
                     }, body);
                 } else if (meshData.vertices) {
-                    const { vertices, indices } = meshData;
-                    const collider = scene.createTrimeshCollider({
-                        vertices,
-                        indices,
-                        friction,
-                        restitution
-                    }, body);
-                    collider.setContactSkin(contactSkin);
+                    vertices.push(...meshData.vertices);
+                    indices.push(...meshData.indices.map(index => index + offsetIndex));
+                    offsetIndex += meshData.indices.length;
                 }
             }
         });
+        if (vertices.length > 0) {
+            const collider = scene.createTrimeshCollider({
+                vertices,
+                indices,
+                friction,
+                restitution
+            }, body);
+            collider.setContactSkin(contactSkin);
+        }
     });
     const platform = parts.get(PLATFORM);
     platform.body.setEnabledRotations(false, true, false);

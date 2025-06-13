@@ -236,16 +236,21 @@ function initializeColliders({ scene, parts }) {
     parts.forEach((partData, name) => {
         const { meshes, friction, restitution, fixed } = partData;
         const body = partData.body = fixed ? scene.createFixedBody() : scene.createKinematicBody();
+        const vertices = [];
+        const indices = [];
+        let offsetIndex = 0;
         meshes.forEach(meshData => {
-            const { vertices, indices } = meshData;
-            if (vertices && indices) {
-                meshData.collider = scene.createTrimeshCollider({
-                    vertices,
-                    indices,
-                    friction,
-                    restitution
-                }, body);
+            if (meshData.vertices) {
+                vertices.push(...meshData.vertices);
+                indices.push(...meshData.indices.map(index => index + offsetIndex));
+                offsetIndex += meshData.indices.length;
             }
         });
+        scene.createTrimeshCollider({
+            vertices,
+            indices,
+            friction,
+            restitution
+        }, body);
     });
 }
