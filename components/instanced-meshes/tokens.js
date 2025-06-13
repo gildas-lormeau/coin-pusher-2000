@@ -207,11 +207,10 @@ function createInstance({ scene, type, instances }) {
     body.setAngularDamping(ANGULAR_DAMPING);
     body.setLinearDamping(LINEAR_DAMPING);
     body.setAdditionalSolverIterations(ADDITIONAL_SOLVER_ITERATIONS);
-    scene.createCuboidCollider({
-        userData: {},
-        width: RADIUS * 1.4,
-        height: DEPTH * 1.1,
-        depth: RADIUS * 1.4,
+    scene.createCylinderCollider({
+        userData: { objectType: TYPE, type, index },
+        radius: RADIUS,
+        height: DEPTH,
         friction: FRICTION,
         restitution: RESTITUTION,
         density: DENSITY
