@@ -344,7 +344,7 @@ export default class {
 
     #autoplay() {
         if (this.#pusher.position.z > -.275 && this.#pusher.position.z < -0.272 && this.#pusher.position.z > this.lastPusherPosition) {
-            Coins.dropCoins({ count: 2 });
+            Coins.dropCoins({ count: 20 });
         }
         this.lastPusherPosition = this.#pusher.position.z;
     }
