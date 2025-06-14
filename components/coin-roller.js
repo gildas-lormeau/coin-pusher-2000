@@ -8,7 +8,7 @@ const DISTANCE_TRAP = 0.25;
 const START_ANGLE = -Math.PI / 2;
 const MODEL_PATH = "./../assets/coin-roller.glb";
 const LAUNCHER_PART_NAME = "launcher";
-const TRAP_COVER_PART_NAME = "trap-cover";
+const TRAP_DOOR_PART_NAME = "trap-door";
 const DOORS_PART_NAME = "doors";
 const TRAP_SENSOR_NAME = "trap";
 const INIT_POSITION = "init-position";
@@ -117,7 +117,7 @@ export default class {
         this.#coinRoller.launcher = this.#coinRoller.parts.get(LAUNCHER_PART_NAME);
         this.#coinRoller.launcher.body.setEnabledRotations(false, false, false);
         this.#coinRoller.launcher.body.setEnabledTranslations(false, false, false);
-        this.#coinRoller.trap = this.#coinRoller.parts.get(TRAP_COVER_PART_NAME);
+        this.#coinRoller.trap = this.#coinRoller.parts.get(TRAP_DOOR_PART_NAME);
         this.#coinRoller.doors = this.#coinRoller.parts.get(DOORS_PART_NAME);
     }
 
