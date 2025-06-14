@@ -48660,11 +48660,6 @@
                 "state": "sensor-letter-idle",
                 "letters": [
                     {
-                        "state": "sensor-gate-locked-on",
-                        "flashStartTime": -1,
-                        "flashCount": 0
-                    },
-                    {
                         "state": "sensor-gate-off",
                         "flashStartTime": -1,
                         "flashCount": 0
@@ -48680,12 +48675,17 @@
                         "flashCount": 0
                     },
                     {
-                        "state": "sensor-gate-locked-on",
+                        "state": "sensor-gate-off",
                         "flashStartTime": -1,
                         "flashCount": 0
                     },
                     {
-                        "state": "sensor-gate-locked-on",
+                        "state": "sensor-gate-off",
+                        "flashStartTime": -1,
+                        "flashCount": 0
+                    },
+                    {
+                        "state": "sensor-gate-off",
                         "flashStartTime": -1,
                         "flashCount": 0
                     }
