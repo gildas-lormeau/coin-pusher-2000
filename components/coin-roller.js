@@ -150,8 +150,10 @@ export default class {
             doors.body.setNextKinematicTranslation(doorsPosition);
             if (state === COIN_ROLLER_STATES.INITIALIZING) {
                 this.#coinRoller.coin = this.#onInitializeCoin({ position: this.#initPosition, rotation: COIN_ROTATION });
+                this.#coinRoller.coin.body.setEnabledTranslations(false, true, true);
             }
             if (state === COIN_ROLLER_STATES.MOVING_LAUNCHER) {
+                coin.body.setEnabledTranslations(true, true, true);
                 coin.body.setEnabledRotations(false, false, false);
                 coin.body.setNextKinematicTranslation(launcherPosition);
             }
