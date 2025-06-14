@@ -9,9 +9,10 @@ const COLOR_COINS = 0;
 const POSITION_COINS = [0.6, 1.11, -0.33];
 const ROTATION_COINS = [0, 0, 0];
 const DIGITS_COUNT_COINS_IN_PLAY = 3;
-const COLOR_COINS_IN_PLAY = 1;
-const POSITION_COINS_IN_PLAY = [-0.95, 0.3, 0.7];
-const ROTATION_COINS_IN_PLAY = [-Math.PI / 2, 0, 0];
+const COLOR_COINS_IN_PLAY = 0;
+const POSITION_COINS_IN_PLAY = [-0.8075, 0.22, 0.77];
+const ROTATION_COINS_IN_PLAY = [0, 0, 0];
+const SCALE_COINS_IN_PLAY = [.7, .7, 1];
 
 export default class {
 
@@ -49,6 +50,7 @@ export default class {
             scene: this.#scene,
             position: POSITION_COINS_IN_PLAY,
             rotation: ROTATION_COINS_IN_PLAY,
+            scale: SCALE_COINS_IN_PLAY,
             digitsCount: DIGITS_COUNT_COINS_IN_PLAY,
             color: COLOR_COINS_IN_PLAY
         });

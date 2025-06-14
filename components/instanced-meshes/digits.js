@@ -6,7 +6,7 @@ const HEIGHT = 0.055;
 const DEPTH = 0.002;
 const INITIAL_HIDDEN_POSITION = [0, 0, 0];
 const INITIAL_HIDDEN_ROTATION = [0, 0, 0, 1];
-const INITIAL_SCALE = new Vector3(1, 1, 1);
+const INITIAL_SCALE = [0, 0, 0];
 const MODEL_PATH = "./../assets/digit.glb";
 const TYPES = 11;
 const COLORS = [
@@ -51,17 +51,24 @@ export default class {
         }
     }
 
-    static addDigit({ type, color, position, rotation }) {
+    static addDigit({ type, color, position, rotation, scale }) {
         const instance = this.#instances[color][type].find(instance => !instance.used);
         instance.used = true;
         instance.initialPosition = position;
         instance.initialRotation = rotation;
-        initializePosition({ instance, position, rotation });
+        instance.initialScale = scale;
+        initializePosition({ instance, position, rotation, scale });
         return instance;
     }
 
     static setVisible(instance, visible) {
-        initializePosition({ instance, hidden: !visible, position: instance.initialPosition, rotation: instance.initialRotation });
+        initializePosition({
+            instance,
+            hidden: !visible,
+            position: instance.initialPosition,
+            rotation: instance.initialRotation,
+            scale: instance.initialScale
+        });
         update({
             instance,
             meshes: this.#meshes[instance.color][instance.type]
@@ -142,6 +149,7 @@ function createInstance({ type, color, instances }) {
         color,
         position: new Vector3(),
         rotation: new Quaternion(),
+        scale: new Vector3(1, 1, 1),
         matrix: new Matrix4(),
         used: false
     };
@@ -149,17 +157,19 @@ function createInstance({ type, color, instances }) {
     return instance;
 }
 
-function initializePosition({ instance, hidden, position, rotation }) {
+function initializePosition({ instance, hidden, position, rotation, scale }) {
     if (hidden) {
         instance.position.fromArray(INITIAL_HIDDEN_POSITION);
         instance.rotation.fromArray(INITIAL_HIDDEN_ROTATION);
+        instance.scale.fromArray(INITIAL_SCALE);
     } else {
         instance.position.fromArray([position.x, position.y, position.z]);
         instance.rotation.setFromEuler(new Euler(rotation.x, rotation.y, rotation.z));
+        instance.scale.fromArray([scale.x, scale.y, scale.z]);
     }
 }
 
 function update({ instance, meshes }) {
-    instance.matrix.compose(instance.position, instance.rotation, INITIAL_SCALE);
+    instance.matrix.compose(instance.position, instance.rotation, instance.scale);
     meshes.forEach(mesh => mesh.setMatrixAt(instance.index, instance.matrix));
 }

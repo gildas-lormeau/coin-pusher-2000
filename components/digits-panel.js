@@ -6,12 +6,13 @@ const BORDER_WIDTH = 0.015;
 const TYPES = 10;
 
 export default class {
-    constructor({ scene, position, rotation, digitsCount, color }) {
+    constructor({ scene, position, rotation, scale, digitsCount, color }) {
         this.#scene = scene;
         this.#digitsCount = digitsCount;
         this.#color = color;
         this.#position = position;
         this.#rotation = rotation;
+        this.#scale = scale || [1, 1, 1];
     }
 
     #scene;
@@ -19,6 +20,7 @@ export default class {
     #color;
     #position;
     #rotation;
+    #scale;
     #digits = [];
     #lastTime = 0;
 
@@ -26,11 +28,19 @@ export default class {
         for (let indexDigit = 0; indexDigit < this.#digitsCount; indexDigit++) {
             this.#digits[indexDigit] = [];
             for (let type = 0; type < TYPES; type++) {
+                const positionX = this.#position[0] + indexDigit * Digits.WIDTH * this.#scale[0];
+                const positionY = this.#position[1];
+                const positionZ = this.#position[2];
                 this.#digits[indexDigit][type] = Digits.addDigit({
                     type,
                     color: this.#color,
-                    position: new Vector3(this.#position[0] + indexDigit * Digits.WIDTH, this.#position[1], this.#position[2]),
-                    rotation: new Vector3(Math.PI / 2 + this.#rotation[0], this.#rotation[1], this.#rotation[2])
+                    position: new Vector3(positionX, positionY, positionZ),
+                    rotation: new Vector3(Math.PI / 2 + this.#rotation[0], this.#rotation[1], this.#rotation[2]),
+                    scale: new Vector3(
+                        this.#scale[0],
+                        this.#scale[2],
+                        this.#scale[1]
+                    )
                 });
             }
         }
@@ -46,38 +56,38 @@ export default class {
             metalness: 0
         });
         const topBorderMesh = new Mesh(
-            new BoxGeometry(panelWidth + 2 * BORDER_WIDTH, BORDER_WIDTH, Digits.DEPTH),
+            new BoxGeometry((panelWidth + 2 * BORDER_WIDTH) * this.#scale[0], BORDER_WIDTH * this.#scale[1], Digits.DEPTH * this.#scale[2]),
             borderMaterial
         );
         topBorderMesh.position.set(
-            panelWidth / 2 - Digits.WIDTH / 2,
-            Digits.HEIGHT / 2 + BORDER_WIDTH / 2,
+            (panelWidth / 2 - Digits.WIDTH / 2) * this.#scale[0],
+            (Digits.HEIGHT / 2 + BORDER_WIDTH / 2) * this.#scale[1],
             0
         );
         const bottomBorderMesh = new Mesh(
-            new BoxGeometry(panelWidth + 2 * BORDER_WIDTH, BORDER_WIDTH, Digits.DEPTH),
+            new BoxGeometry((panelWidth + 2 * BORDER_WIDTH) * this.#scale[0], BORDER_WIDTH * this.#scale[1], Digits.DEPTH * this.#scale[2]),
             borderMaterial
         );
         bottomBorderMesh.position.set(
-            panelWidth / 2 - Digits.WIDTH / 2,
-            -Digits.HEIGHT / 2 - BORDER_WIDTH / 2,
+            (panelWidth / 2 - Digits.WIDTH / 2) * this.#scale[0],
+            (-Digits.HEIGHT / 2 - BORDER_WIDTH / 2) * this.#scale[1],
             0
         );
         const leftBorderMesh = new Mesh(
-            new BoxGeometry(BORDER_WIDTH, Digits.HEIGHT, Digits.DEPTH),
+            new BoxGeometry(BORDER_WIDTH * this.#scale[0], (Digits.HEIGHT + 2 * BORDER_WIDTH) * this.#scale[1], Digits.DEPTH * this.#scale[2]),
             borderMaterial
         );
         leftBorderMesh.position.set(
-            -BORDER_WIDTH / 2 - Digits.WIDTH / 2,
+            (-BORDER_WIDTH / 2 - Digits.WIDTH / 2) * this.#scale[0],
             0,
             0
         );
         const rightBorderMesh = new Mesh(
-            new BoxGeometry(BORDER_WIDTH, Digits.HEIGHT, Digits.DEPTH),
+            new BoxGeometry(BORDER_WIDTH * this.#scale[0], (Digits.HEIGHT + 2 * BORDER_WIDTH) * this.#scale[1], Digits.DEPTH * this.#scale[2]),
             borderMaterial
         );
         rightBorderMesh.position.set(
-            panelWidth + BORDER_WIDTH / 2 - Digits.WIDTH / 2,
+            (panelWidth + BORDER_WIDTH / 2 - Digits.WIDTH / 2) * this.#scale[0],
             0,
             0
         );
