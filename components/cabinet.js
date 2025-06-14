@@ -133,15 +133,21 @@ export default class {
             },
             onBonusWon: () => {
                 const random = Math.random();
-                if (random < .25) {
-                    this.#reelsBox.spinReels();
-                } else if (random < .5) {
-                    this.#excavator.pick();
-                } else if (random < .75) {
-                    this.#controlPanel.enableActionButton();
-                    this.#coinRoller.shootCoin();
+                if (this.DEBUG_AUTOPLAY) {
+                    if (random < .5) {
+                        this.#pusher.deliverBonus({ coinCount: 10, cardCount: 1, tokenCount: 1 });
+                    }
                 } else {
-                    this.#tower.shootCoins();
+                    if (random < .25) {
+                        this.#reelsBox.spinReels();
+                    } else if (random < .5) {
+                        this.#excavator.pick();
+                    } else if (random < .75) {
+                        this.#controlPanel.enableActionButton();
+                        this.#coinRoller.shootCoin();
+                    } else {
+                        this.#tower.shootCoins();
+                    }
                 }
             }
         });
@@ -149,7 +155,7 @@ export default class {
         this.#reelsBox = new ReelsBox({
             scene: this.#scene,
             onBonusWon: (reels) => {
-                this.#pusher.deliverBonus({ coinCount: 10, cardCount: 1, tokenCount: 2 });
+                this.#pusher.deliverBonus({ coinCount: 10, cardCount: 1, tokenCount: 1 });
             }
         });
         await this.#reelsBox.initialize();
