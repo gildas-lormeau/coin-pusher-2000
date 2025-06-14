@@ -13,6 +13,7 @@ const DELAY_SHOOT = 180;
 const IMPULSE_STRENGTH = 0.00005;
 const IMPULSE_DIRECTION = new Vector3(0, 0, -1);
 const Y_AXIS = new Vector3(0, 1, 0);
+const CABINET_COLLISION_GROUP = 0x00010001;
 
 const TOWER_STATES = {
     IDLE: Symbol.for("tower-idle"),
@@ -233,6 +234,7 @@ function getPart(parts, name) {
 }
 
 function initializeColliders({ scene, parts }) {
+    let indexPart = 0;
     parts.forEach((partData, name) => {
         const { meshes, friction, restitution, fixed } = partData;
         const body = partData.body = fixed ? scene.createFixedBody() : scene.createKinematicBody();
@@ -246,11 +248,17 @@ function initializeColliders({ scene, parts }) {
                 offsetIndex += meshData.indices.length;
             }
         });
-        scene.createTrimeshCollider({
+        const collider = scene.createTrimeshCollider({
             vertices,
             indices,
             friction,
             restitution
         }, body);
+        if (fixed) {
+            collider.setCollisionGroups(CABINET_COLLISION_GROUP);
+        } else {
+            collider.setCollisionGroups((1 << (indexPart % 16)) << 16 | (1 << (indexPart % 16)));
+            indexPart++;
+        }
     });
 }
