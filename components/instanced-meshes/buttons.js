@@ -1,7 +1,8 @@
 import { Vector3, Quaternion, Matrix4, Euler, InstancedMesh, PointLight } from "three";
 
 const MAX_INSTANCES = 3;
-const INITIAL_SCALE = new Vector3(1, 1, 1);
+const INITIAL_SCALE = new Vector3(0, 0, 0);
+const DEFAULT_SCALE = new Vector3(1, 1, 1);
 const BUTTON_PRESS_DEPTH = -0.005;
 const BUTTON_RELEASE_DELAY = 75;
 const BLINK_DELAY = 250;
@@ -231,6 +232,9 @@ function initializeInstancedMeshes({ scene, materials, geometries, interactiveOb
             const typeMeshes = [];
             for (let indexMaterial = 0; indexMaterial < materials[color][type].length; indexMaterial++) {
                 const mesh = new InstancedMesh(geometries[color][type][indexMaterial], materials[color][type][indexMaterial], MAX_INSTANCES);
+                for (let indexInstance = 0; indexInstance < MAX_INSTANCES; indexInstance++) {
+                    mesh.setMatrixAt(indexInstance, INITIAL_SCALE);
+                }
                 mesh.active = indexMaterial > 0;
                 mesh.userData = {
                     color,
@@ -302,9 +306,9 @@ function initializePosition({ instance, position, rotation, bulbLight }) {
 }
 
 function update({ instance, meshes }) {
-    instance.matrix.compose(instance.position, instance.rotation, INITIAL_SCALE);
+    instance.matrix.compose(instance.position, instance.rotation, instance.used ? DEFAULT_SCALE : INITIAL_SCALE);
     meshes[0].setMatrixAt(instance.index, instance.matrix);
-    instance.matrix.compose(instance.buttonPosition, instance.rotation, INITIAL_SCALE);
+    instance.matrix.compose(instance.buttonPosition, instance.rotation, instance.used ? DEFAULT_SCALE : INITIAL_SCALE);
     for (let indexMesh = 1; indexMesh < meshes.length; indexMesh++) {
         meshes[indexMesh].setMatrixAt(instance.index, instance.matrix);
     }

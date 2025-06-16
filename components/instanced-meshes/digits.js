@@ -6,7 +6,8 @@ const HEIGHT = 0.055;
 const DEPTH = 0.002;
 const INITIAL_HIDDEN_POSITION = [0, 0, 0];
 const INITIAL_HIDDEN_ROTATION = [0, 0, 0, 1];
-const INITIAL_SCALE = [0, 0, 0];
+const INITIAL_SCALE = new Vector3(0, 0, 0);
+const DEFAULT_SCALE = new Vector3(1, 1, 1);
 const MODEL_PATH = "./../assets/digit.glb";
 const TYPES = 11;
 const COLORS = [
@@ -170,6 +171,6 @@ function initializePosition({ instance, hidden, position, rotation, scale }) {
 }
 
 function update({ instance, meshes }) {
-    instance.matrix.compose(instance.position, instance.rotation, instance.scale);
+    instance.matrix.compose(instance.position, instance.rotation, instance.used ? instance.scale : INITIAL_SCALE);
     meshes.forEach(mesh => mesh.setMatrixAt(instance.index, instance.matrix));
 }

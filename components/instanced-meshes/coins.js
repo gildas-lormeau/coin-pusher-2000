@@ -12,7 +12,8 @@ const INITIAL_HIDDEN_POSITION = [0, 0, 0];
 const INITIAL_HIDDEN_ROTATION = [0, 0, 0, 1];
 const INITIAL_HIDDEN_LINEAR_VELOCITY = new Vector3(0, 0, 0);
 const INITIAL_HIDDEN_ANGULAR_VELOCITY = new Vector3(0, 0, 0);
-const INITIAL_SCALE = new Vector3(1, 1, 1);
+const INITIAL_SCALE = new Vector3(0, 0, 0);
+const DEFAULT_SCALE = new Vector3(1, 1, 1);
 const EULER_ROTATION = new Euler(Math.PI / 2, 0, 0);
 const SOFT_CCD_PREDICTION = 0.1;
 const ADDITIONAL_SOLVER_ITERATIONS = 1;
@@ -281,6 +282,9 @@ function initializeInstancedMeshes({ scene, materials, geometries }) {
     const meshes = [];
     for (let indexMaterial = 0; indexMaterial < materials.length; indexMaterial++) {
         const mesh = new InstancedMesh(geometries[indexMaterial], materials[indexMaterial], MAX_INSTANCES);
+        for (let indexInstance = 0; indexInstance < MAX_INSTANCES; indexInstance++) {
+            mesh.setMatrixAt(indexInstance, INITIAL_SCALE);
+        }
         mesh.castShadow = true;
         mesh.receiveShadow = true;
         scene.addObject(mesh);
@@ -360,11 +364,13 @@ function update({ instance, meshes, forceRefresh }) {
     instance.position.copy(instance.body.translation());
     instance.rotation.copy(instance.body.rotation());
     if (instance.linearSpeed > RENDERING_LINEAR_MIN_SPEED || forceRefresh) {
-        instance.matrix.compose(instance.position, instance.rotation, INITIAL_SCALE);
-        meshes.forEach(mesh => {
-            mesh.setMatrixAt(instance.index, instance.matrix);
-            mesh.instanceMatrix.needsUpdate = true;
-        });
+        instance.matrix.compose(instance.position, instance.rotation, instance.used ? DEFAULT_SCALE : INITIAL_SCALE);
+        if (instance.used) {
+            meshes.forEach(mesh => {
+                mesh.setMatrixAt(instance.index, instance.matrix);
+                mesh.instanceMatrix.needsUpdate = true;
+            });
+        }
     }
 }
 
