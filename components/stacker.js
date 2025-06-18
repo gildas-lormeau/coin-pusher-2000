@@ -63,7 +63,6 @@ export default class {
         parts: null,
         level: 0,
         coin: null,
-        coinPosition: 0,
         nextState: null,
         state: STACKER_STATES.IDLE,
         position: STACKER_INITIAL_POSITION,
@@ -185,7 +184,6 @@ export default class {
             basePosition: this.#stacker.basePosition,
             baseAngle: this.#stacker.baseAngle,
             level: this.#stacker.level,
-            coinPosition: this.#stacker.coinPosition,
             nextState: this.#stacker.nextState ? this.#stacker.nextState.description : null,
             coinHandle: this.#stacker.coin ? this.#stacker.coin.handle : null
         };
@@ -199,7 +197,6 @@ export default class {
         this.#stacker.basePosition = stacker.basePosition;
         this.#stacker.baseAngle = stacker.baseAngle;
         this.#stacker.level = stacker.level;
-        this.#stacker.coinPosition = stacker.coinPosition;
         this.#stacker.nextState = stacker.nextState ? Symbol.for(stacker.nextState) : null;
         if (stacker.coinHandle) {
             this.#stacker.coin = this.#scene.worldBodies.get(stacker.coinHandle);
@@ -302,7 +299,6 @@ function updateStackerState({ stacker }) {
             if (stacker.armPosition > ARM_INITIAL_POSITION) {
                 stacker.armPosition = ARM_INITIAL_POSITION;
                 stacker.level++;
-                stacker.coinPosition = stacker.coin.position.y;
                 if (stacker.level < LEVEL_MAX) {
                     stacker.nextState = STACKER_STATES.LOWERING_BASE;
                 } else {
