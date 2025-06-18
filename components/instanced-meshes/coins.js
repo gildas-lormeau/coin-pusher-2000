@@ -22,7 +22,6 @@ const LINEAR_DAMPING = 0.5;
 const RESTITUTION = 0;
 const MODEL_PATH = "./../assets/coin.glb";
 const SPAWN_TIME_DELTA = 60;
-const RENDERING_LINEAR_MIN_SPEED = 0.0000001;
 const SLEEP_LINEAR_MAX_SPEED = 0.001;
 const TEMP_EULER = new Euler(0, 0, 0, "XYZ");
 const MAX_ANGLE_FLAT = Math.PI / 4;
@@ -363,14 +362,12 @@ function initializePosition({ instance, hidden, position, rotation, slot = 1 }) 
 function update({ instance, meshes, forceRefresh }) {
     instance.position.copy(instance.body.translation());
     instance.rotation.copy(instance.body.rotation());
-    if (instance.linearSpeed > RENDERING_LINEAR_MIN_SPEED || forceRefresh) {
-        instance.matrix.compose(instance.position, instance.rotation, instance.used ? DEFAULT_SCALE : INITIAL_SCALE);
-        if (instance.used) {
-            meshes.forEach(mesh => {
-                mesh.setMatrixAt(instance.index, instance.matrix);
-                mesh.instanceMatrix.needsUpdate = true;
-            });
-        }
+    instance.matrix.compose(instance.position, instance.rotation, instance.used ? DEFAULT_SCALE : INITIAL_SCALE);
+    if (instance.used) {
+        meshes.forEach(mesh => {
+            mesh.setMatrixAt(instance.index, instance.matrix);
+            mesh.instanceMatrix.needsUpdate = true;
+        });
     }
 }
 
