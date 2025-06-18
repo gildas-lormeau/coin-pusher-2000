@@ -27,6 +27,7 @@ const BASE_INITIAL_POSITION = 0;
 const STACKER_INITIAL_POSITION = 0;
 const COMPLETE_TURN_ANGLE = Math.PI * 2;
 const BASE_MAX_POSITION = 0.0125;
+const LEVEL_INITIAL = 0;
 const LEVEL_MAX = 10;
 const BASE_PART_NAME = "base";
 const SUPPORT_PART_NAME = "support";
@@ -61,7 +62,7 @@ export default class {
     #pivotPosition;
     #stacker = {
         parts: null,
-        level: 0,
+        level: LEVEL_INITIAL,
         coin: null,
         nextState: null,
         state: STACKER_STATES.IDLE,
