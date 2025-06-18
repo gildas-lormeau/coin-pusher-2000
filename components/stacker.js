@@ -1,4 +1,5 @@
 import { Vector3, Quaternion } from "three";
+import coins from "./instanced-meshes/coins";
 
 const MODEL_PATH = "./../assets/stacker.glb";
 const DROP_POSITION = "drop-position";
@@ -13,7 +14,7 @@ const ARM_DOOR_SPEED = 0.01;
 const BASE_MAX_SPEED = 0.01;
 const BASE_SPEED = 0.002;
 const STACKER_SPEED = 0.001;
-const BASE_ROTATION_SPEED = Math.PI / 12;
+const BASE_ROTATION_SPEED = Math.PI / 18;
 const BASE_ROTATION_CLEANUP_SPEED = Math.PI / 9;
 const ARM_PROTECTION_LID_SPEED = 0.1;
 const BASE_CLEANUP_ROTATIONS = 5;
@@ -24,7 +25,7 @@ const ARM_INITIAL_POSITION = 0;
 const ARM_MIN_POSITION = -0.07;
 const ARM_DOOR_INITIAL_POSITION = 0;
 const ARM_DOOR_MAX_POSITION = 0.025;
-const STACKER_MAX_POSITION = 0.1;
+const STACKER_MAX_POSITION = 0.2;
 const ROTATIONS_MAX = 6;
 const BASE_INITIAL_ANGLE = 0;
 const BASE_INITIAL_ROTATIONS = 0;
@@ -35,7 +36,7 @@ const BASE_MAX_POSITION = 0.0125;
 const ARM_PROTECTION_LID_INITIAL_ANGLE = 0;
 const ARM_PROTECTION_LID_MAX_ANGLE = Math.PI / 3;
 const LEVEL_INITIAL = 0;
-const LEVEL_MAX = 10;
+const LEVEL_MAX = 50;
 const BASE_PART_NAME = "base";
 const SUPPORT_PART_NAME = "support";
 const ARM_PART_NAME = "arm";
@@ -79,6 +80,7 @@ export default class {
         parts: null,
         level: LEVEL_INITIAL,
         coin: null,
+        coins: [],
         nextState: null,
         state: STACKER_STATES.IDLE,
         position: STACKER_INITIAL_POSITION,
@@ -145,6 +147,9 @@ export default class {
                 armProtectionLid.body.setNextKinematicTranslation(position);
                 armDoor.body.setNextKinematicTranslation(armDoorPosition);
             }
+            if (state === STACKER_STATES.LOWERING_STACKER) {
+                this.#stacker.coins.forEach(coin => coin.body.sleep());
+            }
             if (state === STACKER_STATES.RAISING_BASE ||
                 state === STACKER_STATES.LOWERING_BASE_TO_INITIAL_POSITION ||
                 state === STACKER_STATES.LOWERING_BASE ||
@@ -199,6 +204,7 @@ export default class {
                     rotation: COIN_ROTATION,
                     impulse: COIN_IMPULSE_FORCE
                 });
+                this.#stacker.coins.push(this.#stacker.coin);
             }
         }
         if (this.#stacker.nextState) {
@@ -219,6 +225,7 @@ export default class {
                 bodyHandle: body.handle
             };
         });
+        const coinsHandles = this.#stacker.coins.map(coin => coin.body.handle);
         return {
             state: this.#stacker.state.description,
             parts,
@@ -231,7 +238,8 @@ export default class {
             baseAngle: this.#stacker.baseAngle,
             level: this.#stacker.level,
             nextState: this.#stacker.nextState ? this.#stacker.nextState.description : null,
-            coinHandle: this.#stacker.coin ? this.#stacker.coin.handle : null
+            coinHandle: this.#stacker.coin ? this.#stacker.coin.handle : null,
+            coinsHandles
         };
     }
 
@@ -251,6 +259,7 @@ export default class {
         } else {
             this.#stacker.coin = null;
         }
+        stacker.coinsHandles.forEach(handle => this.#stacker.coins.push(this.#scene.worldBodies.get(handle)));
         this.#stacker.parts.forEach((partData, name) => {
             const loadedPart = stacker.parts[name];
             if (loadedPart) {
@@ -377,6 +386,7 @@ function updateStackerState({ stacker }) {
                 if (stacker.level < LEVEL_MAX) {
                     stacker.nextState = STACKER_STATES.LOWERING_BASE;
                 } else {
+                    stacker.level = LEVEL_INITIAL;
                     stacker.nextState = STACKER_STATES.RETRACTING_ARM;
                 }
             }
@@ -398,6 +408,7 @@ function updateStackerState({ stacker }) {
             stacker.position -= STACKER_SPEED;
             if (stacker.position < STACKER_INITIAL_POSITION) {
                 stacker.position = STACKER_INITIAL_POSITION;
+                stacker.coins = [];
                 stacker.nextState = STACKER_STATES.MOVING_ARM_BACK_TO_INITIAL_POSITION;
             }
             break;
