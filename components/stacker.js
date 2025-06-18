@@ -32,7 +32,7 @@ const LEVEL_MAX = 10;
 const STACKER_STATES = {
     IDLE: Symbol.for("stacker-idle"),
     ACTIVATING: Symbol.for("stacker-activating"),
-    RAISING_BASE_TO_MAX: Symbol.for("stacker-raising-base-to-max"),
+    RAISING_BASE: Symbol.for("stacker-raising-base"),
     HIDING_ARM: Symbol.for("stacker-hiding-arm"),
     CLEANING_UP_BASE: Symbol.for("stacker-cleaning-up-base"),
     LOWERING_BASE_TO_INITIAL_POSITION: Symbol.for("stacker-lowering-base-to-initial-position"),
@@ -122,7 +122,7 @@ export default class {
                 arm.body.setNextKinematicTranslation(armPosition);
                 armProtection.body.setNextKinematicTranslation(position);
             }
-            if (state === STACKER_STATES.RAISING_BASE_TO_MAX ||
+            if (state === STACKER_STATES.RAISING_BASE ||
                 state === STACKER_STATES.LOWERING_BASE_TO_INITIAL_POSITION ||
                 state === STACKER_STATES.LOWERING_BASE ||
                 state === STACKER_STATES.LOWERING_BASE_BACK_TO_INITIAL_POSITION) {
@@ -223,10 +223,10 @@ function updateStackerState({ stacker }) {
             stacker.position += STACKER_SPEED;
             if (stacker.position > STACKER_MAX_POSITION) {
                 stacker.position = STACKER_MAX_POSITION;
-                stacker.nextState = STACKER_STATES.RAISING_BASE_TO_MAX;
+                stacker.nextState = STACKER_STATES.RAISING_BASE;
             }
             break;
-        case STACKER_STATES.RAISING_BASE_TO_MAX:
+        case STACKER_STATES.RAISING_BASE:
             stacker.basePosition += BASE_MAX_SPEED;
             if (stacker.basePosition > BASE_MAX_POSITION) {
                 stacker.basePosition = BASE_MAX_POSITION;
