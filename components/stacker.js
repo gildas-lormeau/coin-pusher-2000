@@ -13,8 +13,8 @@ const STACKER_SPEED = 0.001;
 const BASE_ROTATION_SPEED = Math.PI / 12;
 const BASE_ROTATION_CLEANUP_SPEED = Math.PI / 9;
 const BASE_CLEANUP_ROTATIONS = 2;
+const COIN_SETTLED_POSITION_X = 0.07;
 const COIN_SETTLED_POSITION_Y = 0.1475;
-const COIN_SETTLED_RIGHT_POSITION_X = 0.07;
 const COIN_IMPULSE_FORCE = new Vector3(-0.0000145, 0, 0);
 const ARM_MAX_POSITION = 0.0825;
 const ARM_INITIAL_POSITION = 0;
@@ -264,7 +264,7 @@ function updateStackerState({ stacker }) {
             stacker.nextState = STACKER_STATES.PUSHING_COIN;
             break;
         case STACKER_STATES.PUSHING_COIN:
-            if (stacker.coin.position.x < COIN_SETTLED_RIGHT_POSITION_X &&
+            if (stacker.coin.position.x < COIN_SETTLED_POSITION_X &&
                 stacker.coin.position.y < COIN_SETTLED_POSITION_Y + stacker.position) {
                 if (stacker.armPosition === ARM_INITIAL_POSITION) {
                     stacker.rotations++;
