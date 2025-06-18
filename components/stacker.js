@@ -92,10 +92,9 @@ export default class {
         Object.assign(this.#stacker, { parts });
     }
 
-    update(time) {
+    update() {
         updateStackerState({
-            stacker: this.#stacker,
-            time
+            stacker: this.#stacker
         });
         const { parts, state } = this.#stacker;
         if (state !== STACKER_STATES.IDLE) {
