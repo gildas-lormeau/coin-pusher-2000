@@ -102,7 +102,7 @@ export default class {
             const support = parts.get("support");
             const arm = parts.get("arm");
             const armProtection = parts.get("arm-protection");
-            parts.forEach(({ meshes, body }, name) => {
+            parts.forEach(({ meshes, body }) => {
                 meshes.forEach(({ data }) => {
                     data.position.copy(body.translation());
                     data.quaternion.copy(body.rotation());
