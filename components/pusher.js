@@ -250,6 +250,7 @@ function initializeColliders({ scene, parts }) {
         position: [0, -PUSHER_WALL_WIDTH / 2, (DEPTH - PUSHER_WALL_WIDTH) / 2 - door.position]
     }, door.body);
     door.body.setSoftCcdPrediction(DOOR_SOFT_CCD_PREDICTION);
+    const cabinetBody = scene.createFixedBody();
     scene.createCuboidCollider({
         width: FLOOR_BACK_WIDTH,
         height: FLOOR_HEIGHT,
@@ -257,7 +258,7 @@ function initializeColliders({ scene, parts }) {
         friction: FLOOR_FRICTION,
         restitution: FLOOR_RESTITUTION,
         position: FLOOR_BACK_POSITION
-    });
+    }, cabinetBody);
     scene.createCuboidCollider({
         width: FLOOR_FRONT_WIDTH,
         height: FLOOR_HEIGHT,
@@ -265,7 +266,7 @@ function initializeColliders({ scene, parts }) {
         friction: FLOOR_FRICTION,
         restitution: FLOOR_RESTITUTION,
         position: FLOOR_FRONT_POSITION
-    });
+    }, cabinetBody);
     scene.createCuboidCollider({
         width: WALL_WIDTH,
         height: WALL_HEIGHT,
@@ -273,7 +274,7 @@ function initializeColliders({ scene, parts }) {
         friction: FRICTION,
         restitution: RESTITUTION,
         position: LEFT_WALL_POSITION
-    });
+    }, cabinetBody);
     scene.createCuboidCollider({
         width: WALL_WIDTH,
         height: WALL_HEIGHT,
@@ -281,5 +282,5 @@ function initializeColliders({ scene, parts }) {
         friction: FRICTION,
         restitution: RESTITUTION,
         position: RIGHT_WALL_POSITION
-    });
+    }, cabinetBody);
 }
