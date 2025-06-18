@@ -12,30 +12,31 @@ const ARM_SPEED = 0.02;
 const ARM_DOOR_SPEED = 0.01;
 const BASE_MAX_SPEED = 0.01;
 const BASE_SPEED = 0.002;
-const STACKER_SPEED = 0.001;
-const BASE_ROTATION_SPEED = Math.PI / 18;
-const BASE_ROTATION_CLEANUP_SPEED = Math.PI / 9;
+const STACKER_RAISING_SPEED = 0.003;
+const STACKER_LOWERING_SPEED = 0.001;
+const BASE_ROTATION_SPEED = Math.PI / 12;
+const BASE_ROTATION_CLEANUP_SPEED = Math.PI / 24;
 const ARM_PROTECTION_LID_SPEED = 0.1;
 const BASE_CLEANUP_ROTATIONS = 5;
-const COIN_SETTLED_POSITION_Y = 0.1475;
-const COIN_IMPULSE_FORCE = new Vector3(0, 0, -0.0000125);
+const COIN_SETTLED_POSITION_Y = 0.145;
+const COIN_IMPULSE_FORCE = new Vector3(0, 0, -0.000015);
 const ARM_MAX_POSITION = 0.0825;
 const ARM_INITIAL_POSITION = 0;
 const ARM_MIN_POSITION = -0.07;
 const ARM_DOOR_INITIAL_POSITION = 0;
 const ARM_DOOR_MAX_POSITION = 0.025;
-const STACKER_MAX_POSITION = 0.2;
+const STACKER_MAX_POSITION = 0.225;
 const ROTATIONS_MAX = 6;
 const BASE_INITIAL_ANGLE = 0;
 const BASE_INITIAL_ROTATIONS = 0;
 const BASE_INITIAL_POSITION = 0;
 const STACKER_INITIAL_POSITION = 0;
 const COMPLETE_TURN_ANGLE = Math.PI * 2;
-const BASE_MAX_POSITION = 0.0125;
+const BASE_MAX_POSITION = 0.01275;
 const ARM_PROTECTION_LID_INITIAL_ANGLE = 0;
 const ARM_PROTECTION_LID_MAX_ANGLE = Math.PI / 3;
 const LEVEL_INITIAL = 0;
-const LEVEL_MAX = 50;
+const LEVEL_MAX = 75;
 const BASE_PART_NAME = "base";
 const SUPPORT_PART_NAME = "support";
 const ARM_PART_NAME = "arm";
@@ -288,7 +289,7 @@ function updateStackerState({ stacker }) {
             }
             break;
         case STACKER_STATES.RAISING_STACKER:
-            stacker.position += STACKER_SPEED;
+            stacker.position += STACKER_RAISING_SPEED;
             if (stacker.position > STACKER_MAX_POSITION) {
                 stacker.position = STACKER_MAX_POSITION;
                 stacker.nextState = STACKER_STATES.RAISING_BASE;
@@ -404,7 +405,7 @@ function updateStackerState({ stacker }) {
             }
             break;
         case STACKER_STATES.LOWERING_STACKER:
-            stacker.position -= STACKER_SPEED;
+            stacker.position -= STACKER_LOWERING_SPEED;
             if (stacker.position < STACKER_INITIAL_POSITION) {
                 stacker.position = STACKER_INITIAL_POSITION;
                 stacker.coins = [];
