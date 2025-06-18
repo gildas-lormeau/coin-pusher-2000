@@ -93,9 +93,7 @@ export default class {
     }
 
     update() {
-        updateStackerState({
-            stacker: this.#stacker
-        });
+        updateStackerState({ stacker: this.#stacker });
         const { parts, state } = this.#stacker;
         if (state !== STACKER_STATES.IDLE) {
             const base = parts.get("base");
