@@ -28,6 +28,10 @@ const STACKER_INITIAL_POSITION = 0;
 const COMPLETE_TURN_ANGLE = Math.PI * 2;
 const BASE_MAX_POSITION = 0.0125;
 const LEVEL_MAX = 10;
+const BASE_PART_NAME = "base";
+const SUPPORT_PART_NAME = "support";
+const ARM_PART_NAME = "arm";
+const ARM_PROTECTION_PART_NAME = "arm-protection";
 
 const STACKER_STATES = {
     IDLE: Symbol.for("stacker-idle"),
@@ -96,10 +100,10 @@ export default class {
         updateStackerState({ stacker: this.#stacker });
         const { parts, state } = this.#stacker;
         if (state !== STACKER_STATES.IDLE) {
-            const base = parts.get("base");
-            const support = parts.get("support");
-            const arm = parts.get("arm");
-            const armProtection = parts.get("arm-protection");
+            const base = parts.get(BASE_PART_NAME);
+            const support = parts.get(SUPPORT_PART_NAME);
+            const arm = parts.get(ARM_PART_NAME);
+            const armProtection = parts.get(ARM_PROTECTION_PART_NAME);
             parts.forEach(({ meshes, body }) => {
                 meshes.forEach(({ data }) => {
                     data.position.copy(body.translation());
