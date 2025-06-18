@@ -419,12 +419,7 @@ function initializeColliders({ scene, parts }) {
     let indexPart = 0;
     parts.forEach(partData => {
         const { meshes, colliders, friction, restitution, kinematic } = partData;
-        let body;
-        if (kinematic) {
-            body = partData.body = scene.createKinematicBody();
-        } else {
-            body = partData.body = scene.createFixedBody();
-        }
+        const body = partData.body = kinematic ? scene.createKinematicBody() : scene.createFixedBody();
         body.setEnabled(false);
         const vertices = [];
         const indices = [];
