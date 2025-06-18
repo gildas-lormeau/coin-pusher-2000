@@ -12,6 +12,7 @@ import ReelsBox from "./reels-box.js";
 import Excavator from "./excavator.js";
 import Tower from "./tower.js";
 import CoinRoller from "./coin-roller.js";
+import Stacker from "./stacker.js";
 import Screen from "./screen.js";
 import Runs from "./runs.js";
 
@@ -73,6 +74,7 @@ export default class {
     #excavator;
     #tower;
     #coinRoller;
+    #stacker;
     #screen;
     #runs;
     #parts;
@@ -227,6 +229,11 @@ export default class {
             }
         });
         await this.#coinRoller.initialize();
+        this.#stacker = new Stacker({
+            scene: this.#scene,
+            onInitializeCoin: ({ position, rotation, impulse }) => Coins.depositCoin({ position, rotation, impulse }),
+        });
+        await this.#stacker.initialize();
         this.#screen = new Screen({ scene: this.#scene });
         await this.#screen.initialize();
         this.#runs = new Runs({ state: this.#state, screen: this.#screen });
@@ -244,6 +251,7 @@ export default class {
         this.#excavator.update(time);
         this.#tower.update(time);
         this.#coinRoller.update(time);
+        this.#stacker.update();
         this.#screen.update();
         this.#runs.update(time);
         this.dynamicBodies.forEach(({ object, objects }) => {
@@ -295,6 +303,7 @@ export default class {
             excavator: this.#excavator.save(),
             tower: this.#tower.save(),
             coinRoller: this.#coinRoller.save(),
+            stacker: this.#stacker.save(),
             runs: this.#runs.save()
         });
         return data;
@@ -329,6 +338,7 @@ export default class {
         this.#excavator.load(cabinet.excavator);
         this.#tower.load(cabinet.tower);
         this.#coinRoller.load(cabinet.coinRoller);
+        this.#stacker.load(cabinet.stacker);
         this.#runs.load(cabinet.runs);
     }
 
