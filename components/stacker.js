@@ -417,7 +417,7 @@ function getPart(parts, name) {
 
 function initializeColliders({ scene, parts }) {
     let indexPart = 0;
-    parts.forEach((partData, name) => {
+    parts.forEach(partData => {
         const { meshes, colliders, friction, restitution, kinematic } = partData;
         let body;
         if (kinematic) {
