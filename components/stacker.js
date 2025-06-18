@@ -102,11 +102,6 @@ export default class {
             body.setEnabled(true);
         });
         Object.assign(this.#stacker, { parts });
-
-        setTimeout(() => {
-            // this.#stacker.state = STACKER_STATES.ACTIVATING;
-        }
-            , Math.random() * 1000 + 500);
     }
 
     update() {
