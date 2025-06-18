@@ -14,7 +14,7 @@ const BASE_SPEED = 0.002;
 const STACKER_SPEED = 0.001;
 const BASE_ROTATION_SPEED = Math.PI / 12;
 const BASE_ROTATION_CLEANUP_SPEED = Math.PI / 9;
-const ARM_PROTECTION_LID_SPEED = 0.05;
+const ARM_PROTECTION_LID_SPEED = 0.1;
 const BASE_CLEANUP_ROTATIONS = 3;
 const COIN_SETTLED_POSITION_Y = 0.1475;
 const COIN_IMPULSE_FORCE = new Vector3(0, 0, -0.00001);
@@ -30,7 +30,7 @@ const STACKER_INITIAL_POSITION = 0;
 const COMPLETE_TURN_ANGLE = Math.PI * 2;
 const BASE_MAX_POSITION = 0.0125;
 const ARM_PROTECTION_LID_INITIAL_ANGLE = 0;
-const ARM_PROTECTION_LID_MAX_ANGLE = Math.PI / 6;
+const ARM_PROTECTION_LID_MAX_ANGLE = Math.PI / 4;
 const LEVEL_INITIAL = 0;
 const LEVEL_MAX = 10;
 const BASE_PART_NAME = "base";
@@ -185,6 +185,12 @@ export default class {
         }
         if (this.#stacker.nextState) {
             this.#stacker.state = this.#stacker.nextState;
+        }
+    }
+
+    deliver() {
+        if (this.#stacker.state === STACKER_STATES.IDLE) {
+            this.#stacker.state = STACKER_STATES.ACTIVATING;
         }
     }
 
@@ -461,13 +467,15 @@ function initializeColliders({ scene, parts }) {
         body.setEnabled(false);
         if (cuboid) {
             const boundingBox = meshes[0].data.geometry.boundingBox;
+            const position = new Vector3().addVectors(boundingBox.min, boundingBox.max).multiplyScalar(0.5).toArray();
             const colliderSize = new Vector3(boundingBox.max.x - boundingBox.min.x, boundingBox.max.y - boundingBox.min.y, boundingBox.max.z - boundingBox.min.z);
             const collider = scene.createCuboidCollider({
-                with: colliderSize.x,
+                position,
+                width: colliderSize.x,
                 height: colliderSize.y,
                 depth: colliderSize.z,
                 friction,
-                restitution
+                restitution,
             }, body);
             collider.setCollisionGroups((1 << (indexPart % 16)) << 16 | (1 << (indexPart % 16)));
             indexPart++;
