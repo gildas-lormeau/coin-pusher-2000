@@ -1,5 +1,4 @@
 import { Vector3, Quaternion } from "three";
-import coins from "./instanced-meshes/coins";
 
 const MODEL_PATH = "./../assets/stacker.glb";
 const DROP_POSITION = "drop-position";
