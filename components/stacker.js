@@ -3,8 +3,10 @@ import { Vector3, Quaternion } from "three";
 const MODEL_PATH = "./../assets/stacker.glb";
 const DROP_POSITION = "drop-position";
 const PIVOT_POSITION = "pivot-position";
+const ARM_PROTECTION_LID_PIVOT_POSITION = "arm-protection-lid-pivot-position";
 const COIN_ROTATION = new Vector3(0, 0, 0);
 const COIN_HEIGHT = 0.006;
+const X_AXIS = new Vector3(1, 0, 0);
 const Y_AXIS = new Vector3(0, 1, 0);
 const ARM_SPEED = 0.02;
 const BASE_MAX_SPEED = 0.01;
@@ -12,6 +14,7 @@ const BASE_SPEED = 0.002;
 const STACKER_SPEED = 0.001;
 const BASE_ROTATION_SPEED = Math.PI / 12;
 const BASE_ROTATION_CLEANUP_SPEED = Math.PI / 9;
+const ARM_PROTECTION_LID_SPEED = 0.05;
 const BASE_CLEANUP_ROTATIONS = 3;
 const COIN_SETTLED_POSITION_Y = 0.1475;
 const COIN_IMPULSE_FORCE = new Vector3(0, 0, -0.00001);
@@ -26,18 +29,23 @@ const BASE_INITIAL_POSITION = 0;
 const STACKER_INITIAL_POSITION = 0;
 const COMPLETE_TURN_ANGLE = Math.PI * 2;
 const BASE_MAX_POSITION = 0.0125;
+const ARM_PROTECTION_LID_INITIAL_ANGLE = 0;
+const ARM_PROTECTION_LID_MAX_ANGLE = Math.PI / 6;
 const LEVEL_INITIAL = 0;
 const LEVEL_MAX = 10;
 const BASE_PART_NAME = "base";
 const SUPPORT_PART_NAME = "support";
 const ARM_PART_NAME = "arm";
 const ARM_PROTECTION_PART_NAME = "arm-protection";
+const ARM_PROTECTION_LID_PART_NAME = "arm-protection-lid";
 
 const STACKER_STATES = {
     IDLE: Symbol.for("stacker-idle"),
     ACTIVATING: Symbol.for("stacker-activating"),
     RAISING_BASE: Symbol.for("stacker-raising-base"),
     HIDING_ARM: Symbol.for("stacker-hiding-arm"),
+    RAISING_ARM_PROTECTION_LID: Symbol.for("stacker-raising-arm-protection-lid"),
+    LOWERING_ARM_PROTECTION_LID: Symbol.for("stacker-lowering-arm-protection-lid"),
     CLEANING_UP_BASE: Symbol.for("stacker-cleaning-up-base"),
     LOWERING_BASE_TO_INITIAL_POSITION: Symbol.for("stacker-lowering-base-to-initial-position"),
     MOVING_ARM_TO_INITIAL_POSITION: Symbol.for("stacker-moving-arm-to-initial-position"),
@@ -59,6 +67,7 @@ export default class {
     #onInitializeCoin;
     #dropPosition;
     #pivotPosition;
+    #armProtectionLidPivotPosition;
     #stacker = {
         parts: null,
         level: LEVEL_INITIAL,
@@ -67,6 +76,7 @@ export default class {
         state: STACKER_STATES.IDLE,
         position: STACKER_INITIAL_POSITION,
         armPosition: ARM_INITIAL_POSITION,
+        armProtectionLidAngle: 0,
         rotations: BASE_INITIAL_ROTATIONS,
         basePosition: BASE_INITIAL_POSITION,
         baseAngle: BASE_INITIAL_ANGLE
@@ -79,11 +89,10 @@ export default class {
 
     async initialize() {
         const scene = this.#scene;
-        const { parts, dropPosition, pivotPosition } = await initializeModel({
-            scene,
-        });
+        const { parts, dropPosition, pivotPosition, armProtectionLidPivotPosition } = await initializeModel({ scene });
         this.#dropPosition = dropPosition;
         this.#pivotPosition = pivotPosition;
+        this.#armProtectionLidPivotPosition = armProtectionLidPivotPosition;
         initializeColliders({
             scene,
             parts
@@ -93,6 +102,11 @@ export default class {
             body.setEnabled(true);
         });
         Object.assign(this.#stacker, { parts });
+
+        setTimeout(() => {
+            // this.#stacker.state = STACKER_STATES.ACTIVATING;
+        }
+            , Math.random() * 1000 + 500);
     }
 
     update() {
@@ -103,6 +117,7 @@ export default class {
             const support = parts.get(SUPPORT_PART_NAME);
             const arm = parts.get(ARM_PART_NAME);
             const armProtection = parts.get(ARM_PROTECTION_PART_NAME);
+            const armProtectionLid = parts.get(ARM_PROTECTION_LID_PART_NAME);
             parts.forEach(({ meshes, body }) => {
                 meshes.forEach(({ data }) => {
                     data.position.copy(body.translation());
@@ -121,6 +136,7 @@ export default class {
                 support.body.setNextKinematicTranslation(position);
                 arm.body.setNextKinematicTranslation(armPosition);
                 armProtection.body.setNextKinematicTranslation(position);
+                armProtectionLid.body.setNextKinematicTranslation(position);
             }
             if (state === STACKER_STATES.RAISING_BASE ||
                 state === STACKER_STATES.LOWERING_BASE_TO_INITIAL_POSITION ||
@@ -152,6 +168,15 @@ export default class {
                 support.body.setNextKinematicTranslation(supportPosition);
                 support.body.setNextKinematicRotation(rotation);
             }
+            if (state === STACKER_STATES.RAISING_ARM_PROTECTION_LID ||
+                state === STACKER_STATES.LOWERING_ARM_PROTECTION_LID) {
+                const armProtectionLidPosition = new Vector3().setY(this.#stacker.position);
+                const pivotPosition = this.#armProtectionLidPivotPosition.clone().setY(this.#armProtectionLidPivotPosition.y + this.#stacker.position);
+                const rotation = new Quaternion().setFromAxisAngle(X_AXIS, this.#stacker.armProtectionLidAngle);
+                const position = armProtectionLidPosition.sub(pivotPosition).applyQuaternion(rotation).add(pivotPosition);
+                armProtectionLid.body.setNextKinematicTranslation(position);
+                armProtectionLid.body.setNextKinematicRotation(rotation);
+            }
             if (state === STACKER_STATES.INITIALIZING_COIN) {
                 const position = this.#dropPosition.clone();
                 position.setZ(position.z + this.#stacker.armPosition);
@@ -180,6 +205,7 @@ export default class {
             parts,
             position: this.#stacker.position,
             armPosition: this.#stacker.armPosition,
+            armProtectionLidAngle: this.#stacker.armProtectionLidAngle,
             rotations: this.#stacker.rotations,
             basePosition: this.#stacker.basePosition,
             baseAngle: this.#stacker.baseAngle,
@@ -193,6 +219,7 @@ export default class {
         this.#stacker.state = Symbol.for(stacker.state);
         this.#stacker.position = stacker.position;
         this.#stacker.armPosition = stacker.armPosition;
+        this.#stacker.armProtectionLidAngle = stacker.armProtectionLidAngle;
         this.#stacker.rotations = stacker.rotations;
         this.#stacker.basePosition = stacker.basePosition;
         this.#stacker.baseAngle = stacker.baseAngle;
@@ -235,6 +262,20 @@ function updateStackerState({ stacker }) {
             stacker.armPosition += ARM_SPEED;
             if (stacker.armPosition > ARM_MAX_POSITION) {
                 stacker.armPosition = ARM_MAX_POSITION;
+                stacker.nextState = STACKER_STATES.RAISING_ARM_PROTECTION_LID;
+            }
+            break;
+        case STACKER_STATES.RAISING_ARM_PROTECTION_LID:
+            stacker.armProtectionLidAngle += ARM_PROTECTION_LID_SPEED;
+            if (stacker.armProtectionLidAngle > ARM_PROTECTION_LID_MAX_ANGLE) {
+                stacker.armProtectionLidAngle = ARM_PROTECTION_LID_MAX_ANGLE;
+                stacker.nextState = STACKER_STATES.LOWERING_ARM_PROTECTION_LID;
+            }
+            break;
+        case STACKER_STATES.LOWERING_ARM_PROTECTION_LID:
+            stacker.armProtectionLidAngle -= ARM_PROTECTION_LID_SPEED;
+            if (stacker.armProtectionLidAngle < ARM_PROTECTION_LID_INITIAL_ANGLE) {
+                stacker.armProtectionLidAngle = ARM_PROTECTION_LID_INITIAL_ANGLE;
                 stacker.nextState = STACKER_STATES.CLEANING_UP_BASE;
             }
             break;
@@ -350,6 +391,7 @@ async function initializeModel({ scene }) {
     const parts = new Map();
     const dropPosition = new Vector3();
     const pivotPosition = new Vector3();
+    const armProtectionLidPivotPosition = new Vector3();
     mesh.traverse((child) => {
         if (child.isMesh) {
             const { material, geometry } = child;
@@ -368,6 +410,7 @@ async function initializeModel({ scene }) {
                 partData.friction = userData.friction;
                 partData.restitution = userData.restitution;
                 partData.kinematic = userData.kinematic;
+                partData.cuboid = userData.cuboid;
                 partData.meshes.push({
                     data: child,
                     vertices,
@@ -392,12 +435,15 @@ async function initializeModel({ scene }) {
             dropPosition.copy(child.position);
         } else if (child.name == PIVOT_POSITION) {
             pivotPosition.copy(child.position);
+        } else if (child.name == ARM_PROTECTION_LID_PIVOT_POSITION) {
+            armProtectionLidPivotPosition.copy(child.position);
         }
     });
     return {
         parts,
         dropPosition,
-        pivotPosition
+        pivotPosition,
+        armProtectionLidPivotPosition
     };
 };
 
@@ -415,28 +461,42 @@ function getPart(parts, name) {
 function initializeColliders({ scene, parts }) {
     let indexPart = 0;
     parts.forEach(partData => {
-        const { meshes, colliders, friction, restitution, kinematic } = partData;
+        const { meshes, colliders, friction, restitution, kinematic, cuboid } = partData;
         const body = partData.body = kinematic ? scene.createKinematicBody() : scene.createFixedBody();
         body.setEnabled(false);
-        const vertices = [];
-        const indices = [];
-        let offsetIndex = 0;
-        meshes.forEach(meshData => {
-            if (meshData.vertices) {
-                vertices.push(...meshData.vertices);
-                indices.push(...meshData.indices.map(index => index + offsetIndex));
-                offsetIndex += meshData.indices.length;
-            }
-        });
-        if (vertices.length > 0) {
-            const collider = scene.createTrimeshCollider({
-                vertices,
-                indices,
+        if (cuboid) {
+            const boundingBox = meshes[0].data.geometry.boundingBox;
+            const colliderSize = new Vector3(boundingBox.max.x - boundingBox.min.x, boundingBox.max.y - boundingBox.min.y, boundingBox.max.z - boundingBox.min.z);
+            const collider = scene.createCuboidCollider({
+                with: colliderSize.x,
+                height: colliderSize.y,
+                depth: colliderSize.z,
                 friction,
                 restitution
             }, body);
             collider.setCollisionGroups((1 << (indexPart % 16)) << 16 | (1 << (indexPart % 16)));
             indexPart++;
+        } else {
+            const vertices = [];
+            const indices = [];
+            let offsetIndex = 0;
+            meshes.forEach(meshData => {
+                if (meshData.vertices) {
+                    vertices.push(...meshData.vertices);
+                    indices.push(...meshData.indices.map(index => index + offsetIndex));
+                    offsetIndex += meshData.indices.length;
+                }
+            });
+            if (vertices.length > 0) {
+                const collider = scene.createTrimeshCollider({
+                    vertices,
+                    indices,
+                    friction,
+                    restitution
+                }, body);
+                collider.setCollisionGroups((1 << (indexPart % 16)) << 16 | (1 << (indexPart % 16)));
+                indexPart++;
+            }
         }
         colliders.forEach(colliderData => {
             const { radius, position, height } = colliderData;
