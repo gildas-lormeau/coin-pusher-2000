@@ -36,7 +36,7 @@ export default class {
     #tower = {
         state: TOWER_STATES.IDLE,
         pendingShots: 0,
-        parts: new Map(),
+        parts: null,
         position: POSITION_DOWN_Y,
         angle: ANGLE_IDLE,
         oscillationCount: 0,
