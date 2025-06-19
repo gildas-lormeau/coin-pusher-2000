@@ -363,7 +363,7 @@ function update({ instance, meshes, forceRefresh }) {
     instance.position.copy(instance.body.translation());
     instance.rotation.copy(instance.body.rotation());
     instance.matrix.compose(instance.position, instance.rotation, instance.used ? DEFAULT_SCALE : INITIAL_SCALE);
-    if (instance.used) {
+    if (instance.used || forceRefresh) {
         meshes.forEach(mesh => {
             mesh.setMatrixAt(instance.index, instance.matrix);
             mesh.instanceMatrix.needsUpdate = true;
