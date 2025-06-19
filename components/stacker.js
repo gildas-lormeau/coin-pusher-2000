@@ -9,32 +9,34 @@ const COIN_HEIGHT = 0.006;
 const X_AXIS = new Vector3(1, 0, 0);
 const Y_AXIS = new Vector3(0, 1, 0);
 const ARM_SPEED = 0.02;
-const ARM_DOOR_SPEED = 0.01;
-const BASE_MAX_SPEED = 0.01;
+const ARM_DOOR_SPEED = 0.0005;
 const BASE_SPEED = 0.0015;
 const STACKER_RAISING_SPEED = 0.003;
 const STACKER_LOWERING_SPEED = 0.001;
 const BASE_ROTATION_SPEED = Math.PI / 12;
-const BASE_ROTATION_CLEANUP_SPEED = Math.PI / 12;
+const BASE_ROTATION_CLEANUP_SPEED = Math.PI / 9;
 const ARM_PROTECTION_LID_SPEED = 0.1;
 const BASE_CLEANUP_ROTATIONS = 5;
-const COIN_SETTLED_POSITION_Y = 0.145;
+const COIN_SETTLED_POSITION_Y = 0.1425;
 const COIN_IMPULSE_FORCE = new Vector3(0, 0, -0.000015);
-const ARM_MAX_POSITION = 0.0825;
-const ARM_INITIAL_POSITION = 0;
-const ARM_MIN_POSITION = -0.07;
-const ARM_DOOR_INITIAL_POSITION = 0;
-const ARM_DOOR_MAX_POSITION = 0.025;
-const STACKER_MAX_POSITION = 0.225;
+const ARM_RETRACTED_POSITION = 0;
+const ARM_CIRCUMFERENCE_POSITION = -0.08;
+const ARM_CENTER_POSITION = -0.15;
+const ARM_DOOR_CLOSED_POSITION = 0;
+const ARM_DOOR_OPENED_POSITION = -0.025;
 const ROTATIONS_MAX = 6;
 const BASE_INITIAL_ANGLE = 0;
 const BASE_INITIAL_ROTATIONS = 0;
 const BASE_INITIAL_POSITION = 0;
+const BASE_READY_POSITION = -0.03;
+const SUPPORT_INITIAL_POSITION = 0;
+const SUPPORT_READY_POSITION = -0.01;
 const STACKER_INITIAL_POSITION = 0;
+const STACKER_CLEANUP_POSITION = 0.15;
+const STACKER_MAX_POSITION = 0.225;
 const COMPLETE_TURN_ANGLE = Math.PI * 2;
-const BASE_MAX_POSITION = 0.01275;
-const ARM_PROTECTION_LID_INITIAL_ANGLE = 0;
-const ARM_PROTECTION_LID_MAX_ANGLE = Math.PI / 3;
+const ARM_PROTECTION_LID_CLOSED_ANGLE = 0;
+const ARM_PROTECTION_LID_OPENED_ANGLE = Math.PI / 3;
 const LEVEL_INITIAL = 0;
 const LEVEL_MAX = 75;
 const BASE_PART_NAME = "base";
@@ -47,26 +49,25 @@ const ARM_DOOR_PART_NAME = "arm-door";
 const STACKER_STATES = {
     IDLE: Symbol.for("stacker-idle"),
     ACTIVATING: Symbol.for("stacker-activating"),
-    RAISING_STACKER: Symbol.for("stacker-raising-stacker"),
-    RAISING_BASE: Symbol.for("stacker-raising-base"),
-    HIDING_ARM: Symbol.for("stacker-hiding-arm"),
+    RAISING_STACKER_TO_CLEANUP_POSITION: Symbol.for("stacker-raising-stacker-to-cleanup-position"),
     CLOSING_ARM_DOOR: Symbol.for("stacker-closing-arm-door"),
     RAISING_ARM_PROTECTION_LID: Symbol.for("stacker-raising-arm-protection-lid"),
     LOWERING_ARM_PROTECTION_LID: Symbol.for("stacker-lowering-arm-protection-lid"),
+    LOWERING_SUPPORT_TO_READY_POSITION: Symbol.for("stacker-lowering-support-to-ready-position"),
+    LOWERING_BASE_TO_READY_POSITION: Symbol.for("stacker-lowering-base-to-ready-position"),
     CLEANING_UP_BASE: Symbol.for("stacker-cleaning-up-base"),
+    RAISING_STACKER: Symbol.for("stacker-raising-stacker"),
     OPENING_ARM_DOOR: Symbol.for("stacker-opening-arm-door"),
-    LOWERING_BASE_TO_INITIAL_POSITION: Symbol.for("stacker-lowering-base-to-initial-position"),
-    MOVING_ARM_TO_INITIAL_POSITION: Symbol.for("stacker-moving-arm-to-initial-position"),
+    MOVING_ARM_TO_CIRCUMFERENCE_POSITION: Symbol.for("stacker-moving-arm-to-circumference-position"),
     INITIALIZING_COIN: Symbol.for("stacker-initializing-coin"),
     PUSHING_COIN: Symbol.for("stacker-pushing-coin"),
     ROTATING_BASE: Symbol.for("stacker-rotating-base"),
-    MOVING_ARM_TO_CENTER: Symbol.for("stacker-moving-arm-to-center"),
-    MOVING_ARM_TO_RIGHT: Symbol.for("stacker-moving-arm-to-right"),
+    MOVING_ARM_TO_CENTER_POSITION: Symbol.for("stacker-moving-arm-to-center-position"),
     LOWERING_BASE: Symbol.for("stacker-lowering-base"),
-    RETRACTING_ARM: Symbol.for("stacker-retracting-arm"),
+    MOVING_ARM_BACK_TO_CIRCUMFERENCE_POSITION: Symbol.for("stacker-retracting-arm"),
     LOWERING_STACKER: Symbol.for("stacker-lowering-stacker"),
-    MOVING_ARM_BACK_TO_INITIAL_POSITION: Symbol.for("stacker-moving-arm-back-to-initial-position"),
-    LOWERING_BASE_BACK_TO_INITIAL_POSITION: Symbol.for("stacker-lowering-base-back-to-initial-position")
+    MOVING_ARM_TO_INITIAL_POSITION: Symbol.for("stacker-moving-arm-to-initial-position"),
+    PREPARING_IDLE: Symbol.for("stacker-preparing-idle")
 };
 
 export default class {
@@ -84,11 +85,12 @@ export default class {
         nextState: null,
         state: STACKER_STATES.IDLE,
         position: STACKER_INITIAL_POSITION,
-        armPosition: ARM_INITIAL_POSITION,
-        armProtectionLidAngle: ARM_PROTECTION_LID_INITIAL_ANGLE,
-        armDoorPosition: ARM_DOOR_INITIAL_POSITION,
-        rotations: BASE_INITIAL_ROTATIONS,
+        supportPosition: SUPPORT_INITIAL_POSITION,
         basePosition: BASE_INITIAL_POSITION,
+        armPosition: ARM_RETRACTED_POSITION,
+        armDoorPosition: ARM_DOOR_CLOSED_POSITION,
+        armProtectionLidAngle: ARM_PROTECTION_LID_CLOSED_ANGLE,
+        rotations: BASE_INITIAL_ROTATIONS,
         baseAngle: BASE_INITIAL_ANGLE
     };
 
@@ -130,70 +132,92 @@ export default class {
                     data.quaternion.copy(body.rotation());
                 });
             });
-            if (state === STACKER_STATES.RAISING_STACKER ||
+            if (state === STACKER_STATES.RAISING_STACKER_TO_CLEANUP_POSITION ||
+                state === STACKER_STATES.RAISING_STACKER ||
                 state === STACKER_STATES.LOWERING_STACKER) {
-                const position = new Vector3().copy(base.body.translation());
-                const armPosition = new Vector3().copy(arm.body.translation());
+                const stackerPosition = new Vector3().copy(base.body.translation());
+                const supportPosition = new Vector3().copy(support.body.translation());
                 const basePosition = new Vector3().copy(base.body.translation());
+                const armPosition = new Vector3().copy(arm.body.translation());
                 const armDoorPosition = new Vector3().copy(armDoor.body.translation());
-                position.setY(this.#stacker.position);
-                armPosition.setY(this.#stacker.position);
-                basePosition.setY(this.#stacker.position + this.#stacker.basePosition);
-                armDoorPosition.setY(this.#stacker.position + this.#stacker.armDoorPosition);
+                const armProtectionPosition = new Vector3().copy(armProtection.body.translation());
+                const armProtectionLidPosition = new Vector3().copy(armProtectionLid.body.translation());
+                stackerPosition.setY(this.#stacker.position);
+                let supportPositionY = this.#stacker.position + this.#stacker.supportPosition;
+                if (supportPositionY < 0) {
+                    supportPositionY = 0;
+                }
+                supportPosition.setY(this.#stacker.position + this.#stacker.supportPosition);
+                let basePositionY = this.#stacker.position + this.#stacker.supportPosition + this.#stacker.basePosition;
+                if (basePositionY < 0) {
+                    basePositionY = 0;
+                }
+                basePosition.setY(basePositionY);
+                armPosition.setY(this.#stacker.position + this.#stacker.armPosition);
+                armDoorPosition.setY(this.#stacker.position + this.#stacker.armPosition + this.#stacker.armDoorPosition);
+                armProtectionPosition.setY(this.#stacker.position + this.#stacker.armPosition);
+                armProtectionLidPosition.setY(this.#stacker.position + this.#stacker.armPosition);
+                support.body.setNextKinematicTranslation(supportPosition);
                 base.body.setNextKinematicTranslation(basePosition);
-                support.body.setNextKinematicTranslation(position);
                 arm.body.setNextKinematicTranslation(armPosition);
-                armProtection.body.setNextKinematicTranslation(position);
-                armProtectionLid.body.setNextKinematicTranslation(position);
+                armProtection.body.setNextKinematicTranslation(armProtectionPosition);
+                armProtectionLid.body.setNextKinematicTranslation(armProtectionLidPosition);
                 armDoor.body.setNextKinematicTranslation(armDoorPosition);
+            }
+            if (state === STACKER_STATES.LOWERING_SUPPORT_TO_READY_POSITION) {
+                const supportPosition = new Vector3().copy(support.body.translation());
+                const basePosition = new Vector3().copy(base.body.translation());
+                supportPosition.setY(this.#stacker.position + this.#stacker.supportPosition);
+                basePosition.setY(this.#stacker.position + this.#stacker.supportPosition + this.#stacker.basePosition);
+                base.body.setNextKinematicTranslation(basePosition);
+                support.body.setNextKinematicTranslation(supportPosition);
             }
             if (state === STACKER_STATES.LOWERING_STACKER) {
                 this.#stacker.coins.forEach(coin => coin.body.sleep());
             }
             if (state === STACKER_STATES.RAISING_BASE ||
-                state === STACKER_STATES.LOWERING_BASE_TO_INITIAL_POSITION ||
                 state === STACKER_STATES.LOWERING_BASE ||
-                state === STACKER_STATES.LOWERING_BASE_BACK_TO_INITIAL_POSITION) {
-                const position = new Vector3().copy(base.body.translation());
-                position.setY(this.#stacker.basePosition + this.#stacker.position);
-                base.body.setNextKinematicTranslation(position);
+                state === STACKER_STATES.LOWERING_BASE_TO_READY_POSITION) {
+                const basePosition = new Vector3().copy(base.body.translation());
+                basePosition.setY(this.#stacker.position + this.#stacker.supportPosition + this.#stacker.basePosition);
+                base.body.setNextKinematicTranslation(basePosition);
             }
-            if (state === STACKER_STATES.ACTIVATING ||
-                state === STACKER_STATES.MOVING_ARM_TO_INITIAL_POSITION ||
-                state === STACKER_STATES.MOVING_ARM_TO_CENTER ||
-                state === STACKER_STATES.MOVING_ARM_TO_RIGHT ||
-                state === STACKER_STATES.RETRACTING_ARM ||
-                state === STACKER_STATES.MOVING_ARM_BACK_TO_INITIAL_POSITION) {
-                const position = new Vector3().copy(arm.body.translation());
-                position.setZ(this.#stacker.armPosition);
-                arm.body.setNextKinematicTranslation(position);
+            if (state === STACKER_STATES.MOVING_ARM_TO_CIRCUMFERENCE_POSITION ||
+                state === STACKER_STATES.MOVING_ARM_TO_CENTER_POSITION ||
+                state === STACKER_STATES.MOVING_ARM_BACK_TO_CIRCUMFERENCE_POSITION ||
+                state === STACKER_STATES.MOVING_ARM_TO_INITIAL_POSITION) {
+                const armPosition = new Vector3().copy(arm.body.translation());
+                armPosition.setZ(this.#stacker.armPosition);
+                arm.body.setNextKinematicTranslation(armPosition);
             }
             if (state === STACKER_STATES.CLOSING_ARM_DOOR ||
                 state === STACKER_STATES.OPENING_ARM_DOOR) {
-                const position = new Vector3().copy(armDoor.body.translation());
-                position.setY(this.#stacker.position + this.#stacker.armDoorPosition);
-                armDoor.body.setNextKinematicTranslation(position);
+                const armDoorPosition = new Vector3().copy(armDoor.body.translation());
+                armDoorPosition.setY(this.#stacker.position + this.#stacker.armPosition + this.#stacker.armDoorPosition);
+                armDoor.body.setNextKinematicTranslation(armDoorPosition);
             }
+
             if (state === STACKER_STATES.CLEANING_UP_BASE ||
                 state === STACKER_STATES.ROTATING_BASE) {
                 const rotation = new Quaternion().setFromAxisAngle(Y_AXIS, this.#stacker.baseAngle);
-                const position = new Vector3().sub(this.#pivotPosition).applyQuaternion(rotation).add(this.#pivotPosition);
-                position.setY(this.#stacker.basePosition + this.#stacker.position);
-                base.body.setNextKinematicTranslation(position);
+                const basePosition = new Vector3().sub(this.#pivotPosition).applyQuaternion(rotation).add(this.#pivotPosition);
+                basePosition.setY(this.#stacker.position + this.#stacker.supportPosition + this.#stacker.basePosition);
+                base.body.setNextKinematicTranslation(basePosition);
                 base.body.setNextKinematicRotation(rotation);
                 const supportPosition = new Vector3().sub(this.#pivotPosition).applyQuaternion(rotation).add(this.#pivotPosition);
-                supportPosition.setY(this.#stacker.position);
+                supportPosition.setY(this.#stacker.position + this.#stacker.supportPosition);
                 support.body.setNextKinematicTranslation(supportPosition);
                 support.body.setNextKinematicRotation(rotation);
             }
+
             if (state === STACKER_STATES.RAISING_ARM_PROTECTION_LID ||
                 state === STACKER_STATES.LOWERING_ARM_PROTECTION_LID) {
-                const armProtectionLidPosition = new Vector3().setY(this.#stacker.position);
+                let armProtectionLidPosition = new Vector3().setY(this.#stacker.position + this.#stacker.armPosition);
                 const pivotPosition = this.#armProtectionLidPivotPosition.clone().setY(this.#armProtectionLidPivotPosition.y + this.#stacker.position);
-                const rotation = new Quaternion().setFromAxisAngle(X_AXIS, this.#stacker.armProtectionLidAngle);
-                const position = armProtectionLidPosition.sub(pivotPosition).applyQuaternion(rotation).add(pivotPosition);
-                armProtectionLid.body.setNextKinematicTranslation(position);
-                armProtectionLid.body.setNextKinematicRotation(rotation);
+                const armProtectionLidRotation = new Quaternion().setFromAxisAngle(X_AXIS, this.#stacker.armProtectionLidAngle);
+                armProtectionLidPosition = armProtectionLidPosition.sub(pivotPosition).applyQuaternion(armProtectionLidRotation).add(pivotPosition);
+                armProtectionLid.body.setNextKinematicTranslation(armProtectionLidPosition);
+                armProtectionLid.body.setNextKinematicRotation(armProtectionLidRotation);
             }
             if (state === STACKER_STATES.INITIALIZING_COIN) {
                 const position = this.#dropPosition.clone();
@@ -275,16 +299,37 @@ function updateStackerState({ stacker }) {
         case STACKER_STATES.IDLE:
             break;
         case STACKER_STATES.ACTIVATING:
-            stacker.armPosition += ARM_SPEED;
-            if (stacker.armPosition > ARM_MAX_POSITION) {
-                stacker.armPosition = ARM_MAX_POSITION;
-                stacker.nextState = STACKER_STATES.CLOSING_ARM_DOOR;
+            stacker.nextState = STACKER_STATES.RAISING_STACKER_TO_CLEANUP_POSITION;
+            break;
+        case STACKER_STATES.RAISING_STACKER_TO_CLEANUP_POSITION:
+            stacker.position += STACKER_RAISING_SPEED;
+            if (stacker.position > STACKER_CLEANUP_POSITION) {
+                stacker.position = STACKER_CLEANUP_POSITION;
+                stacker.nextState = STACKER_STATES.RAISING_ARM_PROTECTION_LID;
             }
             break;
-        case STACKER_STATES.CLOSING_ARM_DOOR:
-            stacker.armDoorPosition += ARM_DOOR_SPEED;
-            if (stacker.armDoorPosition > ARM_DOOR_MAX_POSITION) {
-                stacker.armDoorPosition = ARM_DOOR_MAX_POSITION;
+        case STACKER_STATES.RAISING_ARM_PROTECTION_LID:
+            stacker.armProtectionLidAngle += ARM_PROTECTION_LID_SPEED;
+            if (stacker.armProtectionLidAngle > ARM_PROTECTION_LID_OPENED_ANGLE) {
+                stacker.armProtectionLidAngle = ARM_PROTECTION_LID_OPENED_ANGLE;
+                stacker.nextState = STACKER_STATES.LOWERING_ARM_PROTECTION_LID;
+            }
+            break;
+        case STACKER_STATES.LOWERING_ARM_PROTECTION_LID:
+            stacker.armProtectionLidAngle -= ARM_PROTECTION_LID_SPEED;
+            if (stacker.armProtectionLidAngle < ARM_PROTECTION_LID_CLOSED_ANGLE) {
+                stacker.armProtectionLidAngle = ARM_PROTECTION_LID_CLOSED_ANGLE;
+                if (stacker.position == STACKER_CLEANUP_POSITION) {
+                    stacker.nextState = STACKER_STATES.CLEANING_UP_BASE;
+                } else {
+                    stacker.nextState = STACKER_STATES.OPENING_ARM_DOOR;
+                }
+            }
+            break;
+        case STACKER_STATES.CLEANING_UP_BASE:
+            stacker.baseAngle -= BASE_ROTATION_CLEANUP_SPEED;
+            if (stacker.baseAngle < -BASE_CLEANUP_ROTATIONS * COMPLETE_TURN_ANGLE) {
+                stacker.baseAngle = BASE_INITIAL_ANGLE;
                 stacker.nextState = STACKER_STATES.RAISING_STACKER;
             }
             break;
@@ -292,55 +337,34 @@ function updateStackerState({ stacker }) {
             stacker.position += STACKER_RAISING_SPEED;
             if (stacker.position > STACKER_MAX_POSITION) {
                 stacker.position = STACKER_MAX_POSITION;
-                stacker.nextState = STACKER_STATES.RAISING_BASE;
+                stacker.nextState = STACKER_STATES.LOWERING_SUPPORT_TO_READY_POSITION;
             }
             break;
-        case STACKER_STATES.RAISING_BASE:
-            stacker.basePosition += BASE_MAX_SPEED;
-            if (stacker.basePosition > BASE_MAX_POSITION) {
-                stacker.basePosition = BASE_MAX_POSITION;
+        case STACKER_STATES.LOWERING_SUPPORT_TO_READY_POSITION:
+            stacker.supportPosition -= STACKER_LOWERING_SPEED;
+            if (stacker.supportPosition < SUPPORT_READY_POSITION) {
+                stacker.supportPosition = SUPPORT_READY_POSITION;
+                stacker.nextState = STACKER_STATES.LOWERING_BASE_TO_READY_POSITION;
+            }
+            break;
+        case STACKER_STATES.LOWERING_BASE_TO_READY_POSITION:
+            stacker.basePosition -= BASE_SPEED;
+            if (stacker.basePosition < BASE_READY_POSITION) {
+                stacker.basePosition = BASE_READY_POSITION;
                 stacker.nextState = STACKER_STATES.RAISING_ARM_PROTECTION_LID;
-            }
-            break;
-        case STACKER_STATES.RAISING_ARM_PROTECTION_LID:
-            stacker.armProtectionLidAngle += ARM_PROTECTION_LID_SPEED;
-            if (stacker.armProtectionLidAngle > ARM_PROTECTION_LID_MAX_ANGLE) {
-                stacker.armProtectionLidAngle = ARM_PROTECTION_LID_MAX_ANGLE;
-                stacker.nextState = STACKER_STATES.LOWERING_ARM_PROTECTION_LID;
-            }
-            break;
-        case STACKER_STATES.LOWERING_ARM_PROTECTION_LID:
-            stacker.armProtectionLidAngle -= ARM_PROTECTION_LID_SPEED;
-            if (stacker.armProtectionLidAngle < ARM_PROTECTION_LID_INITIAL_ANGLE) {
-                stacker.armProtectionLidAngle = ARM_PROTECTION_LID_INITIAL_ANGLE;
-                stacker.nextState = STACKER_STATES.CLEANING_UP_BASE;
-            }
-            break;
-        case STACKER_STATES.CLEANING_UP_BASE:
-            stacker.baseAngle -= BASE_ROTATION_CLEANUP_SPEED;
-            if (stacker.baseAngle < -BASE_CLEANUP_ROTATIONS * COMPLETE_TURN_ANGLE) {
-                stacker.baseAngle = BASE_INITIAL_ANGLE;
-                stacker.nextState = STACKER_STATES.OPENING_ARM_DOOR;
             }
             break;
         case STACKER_STATES.OPENING_ARM_DOOR:
             stacker.armDoorPosition -= ARM_DOOR_SPEED;
-            if (stacker.armDoorPosition < ARM_DOOR_INITIAL_POSITION) {
-                stacker.armDoorPosition = ARM_DOOR_INITIAL_POSITION;
-                stacker.nextState = STACKER_STATES.LOWERING_BASE_TO_INITIAL_POSITION;
+            if (stacker.armDoorPosition < ARM_DOOR_OPENED_POSITION) {
+                stacker.armDoorPosition = ARM_DOOR_OPENED_POSITION;
+                stacker.nextState = STACKER_STATES.MOVING_ARM_TO_CIRCUMFERENCE_POSITION;
             }
             break;
-        case STACKER_STATES.LOWERING_BASE_TO_INITIAL_POSITION:
-            stacker.basePosition -= BASE_MAX_SPEED;
-            if (stacker.basePosition < BASE_INITIAL_POSITION) {
-                stacker.basePosition = BASE_INITIAL_POSITION;
-                stacker.nextState = STACKER_STATES.MOVING_ARM_TO_INITIAL_POSITION;
-            }
-            break;
-        case STACKER_STATES.MOVING_ARM_TO_INITIAL_POSITION:
+        case STACKER_STATES.MOVING_ARM_TO_CIRCUMFERENCE_POSITION:
             stacker.armPosition -= ARM_SPEED;
-            if (stacker.armPosition < ARM_INITIAL_POSITION) {
-                stacker.armPosition = ARM_INITIAL_POSITION;
+            if (stacker.armPosition < ARM_CIRCUMFERENCE_POSITION) {
+                stacker.armPosition = ARM_CIRCUMFERENCE_POSITION;
                 stacker.nextState = STACKER_STATES.INITIALIZING_COIN;
             }
             break;
@@ -349,11 +373,11 @@ function updateStackerState({ stacker }) {
             break;
         case STACKER_STATES.PUSHING_COIN:
             if (stacker.coin.position.y < COIN_SETTLED_POSITION_Y + stacker.position) {
-                if (stacker.armPosition === ARM_INITIAL_POSITION) {
+                if (stacker.armPosition === ARM_CIRCUMFERENCE_POSITION) {
                     stacker.rotations++;
                     stacker.nextState = STACKER_STATES.ROTATING_BASE;
                 } else {
-                    stacker.nextState = STACKER_STATES.MOVING_ARM_TO_RIGHT;
+                    stacker.nextState = STACKER_STATES.LOWERING_BASE;
                 }
             }
             break;
@@ -365,42 +389,49 @@ function updateStackerState({ stacker }) {
                 if (stacker.rotations == ROTATIONS_MAX) {
                     stacker.rotations = BASE_INITIAL_ROTATIONS;
                     stacker.baseAngle = BASE_INITIAL_ANGLE;
-                    stacker.nextState = STACKER_STATES.MOVING_ARM_TO_CENTER;
+                    stacker.nextState = STACKER_STATES.MOVING_ARM_TO_CENTER_POSITION;
                 } else {
                     stacker.nextState = STACKER_STATES.INITIALIZING_COIN;
                 }
             }
             break;
-        case STACKER_STATES.MOVING_ARM_TO_CENTER:
+        case STACKER_STATES.MOVING_ARM_TO_CENTER_POSITION:
             stacker.armPosition -= ARM_SPEED;
-            if (stacker.armPosition < ARM_MIN_POSITION) {
-                stacker.armPosition = ARM_MIN_POSITION;
+            if (stacker.armPosition < ARM_CENTER_POSITION) {
+                stacker.armPosition = ARM_CENTER_POSITION;
                 stacker.nextState = STACKER_STATES.INITIALIZING_COIN;
-            }
-            break;
-        case STACKER_STATES.MOVING_ARM_TO_RIGHT:
-            stacker.armPosition += ARM_SPEED;
-            if (stacker.armPosition > ARM_INITIAL_POSITION) {
-                stacker.armPosition = ARM_INITIAL_POSITION;
-                stacker.level++;
-                if (stacker.level < LEVEL_MAX) {
-                    stacker.nextState = STACKER_STATES.LOWERING_BASE;
-                } else {
-                    stacker.level = LEVEL_INITIAL;
-                    stacker.nextState = STACKER_STATES.RETRACTING_ARM;
-                }
             }
             break;
         case STACKER_STATES.LOWERING_BASE:
             stacker.basePosition -= BASE_SPEED;
             if (COIN_SETTLED_POSITION_Y + stacker.position - stacker.coin.position.y > COIN_HEIGHT) {
-                stacker.nextState = STACKER_STATES.INITIALIZING_COIN;
+                stacker.nextState = STACKER_STATES.MOVING_ARM_BACK_TO_CIRCUMFERENCE_POSITION;
             }
             break;
-        case STACKER_STATES.RETRACTING_ARM:
+        case STACKER_STATES.MOVING_ARM_BACK_TO_CIRCUMFERENCE_POSITION:
             stacker.armPosition += ARM_SPEED;
-            if (stacker.armPosition > ARM_MAX_POSITION) {
-                stacker.armPosition = ARM_MAX_POSITION;
+            if (stacker.armPosition > ARM_CIRCUMFERENCE_POSITION) {
+                stacker.armPosition = ARM_CIRCUMFERENCE_POSITION;
+                stacker.level++;
+                if (stacker.level < LEVEL_MAX) {
+                    stacker.nextState = STACKER_STATES.INITIALIZING_COIN;
+                } else {
+                    stacker.level = LEVEL_INITIAL;
+                    stacker.nextState = STACKER_STATES.MOVING_ARM_TO_INITIAL_POSITION;
+                }
+            }
+            break;
+        case STACKER_STATES.MOVING_ARM_TO_INITIAL_POSITION:
+            stacker.armPosition -= ARM_SPEED;
+            if (stacker.armPosition < ARM_RETRACTED_POSITION) {
+                stacker.armPosition = ARM_RETRACTED_POSITION;
+                stacker.nextState = STACKER_STATES.CLOSING_ARM_DOOR;
+            }
+            break;
+        case STACKER_STATES.CLOSING_ARM_DOOR:
+            stacker.armDoorPosition += ARM_DOOR_SPEED;
+            if (stacker.armDoorPosition > ARM_DOOR_CLOSED_POSITION) {
+                stacker.armDoorPosition = ARM_DOOR_CLOSED_POSITION;
                 stacker.nextState = STACKER_STATES.LOWERING_STACKER;
             }
             break;
@@ -408,23 +439,15 @@ function updateStackerState({ stacker }) {
             stacker.position -= STACKER_LOWERING_SPEED;
             if (stacker.position < STACKER_INITIAL_POSITION) {
                 stacker.position = STACKER_INITIAL_POSITION;
+                stacker.coin = null;
                 stacker.coins = [];
-                stacker.nextState = STACKER_STATES.MOVING_ARM_BACK_TO_INITIAL_POSITION;
-            }
-            break;
-        case STACKER_STATES.MOVING_ARM_BACK_TO_INITIAL_POSITION:
-            stacker.armPosition -= ARM_SPEED;
-            if (stacker.armPosition < ARM_INITIAL_POSITION) {
-                stacker.armPosition = ARM_INITIAL_POSITION;
-                stacker.nextState = STACKER_STATES.LOWERING_BASE_BACK_TO_INITIAL_POSITION;
-            }
-            break;
-        case STACKER_STATES.LOWERING_BASE_BACK_TO_INITIAL_POSITION:
-            stacker.basePosition += BASE_MAX_SPEED;
-            if (stacker.basePosition > BASE_INITIAL_POSITION) {
                 stacker.basePosition = BASE_INITIAL_POSITION;
-                stacker.nextState = STACKER_STATES.IDLE;
+                stacker.supportPosition = SUPPORT_INITIAL_POSITION;
+                stacker.nextState = STACKER_STATES.PREPARING_IDLE;
             }
+            break;
+        case STACKER_STATES.PREPARING_IDLE:
+            stacker.nextState = STACKER_STATES.IDLE;
             break;
         default:
             break;
@@ -457,6 +480,7 @@ async function initializeModel({ scene }) {
                 partData.restitution = userData.restitution;
                 partData.kinematic = userData.kinematic;
                 partData.cuboid = userData.cuboid;
+                partData.cylinder = userData.cylinder;
                 partData.meshes.push({
                     data: child,
                     vertices,
@@ -507,21 +531,32 @@ function getPart(parts, name) {
 function initializeColliders({ scene, parts }) {
     let indexPart = 0;
     parts.forEach(partData => {
-        const { meshes, colliders, friction, restitution, kinematic, cuboid } = partData;
+        const { meshes, colliders, friction, restitution, kinematic, cuboid, cylinder } = partData;
         const body = partData.body = kinematic ? scene.createKinematicBody() : scene.createFixedBody();
         body.setEnabled(false);
-        if (cuboid) {
+        if (cuboid || cylinder) {
             const boundingBox = meshes[0].data.geometry.boundingBox;
             const position = new Vector3().addVectors(boundingBox.min, boundingBox.max).multiplyScalar(0.5).toArray();
             const colliderSize = new Vector3(boundingBox.max.x - boundingBox.min.x, boundingBox.max.y - boundingBox.min.y, boundingBox.max.z - boundingBox.min.z);
-            const collider = scene.createCuboidCollider({
-                position,
-                width: colliderSize.x,
-                height: colliderSize.y,
-                depth: colliderSize.z,
-                friction,
-                restitution,
-            }, body);
+            let collider;
+            if (cuboid) {
+                collider = scene.createCuboidCollider({
+                    position,
+                    width: colliderSize.x,
+                    height: colliderSize.y,
+                    depth: colliderSize.z,
+                    friction,
+                    restitution,
+                }, body);
+            } else {
+                collider = scene.createCylinderCollider({
+                    position,
+                    radius: colliderSize.x / 2,
+                    height: colliderSize.y,
+                    friction,
+                    restitution
+                }, body);
+            }
             collider.setCollisionGroups((1 << (indexPart % 16)) << 16 | (1 << (indexPart % 16)));
             indexPart++;
         } else {
