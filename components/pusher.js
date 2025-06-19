@@ -207,7 +207,8 @@ function initializeColliders({ scene, parts }) {
         scene.createKinematicBody(),
         scene.createKinematicBody()
     ];
-    scene.createCuboidCollider({
+    let indexPart = 0, collider;
+    collider = scene.createCuboidCollider({
         width: WIDTH,
         height: PUSHER_WALL_WIDTH,
         depth: DEPTH,
@@ -215,7 +216,8 @@ function initializeColliders({ scene, parts }) {
         restitution: RESTITUTION,
         position: [0, (HEIGHT - PUSHER_WALL_WIDTH) / 2, 0]
     }, platform.bodies[0]);
-    scene.createCuboidCollider({
+    collider.setCollisionGroups((1 << (indexPart % 16)) << 16 | (1 << (indexPart % 16)));
+    collider = scene.createCuboidCollider({
         width: PUSHER_WALL_WIDTH,
         height: HEIGHT - PUSHER_WALL_WIDTH,
         depth: DEPTH,
@@ -223,7 +225,8 @@ function initializeColliders({ scene, parts }) {
         restitution: RESTITUTION,
         position: [-(WIDTH - PUSHER_WALL_WIDTH) / 2, -PUSHER_WALL_WIDTH / 2, 0]
     }, platform.bodies[1]);
-    scene.createCuboidCollider({
+    collider.setCollisionGroups((1 << (indexPart % 16)) << 16 | (1 << (indexPart % 16)));
+    collider = scene.createCuboidCollider({
         width: PUSHER_WALL_WIDTH,
         height: HEIGHT - PUSHER_WALL_WIDTH,
         depth: DEPTH,
@@ -231,7 +234,8 @@ function initializeColliders({ scene, parts }) {
         restitution: RESTITUTION,
         position: [(WIDTH - PUSHER_WALL_WIDTH) / 2, -PUSHER_WALL_WIDTH / 2, 0]
     }, platform.bodies[2]);
-    scene.createCuboidCollider({
+    collider.setCollisionGroups((1 << (indexPart % 16)) << 16 | (1 << (indexPart % 16)));
+    collider = scene.createCuboidCollider({
         width: WIDTH,
         height: EDGE_HEIGHT,
         depth: EDGE_DEPTH,
@@ -240,8 +244,10 @@ function initializeColliders({ scene, parts }) {
         position: [0, HEIGHT / 2 - PUSHER_WALL_WIDTH, DEPTH / 2],
         rotation: [Math.PI / 4, 0, 0]
     }, platform.bodies[3]);
+    collider.setCollisionGroups((1 << (indexPart % 16)) << 16 | (1 << (indexPart % 16)));
+    indexPart++;
     door.body = scene.createKinematicBody();
-    scene.createCuboidCollider({
+    collider = scene.createCuboidCollider({
         width: WIDTH - PUSHER_WALL_WIDTH * 2,
         height: HEIGHT - PUSHER_WALL_WIDTH,
         depth: PUSHER_WALL_WIDTH,
@@ -249,9 +255,11 @@ function initializeColliders({ scene, parts }) {
         restitution: RESTITUTION,
         position: [0, -PUSHER_WALL_WIDTH / 2, (DEPTH - PUSHER_WALL_WIDTH) / 2 - door.position]
     }, door.body);
+    collider.setCollisionGroups((1 << (indexPart % 16)) << 16 | (1 << (indexPart % 16)));
+    indexPart++;
     door.body.setSoftCcdPrediction(DOOR_SOFT_CCD_PREDICTION);
     const cabinetBody = scene.createFixedBody();
-    scene.createCuboidCollider({
+    collider = scene.createCuboidCollider({
         width: FLOOR_BACK_WIDTH,
         height: FLOOR_HEIGHT,
         depth: FLOOR_BACK_DEPTH,
@@ -259,7 +267,8 @@ function initializeColliders({ scene, parts }) {
         restitution: FLOOR_RESTITUTION,
         position: FLOOR_BACK_POSITION
     }, cabinetBody);
-    scene.createCuboidCollider({
+    collider.setCollisionGroups((1 << (indexPart % 16)) << 16 | (1 << (indexPart % 16)));
+    collider = scene.createCuboidCollider({
         width: FLOOR_FRONT_WIDTH,
         height: FLOOR_HEIGHT,
         depth: FLOOR_FRONT_DEPTH,
@@ -267,7 +276,8 @@ function initializeColliders({ scene, parts }) {
         restitution: FLOOR_RESTITUTION,
         position: FLOOR_FRONT_POSITION
     }, cabinetBody);
-    scene.createCuboidCollider({
+    collider.setCollisionGroups((1 << (indexPart % 16)) << 16 | (1 << (indexPart % 16)));
+    collider = scene.createCuboidCollider({
         width: WALL_WIDTH,
         height: WALL_HEIGHT,
         depth: WALL_DEPTH,
@@ -275,7 +285,8 @@ function initializeColliders({ scene, parts }) {
         restitution: RESTITUTION,
         position: LEFT_WALL_POSITION
     }, cabinetBody);
-    scene.createCuboidCollider({
+    collider.setCollisionGroups((1 << (indexPart % 16)) << 16 | (1 << (indexPart % 16)));
+    collider = scene.createCuboidCollider({
         width: WALL_WIDTH,
         height: WALL_HEIGHT,
         depth: WALL_DEPTH,
@@ -283,4 +294,5 @@ function initializeColliders({ scene, parts }) {
         restitution: RESTITUTION,
         position: RIGHT_WALL_POSITION
     }, cabinetBody);
+    collider.setCollisionGroups((1 << (indexPart % 16)) << 16 | (1 << (indexPart % 16)));
 }
