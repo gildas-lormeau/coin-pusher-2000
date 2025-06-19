@@ -17,7 +17,7 @@ const BASE_ROTATION_SPEED = Math.PI / 12;
 const BASE_ROTATION_CLEANUP_SPEED = Math.PI / 9;
 const ARM_PROTECTION_LID_SPEED = 0.1;
 const BASE_CLEANUP_ROTATIONS = 5;
-const COIN_SETTLED_POSITION_Y = 0.1425;
+const COIN_SETTLED_POSITION_Y = 0.143;
 const COIN_IMPULSE_FORCE = new Vector3(0, 0, -0.000015);
 const ARM_RETRACTED_POSITION = 0;
 const ARM_CIRCUMFERENCE_POSITION = -0.08;
@@ -38,6 +38,8 @@ const COMPLETE_TURN_ANGLE = Math.PI * 2;
 const ARM_PROTECTION_LID_CLOSED_ANGLE = 0;
 const ARM_PROTECTION_LID_OPENED_ANGLE = Math.PI / 3;
 const LEVEL_INITIAL = 0;
+const STACKS_MIN = 1;
+const LEVEL_MIN = 5;
 const LEVEL_MAX = 75;
 const BASE_PART_NAME = "base";
 const SUPPORT_PART_NAME = "support";
@@ -65,8 +67,11 @@ const STACKER_STATES = {
     MOVING_ARM_TO_CENTER_POSITION: Symbol.for("stacker-moving-arm-to-center-position"),
     LOWERING_BASE: Symbol.for("stacker-lowering-base"),
     MOVING_ARM_BACK_TO_CIRCUMFERENCE_POSITION: Symbol.for("stacker-retracting-arm"),
-    LOWERING_STACKER: Symbol.for("stacker-lowering-stacker"),
+    FINISHING_LEVEL: Symbol.for("stacker-finishing-level"),
     MOVING_ARM_TO_INITIAL_POSITION: Symbol.for("stacker-moving-arm-to-initial-position"),
+    ALIGNING_COINS: Symbol.for("stacker-aligning-coins"),
+    LOWERING_STACKER: Symbol.for("stacker-lowering-stacker"),
+    RESETTING_BASE_ROTATION: Symbol.for("stacker-resetting-base-rotation"),
     PREPARING_IDLE: Symbol.for("stacker-preparing-idle")
 };
 
@@ -83,6 +88,8 @@ export default class {
         coin: null,
         coins: [],
         nextState: null,
+        stacks: -1,
+        levels: -1,
         state: STACKER_STATES.IDLE,
         position: STACKER_INITIAL_POSITION,
         supportPosition: SUPPORT_INITIAL_POSITION,
@@ -196,9 +203,10 @@ export default class {
                 armDoorPosition.setY(this.#stacker.position + this.#stacker.armPosition + this.#stacker.armDoorPosition);
                 armDoor.body.setNextKinematicTranslation(armDoorPosition);
             }
-
             if (state === STACKER_STATES.CLEANING_UP_BASE ||
-                state === STACKER_STATES.ROTATING_BASE) {
+                state === STACKER_STATES.ROTATING_BASE ||
+                state === STACKER_STATES.ALIGNING_COINS ||
+                state === STACKER_STATES.RESETTING_BASE_ROTATION) {
                 const rotation = new Quaternion().setFromAxisAngle(Y_AXIS, this.#stacker.baseAngle);
                 const basePosition = new Vector3().sub(this.#pivotPosition).applyQuaternion(rotation).add(this.#pivotPosition);
                 basePosition.setY(this.#stacker.position + this.#stacker.supportPosition + this.#stacker.basePosition);
@@ -209,7 +217,6 @@ export default class {
                 support.body.setNextKinematicTranslation(supportPosition);
                 support.body.setNextKinematicRotation(rotation);
             }
-
             if (state === STACKER_STATES.RAISING_ARM_PROTECTION_LID ||
                 state === STACKER_STATES.LOWERING_ARM_PROTECTION_LID) {
                 let armProtectionLidPosition = new Vector3().setY(this.#stacker.position + this.#stacker.armPosition);
@@ -236,8 +243,10 @@ export default class {
         }
     }
 
-    deliver() {
+    deliver({ stacks = STACKS_MIN, levels = LEVEL_MIN } = { stacks: STACKS_MIN, levels: LEVEL_MIN }) {
         if (this.#stacker.state === STACKER_STATES.IDLE) {
+            this.#stacker.stacks = stacks;
+            this.#stacker.levels = levels;
             this.#stacker.state = STACKER_STATES.ACTIVATING;
         }
     }
@@ -254,13 +263,16 @@ export default class {
             state: this.#stacker.state.description,
             parts,
             position: this.#stacker.position,
-            armPosition: this.#stacker.armPosition,
-            armProtectionLidAngle: this.#stacker.armProtectionLidAngle,
-            armDoorPosition: this.#stacker.armDoorPosition,
-            rotations: this.#stacker.rotations,
+            supportPosition: this.#stacker.supportPosition,
             basePosition: this.#stacker.basePosition,
+            armPosition: this.#stacker.armPosition,
+            armDoorPosition: this.#stacker.armDoorPosition,
+            armProtectionLidAngle: this.#stacker.armProtectionLidAngle,
+            rotations: this.#stacker.rotations,
             baseAngle: this.#stacker.baseAngle,
             level: this.#stacker.level,
+            stacks: this.#stacker.stacks,
+            levels: this.#stacker.levels,
             nextState: this.#stacker.nextState ? this.#stacker.nextState.description : null,
             coinHandle: this.#stacker.coin ? this.#stacker.coin.handle : null,
             coinsHandles
@@ -270,19 +282,23 @@ export default class {
     load(stacker) {
         this.#stacker.state = Symbol.for(stacker.state);
         this.#stacker.position = stacker.position;
-        this.#stacker.armPosition = stacker.armPosition;
-        this.#stacker.armProtectionLidAngle = stacker.armProtectionLidAngle;
-        this.#stacker.armDoorPosition = stacker.armDoorPosition;
-        this.#stacker.rotations = stacker.rotations;
+        this.#stacker.supportPosition = stacker.supportPosition;
         this.#stacker.basePosition = stacker.basePosition;
+        this.#stacker.armPosition = stacker.armPosition;
+        this.#stacker.armDoorPosition = stacker.armDoorPosition;
+        this.#stacker.armProtectionLidAngle = stacker.armProtectionLidAngle;
+        this.#stacker.rotations = stacker.rotations;
         this.#stacker.baseAngle = stacker.baseAngle;
         this.#stacker.level = stacker.level;
+        this.#stacker.stacks = stacker.stacks;
+        this.#stacker.levels = stacker.levels;
         this.#stacker.nextState = stacker.nextState ? Symbol.for(stacker.nextState) : null;
         if (stacker.coinHandle) {
             this.#stacker.coin = this.#scene.worldBodies.get(stacker.coinHandle);
         } else {
             this.#stacker.coin = null;
         }
+        this.#stacker.coins = [];
         stacker.coinsHandles.forEach(handle => this.#stacker.coins.push(this.#scene.worldBodies.get(handle)));
         this.#stacker.parts.forEach((partData, name) => {
             const loadedPart = stacker.parts[name];
@@ -294,6 +310,7 @@ export default class {
 }
 
 function updateStackerState({ stacker }) {
+    let targetAngle;
     stacker.nextState = null;
     switch (stacker.state) {
         case STACKER_STATES.IDLE:
@@ -358,7 +375,11 @@ function updateStackerState({ stacker }) {
             stacker.armDoorPosition -= ARM_DOOR_SPEED;
             if (stacker.armDoorPosition < ARM_DOOR_OPENED_POSITION) {
                 stacker.armDoorPosition = ARM_DOOR_OPENED_POSITION;
-                stacker.nextState = STACKER_STATES.MOVING_ARM_TO_CIRCUMFERENCE_POSITION;
+                if (stacker.stacks == 1) {
+                    stacker.nextState = STACKER_STATES.MOVING_ARM_TO_CENTER_POSITION;
+                } else {
+                    stacker.nextState = STACKER_STATES.MOVING_ARM_TO_CIRCUMFERENCE_POSITION;
+                }
             }
             break;
         case STACKER_STATES.MOVING_ARM_TO_CIRCUMFERENCE_POSITION:
@@ -373,8 +394,18 @@ function updateStackerState({ stacker }) {
             break;
         case STACKER_STATES.PUSHING_COIN:
             if (stacker.coin.position.y < COIN_SETTLED_POSITION_Y + stacker.position) {
-                if (stacker.armPosition === ARM_CIRCUMFERENCE_POSITION) {
-                    stacker.rotations++;
+                if (stacker.stacks == 1) {
+                    stacker.nextState = STACKER_STATES.LOWERING_BASE;
+                } else if (stacker.armPosition === ARM_CIRCUMFERENCE_POSITION) {
+                    if (stacker.stacks == 2 || stacker.stacks == 3) {
+                        stacker.rotations += 3;
+                    } else if (stacker.stacks == 4) {
+                        stacker.rotations += 2;
+                    } else if (stacker.stacks == 5) {
+                        stacker.rotations += stacker.rotations % 3 == 0 ? 1 : 2;
+                    } else {
+                        stacker.rotations++;
+                    }
                     stacker.nextState = STACKER_STATES.ROTATING_BASE;
                 } else {
                     stacker.nextState = STACKER_STATES.LOWERING_BASE;
@@ -383,13 +414,17 @@ function updateStackerState({ stacker }) {
             break;
         case STACKER_STATES.ROTATING_BASE:
             stacker.baseAngle -= BASE_ROTATION_SPEED;
-            const targetAngle = -COMPLETE_TURN_ANGLE / ROTATIONS_MAX * stacker.rotations;
+            targetAngle = -COMPLETE_TURN_ANGLE / ROTATIONS_MAX * stacker.rotations;
             if (stacker.baseAngle < targetAngle) {
                 stacker.baseAngle = targetAngle;
                 if (stacker.rotations == ROTATIONS_MAX) {
                     stacker.rotations = BASE_INITIAL_ROTATIONS;
                     stacker.baseAngle = BASE_INITIAL_ANGLE;
-                    stacker.nextState = STACKER_STATES.MOVING_ARM_TO_CENTER_POSITION;
+                    if (stacker.stacks == 2 || stacker.stacks == 6) {
+                        stacker.nextState = STACKER_STATES.LOWERING_BASE;
+                    } else {
+                        stacker.nextState = STACKER_STATES.MOVING_ARM_TO_CENTER_POSITION;
+                    }
                 } else {
                     stacker.nextState = STACKER_STATES.INITIALIZING_COIN;
                 }
@@ -405,20 +440,28 @@ function updateStackerState({ stacker }) {
         case STACKER_STATES.LOWERING_BASE:
             stacker.basePosition -= BASE_SPEED;
             if (COIN_SETTLED_POSITION_Y + stacker.position - stacker.coin.position.y > COIN_HEIGHT) {
-                stacker.nextState = STACKER_STATES.MOVING_ARM_BACK_TO_CIRCUMFERENCE_POSITION;
+                if (stacker.stacks == 1) {
+                    stacker.nextState = STACKER_STATES.FINISHING_LEVEL;
+                } else {
+                    stacker.nextState = STACKER_STATES.MOVING_ARM_BACK_TO_CIRCUMFERENCE_POSITION;
+                }
             }
             break;
         case STACKER_STATES.MOVING_ARM_BACK_TO_CIRCUMFERENCE_POSITION:
             stacker.armPosition += ARM_SPEED;
             if (stacker.armPosition > ARM_CIRCUMFERENCE_POSITION) {
                 stacker.armPosition = ARM_CIRCUMFERENCE_POSITION;
-                stacker.level++;
-                if (stacker.level < LEVEL_MAX) {
-                    stacker.nextState = STACKER_STATES.INITIALIZING_COIN;
-                } else {
-                    stacker.level = LEVEL_INITIAL;
-                    stacker.nextState = STACKER_STATES.MOVING_ARM_TO_INITIAL_POSITION;
-                }
+                stacker.nextState = STACKER_STATES.FINISHING_LEVEL;
+            }
+            break;
+        case STACKER_STATES.FINISHING_LEVEL:
+            stacker.level++;
+            if (stacker.level < stacker.levels) {
+                stacker.nextState = STACKER_STATES.INITIALIZING_COIN;
+            } else {
+                stacker.level = LEVEL_INITIAL;
+                stacker.levels = -1;
+                stacker.nextState = STACKER_STATES.MOVING_ARM_TO_INITIAL_POSITION;
             }
             break;
         case STACKER_STATES.MOVING_ARM_TO_INITIAL_POSITION:
@@ -432,6 +475,18 @@ function updateStackerState({ stacker }) {
             stacker.armDoorPosition += ARM_DOOR_SPEED;
             if (stacker.armDoorPosition > ARM_DOOR_CLOSED_POSITION) {
                 stacker.armDoorPosition = ARM_DOOR_CLOSED_POSITION;
+                if (stacker.stacks == 2 || stacker.stacks == 3 || stacker.stacks == 5) {
+                    stacker.nextState = STACKER_STATES.ALIGNING_COINS;
+                } else {
+                    stacker.nextState = STACKER_STATES.LOWERING_STACKER;
+                }
+            }
+            break;
+        case STACKER_STATES.ALIGNING_COINS:
+            stacker.baseAngle -= BASE_ROTATION_SPEED;
+            targetAngle = (-COMPLETE_TURN_ANGLE / ROTATIONS_MAX) * (stacker.stacks == 5 ? 2 : 1.5);
+            if (stacker.baseAngle < targetAngle) {
+                stacker.baseAngle = targetAngle;
                 stacker.nextState = STACKER_STATES.LOWERING_STACKER;
             }
             break;
@@ -439,14 +494,29 @@ function updateStackerState({ stacker }) {
             stacker.position -= STACKER_LOWERING_SPEED;
             if (stacker.position < STACKER_INITIAL_POSITION) {
                 stacker.position = STACKER_INITIAL_POSITION;
-                stacker.coin = null;
-                stacker.coins = [];
                 stacker.basePosition = BASE_INITIAL_POSITION;
                 stacker.supportPosition = SUPPORT_INITIAL_POSITION;
+                if (stacker.stacks == 2 || stacker.stacks == 3 || stacker.stacks == 5) {
+                    stacker.nextState = STACKER_STATES.RESETTING_BASE_ROTATION;
+                } else {
+                    stacker.rotations = BASE_INITIAL_ROTATIONS;
+                    stacker.baseAngle = BASE_INITIAL_ANGLE;
+                    stacker.nextState = STACKER_STATES.PREPARING_IDLE;
+                }
+            }
+            break;
+        case STACKER_STATES.RESETTING_BASE_ROTATION:
+            stacker.baseAngle += BASE_ROTATION_SPEED;
+            if (stacker.baseAngle > BASE_INITIAL_ANGLE) {
+                stacker.baseAngle = BASE_INITIAL_ANGLE;
+                stacker.rotations = BASE_INITIAL_ROTATIONS;
                 stacker.nextState = STACKER_STATES.PREPARING_IDLE;
             }
             break;
         case STACKER_STATES.PREPARING_IDLE:
+            stacker.coin = null;
+            stacker.coins = [];
+            stacker.stacks = -1;
             stacker.nextState = STACKER_STATES.IDLE;
             break;
         default:
