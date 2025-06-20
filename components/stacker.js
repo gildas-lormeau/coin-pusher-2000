@@ -359,7 +359,7 @@ function updateStackerState({ stacker }) {
                 if (stacker.position == STACKER_CLEANUP_POSITION) {
                     stacker.nextState = STACKER_STATES.CLEANING_UP_BASE_LEFT;
                 } else {
-                    stacker.nextState = STACKER_STATES.OPENING_ARM_DOOR;
+                    stacker.nextState = STACKER_STATES.LOWERING_SUPPORT_TO_READY_POSITION;
                 }
             }
             break;
@@ -381,7 +381,7 @@ function updateStackerState({ stacker }) {
             stacker.position += STACKER_RAISING_SPEED;
             if (stacker.position > STACKER_MAX_POSITION) {
                 stacker.position = STACKER_MAX_POSITION;
-                stacker.nextState = STACKER_STATES.LOWERING_SUPPORT_TO_READY_POSITION;
+                stacker.nextState = STACKER_STATES.RAISING_ARM_PROTECTION_LID;
             }
             break;
         case STACKER_STATES.LOWERING_SUPPORT_TO_READY_POSITION:
@@ -395,7 +395,7 @@ function updateStackerState({ stacker }) {
             stacker.basePosition -= BASE_SPEED;
             if (stacker.basePosition < BASE_READY_POSITION) {
                 stacker.basePosition = BASE_READY_POSITION;
-                stacker.nextState = STACKER_STATES.RAISING_ARM_PROTECTION_LID;
+                stacker.nextState = STACKER_STATES.OPENING_ARM_DOOR;
             }
             break;
         case STACKER_STATES.OPENING_ARM_DOOR:
