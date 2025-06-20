@@ -39,6 +39,7 @@ const ARM_PROTECTION_LID_CLOSED_ANGLE = 0;
 const ARM_PROTECTION_LID_OPENED_ANGLE = Math.PI / 3;
 const LEVEL_INITIAL = 0;
 const STACKS_MIN = 1;
+const STACKS_MAX = 7;
 const LEVEL_MIN = 5;
 const LEVEL_MAX = 75;
 const BASE_PART_NAME = "base";
@@ -245,6 +246,8 @@ export default class {
     }
 
     deliver({ stacks = STACKS_MIN, levels = LEVEL_MIN } = { stacks: STACKS_MIN, levels: LEVEL_MIN }) {
+        levels = Math.max(LEVEL_MIN, Math.min(LEVEL_MAX, levels));
+        stacks = Math.max(STACKS_MIN, Math.min(STACKS_MAX, stacks));
         if (this.#stacker.state === STACKER_STATES.IDLE) {
             this.#stacker.stacks = stacks;
             this.#stacker.levels = levels;
