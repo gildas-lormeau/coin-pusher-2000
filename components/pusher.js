@@ -3,7 +3,7 @@ import { Vector3 } from "three";
 const SPEED = 2;
 const DISTANCE = 0.1075;
 const WIDTH = 0.6;
-const HEIGHT = 0.05;
+const HEIGHT = 0.055;
 const DEPTH = 0.6;
 const FRICTION = 0;
 const RESTITUTION = .05;
