@@ -82,6 +82,7 @@ const STACKER_STATES = {
 export default class {
 
     #scene;
+    #floorLock;
     #onInitializeCoin;
     #dropPosition;
     #pivotPosition;
@@ -106,8 +107,9 @@ export default class {
         baseAngle: BASE_INITIAL_ANGLE
     };
 
-    constructor({ scene, onInitializeCoin }) {
+    constructor({ scene,  floorLock, onInitializeCoin }) {
         this.#scene = scene;
+        this.#floorLock = floorLock;
         this.#onInitializeCoin = onInitializeCoin;
     }
 
@@ -129,7 +131,7 @@ export default class {
     }
 
     update() {
-        updateStackerState({ stacker: this.#stacker });
+        updateStackerState({ stacker: this.#stacker, floorLock: this.#floorLock });
         const { parts, state } = this.#stacker;
         if (state !== STACKER_STATES.IDLE) {
             const base = parts.get(BASE_PART_NAME);
@@ -322,14 +324,17 @@ export default class {
     }
 }
 
-function updateStackerState({ stacker }) {
+function updateStackerState({ stacker, floorLock }) {
     let targetAngle;
     stacker.nextState = null;
     switch (stacker.state) {
         case STACKER_STATES.IDLE:
             break;
         case STACKER_STATES.ACTIVATING:
-            stacker.nextState = STACKER_STATES.RAISING_STACKER_TO_CLEANUP_POSITION;
+            if (!floorLock.isLocked()) {
+                floorLock.acquire();
+                stacker.nextState = STACKER_STATES.RAISING_STACKER_TO_CLEANUP_POSITION;
+            }
             break;
         case STACKER_STATES.RAISING_STACKER_TO_CLEANUP_POSITION:
             stacker.position += STACKER_RAISING_SPEED;
@@ -541,6 +546,7 @@ function updateStackerState({ stacker }) {
             }
             break;
         case STACKER_STATES.PREPARING_IDLE:
+            floorLock.release();
             stacker.coin = null;
             stacker.coins = [];
             if (stacker.pendingDeliveries.length > 0) {

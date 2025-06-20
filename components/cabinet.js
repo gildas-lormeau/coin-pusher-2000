@@ -33,6 +33,7 @@ export default class {
 
     #scene;
     #state;
+    #floorLocked = false;
     #sensorColliders;
     #sensorListeners = {
         "left-trap": (userData) => {
@@ -159,6 +160,21 @@ export default class {
             }
         });
         await this.#sensorGate.initialize();
+        const floorLock = {
+            acquire: () => {
+                if (!this.#floorLocked) {
+                    this.#floorLocked = true;
+                }
+            },
+            release: () => {
+                if (this.#floorLocked) {
+                    this.#floorLocked = false;
+                }
+            },
+            isLocked: () => {
+                return this.#floorLocked;
+            }
+        };
         this.#reelsBox = new ReelsBox({
             scene: this.#scene,
             onBonusWon: (reels) => {
@@ -168,6 +184,7 @@ export default class {
         await this.#reelsBox.initialize();
         this.#excavator = new Excavator({
             scene: this.#scene,
+            floorLock,
             onPick: dropPosition => {
                 const objects = [];
                 for (let i = 0; i < 30 + Math.floor(Math.random() * 10); i++) {
@@ -247,6 +264,7 @@ export default class {
         await this.#coinRoller.initialize();
         this.#stacker = new Stacker({
             scene: this.#scene,
+            floorLock,
             onInitializeCoin: ({ position, rotation, impulse }) => Coins.depositCoin({ position, rotation, impulse }),
         });
         await this.#stacker.initialize();
@@ -312,6 +330,7 @@ export default class {
         const data = {};
         InstancedMeshes.save(data);
         Object.assign(data, {
+            floorLocked: this.#floorLocked,
             sensorCollidersHandles,
             scene: await this.#scene.save(),
             pusher: this.#pusher.save(),
@@ -350,6 +369,7 @@ export default class {
             });
         });
         InstancedMeshes.load(cabinet);
+        this.#floorLocked = cabinet.floorLocked;
         await this.#pusher.load(cabinet.pusher);
         this.#sensorGate.load(cabinet.sensorGate);
         this.#reelsBox.load(cabinet.reelsBox);

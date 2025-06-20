@@ -51,6 +51,7 @@ const EXCAVATOR_STATES = {
 export default class {
 
     #scene;
+    #floorLock;
     #onPick;
     #onRecycleObject;
     #onGetObject;
@@ -65,8 +66,9 @@ export default class {
         beaconLightAngle: 0
     };
 
-    constructor({ scene, onPick, onGetObject, onRecycleObject }) {
+    constructor({ scene, onPick, floorLock, onGetObject, onRecycleObject }) {
         this.#scene = scene;
+        this.#floorLock = floorLock;
         this.#onPick = onPick;
         this.#onGetObject = onGetObject;
         this.#onRecycleObject = onRecycleObject;
@@ -128,10 +130,8 @@ export default class {
                 jaw3Joint: this.#jaw3Joint,
                 jaw4Joint: this.#jaw4Joint
             },
-            platform: this.#platform,
-            dropPosition: this.#dropPosition,
             time,
-            onPick: this.#onPick
+            floorLock: this.#floorLock
         });
         const { state, parts } = this.#excavator;
         parts.forEach(({ meshes, body }) => meshes.forEach(({ data }) => {
@@ -302,17 +302,20 @@ export default class {
     }
 }
 
-function updateExcavatorState({ excavator, joints, time }) {
+function updateExcavatorState({ excavator, joints, time, floorLock }) {
     const { platformJoint, platformArmJoint, armsJoint, jaw1Joint, jaw2Joint, jaw3Joint, jaw4Joint } = joints;
     switch (excavator.state) {
         case EXCAVATOR_STATES.IDLE:
             break;
         case EXCAVATOR_STATES.ACTIVATING:
-            jaw1Joint.joint.configureMotor(-.5, -2.5, MOTOR_STIFFNESS, MOTOR_DAMPING);
-            jaw2Joint.joint.configureMotor(.5, 2.5, MOTOR_STIFFNESS, MOTOR_DAMPING);
-            jaw3Joint.joint.configureMotor(-.5, -2.5, MOTOR_STIFFNESS, MOTOR_DAMPING);
-            jaw4Joint.joint.configureMotor(.5, 2.5, MOTOR_STIFFNESS, MOTOR_DAMPING);
-            excavator.state = EXCAVATOR_STATES.OPENING_JAWS;
+            if (!floorLock.isLocked()) {
+                floorLock.acquire();
+                jaw1Joint.joint.configureMotor(-.5, -2.5, MOTOR_STIFFNESS, MOTOR_DAMPING);
+                jaw2Joint.joint.configureMotor(.5, 2.5, MOTOR_STIFFNESS, MOTOR_DAMPING);
+                jaw3Joint.joint.configureMotor(-.5, -2.5, MOTOR_STIFFNESS, MOTOR_DAMPING);
+                jaw4Joint.joint.configureMotor(.5, 2.5, MOTOR_STIFFNESS, MOTOR_DAMPING);
+                excavator.state = EXCAVATOR_STATES.OPENING_JAWS;
+            }
             break;
         case EXCAVATOR_STATES.OPENING_JAWS:
             // console.log("=> opening jaws", getAngle(jaw1Joint), getAngle(jaw2Joint), getAngle(jaw3Joint), getAngle(jaw4Joint));
@@ -413,6 +416,7 @@ function updateExcavatorState({ excavator, joints, time }) {
         case EXCAVATOR_STATES.PREPARING_IDLE:
             // console.log("=> preparing idle", getAngle(jaw1Joint), getAngle(jaw2Joint), getAngle(jaw3Joint), getAngle(jaw4Joint));
             if (getAngle(jaw1Joint) > -.01 && getAngle(jaw2Joint) < .01 && getAngle(jaw3Joint) > -.01 && getAngle(jaw4Joint) < .01) {
+                floorLock.release();
                 if (excavator.pendingPicks > 0) {
                     excavator.pendingPicks--;
                     excavator.state = EXCAVATOR_STATES.ACTIVATING;
