@@ -28,6 +28,7 @@ const ROTATIONS_MAX = 6;
 const BASE_INITIAL_ANGLE = 0;
 const BASE_INITIAL_ROTATIONS = 0;
 const BASE_INITIAL_POSITION = 0;
+const BASE_CLEANUP_POSITION = 0.005;
 const BASE_READY_POSITION = -0.03;
 const SUPPORT_INITIAL_POSITION = 0;
 const SUPPORT_READY_POSITION = -0.01;
@@ -53,6 +54,7 @@ const STACKER_STATES = {
     IDLE: Symbol.for("stacker-idle"),
     ACTIVATING: Symbol.for("stacker-activating"),
     RAISING_STACKER_TO_CLEANUP_POSITION: Symbol.for("stacker-raising-stacker-to-cleanup-position"),
+    RAISING_BASE_TO_CLEANUP_POSITION: Symbol.for("stacker-raising-base-to-cleanup-position"),
     CLOSING_ARM_DOOR: Symbol.for("stacker-closing-arm-door"),
     RAISING_ARM_PROTECTION_LID: Symbol.for("stacker-raising-arm-protection-lid"),
     LOWERING_ARM_PROTECTION_LID: Symbol.for("stacker-lowering-arm-protection-lid"),
@@ -185,7 +187,8 @@ export default class {
             if (state === STACKER_STATES.LOWERING_STACKER) {
                 this.#stacker.coins.forEach(coin => coin.body.sleep());
             }
-            if (state === STACKER_STATES.RAISING_BASE ||
+            if (state === STACKER_STATES.RAISING_BASE_TO_CLEANUP_POSITION ||
+                state === STACKER_STATES.RAISING_BASE ||
                 state === STACKER_STATES.LOWERING_BASE ||
                 state === STACKER_STATES.LOWERING_BASE_TO_READY_POSITION) {
                 const basePosition = new Vector3().copy(base.body.translation());
@@ -332,6 +335,13 @@ function updateStackerState({ stacker }) {
             stacker.position += STACKER_RAISING_SPEED;
             if (stacker.position > STACKER_CLEANUP_POSITION) {
                 stacker.position = STACKER_CLEANUP_POSITION;
+                stacker.nextState = STACKER_STATES.RAISING_BASE_TO_CLEANUP_POSITION;
+            }
+            break;
+        case STACKER_STATES.RAISING_BASE_TO_CLEANUP_POSITION:
+            stacker.basePosition += BASE_SPEED;
+            if (stacker.basePosition > BASE_CLEANUP_POSITION) {
+                stacker.basePosition = BASE_CLEANUP_POSITION;
                 stacker.nextState = STACKER_STATES.RAISING_ARM_PROTECTION_LID;
             }
             break;
