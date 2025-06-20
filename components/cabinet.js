@@ -19,6 +19,7 @@ import Runs from "./runs.js";
 const MIN_POSITION_Y_OBJECTS = -1;
 const MODEL_PATH = "./../assets/cabinet.glb";
 const SENSOR_HEIGHT = 0.2;
+const CABINET_COLLISION_GROUP = 0x00010001;
 
 export default class {
 
@@ -72,7 +73,8 @@ export default class {
     #collisionsDetector;
     #reelsBox;
     #excavator;
-    #tower;
+    #leftTower;
+    #rightTower;
     #coinRoller;
     #stacker;
     #screen;
@@ -148,7 +150,8 @@ export default class {
                         this.#controlPanel.enableActionButton();
                         this.#coinRoller.shootCoin();
                     } else if (random < .8) {
-                        this.#tower.shootCoins();
+                        this.#leftTower.shootCoins();
+                        this.#rightTower.shootCoins();
                     } else {
                         this.#stacker.deliver({ stacks: 7, levels: 15 });
                     }
@@ -210,13 +213,24 @@ export default class {
             }
         });
         await this.#excavator.initialize();
-        this.#tower = new Tower({
+        this.#leftTower = new Tower({
             scene: this.#scene,
+            offsetX: -.2,
+            oscillationDirection: 1,
             onShootCoin: ({ position, impulse }) => {
                 Coins.depositCoin({ position, impulse });
             }
         });
-        await this.#tower.initialize();
+        await this.#leftTower.initialize();
+        this.#rightTower = new Tower({
+            scene: this.#scene,
+            offsetX: .2,
+            oscillationDirection: -1,
+            onShootCoin: ({ position, impulse }) => {
+                Coins.depositCoin({ position, impulse });
+            }
+        });
+        await this.#rightTower.initialize();
         this.#coinRoller = new CoinRoller({
             scene: this.#scene,
             onInitializeCoin: ({ position, rotation }) => Coins.depositCoin({ position, rotation }),
@@ -251,7 +265,8 @@ export default class {
         this.#sensorGate.update(time);
         this.#reelsBox.update(time);
         this.#excavator.update(time);
-        this.#tower.update(time);
+        this.#leftTower.update(time);
+        this.#rightTower.update(time);
         this.#coinRoller.update(time);
         this.#stacker.update();
         this.#screen.update();
@@ -303,7 +318,8 @@ export default class {
             sensorGate: this.#sensorGate.save(),
             reelsBox: this.#reelsBox.save(),
             excavator: this.#excavator.save(),
-            tower: this.#tower.save(),
+            leftTower: this.#leftTower.save(),
+            rightTower: this.#rightTower.save(),
             coinRoller: this.#coinRoller.save(),
             stacker: this.#stacker.save(),
             runs: this.#runs.save()
@@ -338,7 +354,8 @@ export default class {
         this.#sensorGate.load(cabinet.sensorGate);
         this.#reelsBox.load(cabinet.reelsBox);
         this.#excavator.load(cabinet.excavator);
-        this.#tower.load(cabinet.tower);
+        this.#leftTower.load(cabinet.leftTower);
+        this.#rightTower.load(cabinet.rightTower);
         this.#coinRoller.load(cabinet.coinRoller);
         this.#stacker.load(cabinet.stacker);
         this.#runs.load(cabinet.runs);
@@ -445,12 +462,13 @@ function initializeColliders({ scene, parts, sensorListeners }) {
             }
         });
         if (vertices.length > 0) {
-            scene.createTrimeshCollider({
+            const collider = scene.createTrimeshCollider({
                 vertices,
                 indices,
                 friction,
                 restitution
             }, body);
+            collider.setCollisionGroups(CABINET_COLLISION_GROUP);
         }
     });
     return {

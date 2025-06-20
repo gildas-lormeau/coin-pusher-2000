@@ -28,6 +28,7 @@ export default class {
 
     #scene;
     #initPosition;
+    #offsetX;
     #onShootCoin;
     #turret;
     #turretPosition = new Vector3();
@@ -40,18 +41,20 @@ export default class {
         position: POSITION_DOWN_Y,
         angle: ANGLE_IDLE,
         oscillationCount: 0,
+        oscillationDirection: -1,
         timeActive: -1,
         timeLastShot: -1
     };
 
-    constructor({ scene, onShootCoin }) {
+    constructor({ scene, onShootCoin, offsetX = 0, oscillationDirection = -1 }) {
         this.#scene = scene;
         this.#onShootCoin = onShootCoin;
+        this.#offsetX = offsetX;
     }
 
     async initialize() {
         const scene = this.#scene;
-        const { parts, initPosition } = await initializeModel({ scene });
+        const { parts, initPosition } = await initializeModel({ scene, offsetX: this.#offsetX });
         initializeColliders({ scene, parts });
         this.#initPosition = initPosition;
         parts.forEach(({ meshes }) => meshes.forEach(({ data }) => this.#scene.addObject(data)));
@@ -101,6 +104,7 @@ export default class {
             position: this.#tower.position,
             angle: this.#tower.angle,
             oscillationCount: this.#tower.oscillationCount,
+            oscillationDirection: this.#tower.oscillationDirection,
             pendingShots: this.#tower.pendingShots,
             timeActive: this.#tower.timeActive,
             timeLastShot: this.#tower.timeLastShot
@@ -110,6 +114,7 @@ export default class {
     load(tower) {
         this.#tower.state = Symbol.for(tower.state);
         this.#tower.oscillationCount = tower.oscillationCount;
+        this.#tower.oscillationDirection = tower.oscillationDirection;
         this.#tower.pendingShots = tower.pendingShots;
         this.#tower.timeActive = tower.timeActive;
         this.#tower.timeLastShot = tower.timeLastShot;
@@ -139,7 +144,7 @@ function updateTowerState({ tower, time }) {
         case TOWER_STATES.SHOOTING_COINS:
             if (tower.oscillationCount < 1) {
                 const phase = (time - tower.timeActive) * DELTA_POSITION_STEP;
-                tower.angle = Math.sin(phase) * ANGLE_AMPLITUDE;
+                tower.angle = Math.sin(phase) * ANGLE_AMPLITUDE * tower.oscillationDirection;
                 tower.oscillationCount = Math.floor(phase / (2 * Math.PI));
                 if (time - tower.timeLastShot > DELAY_SHOOT) {
                     tower.state = TOWER_STATES.SHOOTING_COIN;
@@ -175,7 +180,7 @@ function updateTowerState({ tower, time }) {
     }
 }
 
-async function initializeModel({ scene }) {
+async function initializeModel({ scene, offsetX }) {
     const model = await scene.loadModel(MODEL_PATH);
     const mesh = model.scene;
     const parts = new Map();
@@ -183,6 +188,10 @@ async function initializeModel({ scene }) {
     mesh.traverse((child) => {
         if (child.isMesh) {
             const { material, geometry } = child;
+            for (let indexVertex = 0; indexVertex < geometry.index.count; indexVertex++) {
+                const position = geometry.attributes.position;
+                position.setX(indexVertex, position.getX(indexVertex) + offsetX);
+            }
             const userData = material.userData;
             if (userData.collider) {
                 const name = userData.name;
@@ -211,6 +220,8 @@ async function initializeModel({ scene }) {
                 });
             }
         } else if (child.name == INIT_POSITION_PART_NAME) {
+            const position = child.position;
+            position.x += offsetX;
             initPosition.copy(child.position);
         }
     });
