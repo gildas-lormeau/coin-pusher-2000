@@ -104,10 +104,11 @@ export default class {
         armDoorPosition: ARM_DOOR_CLOSED_POSITION,
         armProtectionLidAngle: ARM_PROTECTION_LID_CLOSED_ANGLE,
         rotations: BASE_INITIAL_ROTATIONS,
+        rotationDirection: 1,
         baseAngle: BASE_INITIAL_ANGLE
     };
 
-    constructor({ scene,  floorLock, onInitializeCoin }) {
+    constructor({ scene, floorLock, onInitializeCoin }) {
         this.#scene = scene;
         this.#floorLock = floorLock;
         this.#onInitializeCoin = onInitializeCoin;
@@ -282,6 +283,7 @@ export default class {
             armDoorPosition: this.#stacker.armDoorPosition,
             armProtectionLidAngle: this.#stacker.armProtectionLidAngle,
             rotations: this.#stacker.rotations,
+            rotationDirection: this.#stacker.rotationDirection,
             baseAngle: this.#stacker.baseAngle,
             level: this.#stacker.level,
             stacks: this.#stacker.stacks,
@@ -302,6 +304,7 @@ export default class {
         this.#stacker.armDoorPosition = stacker.armDoorPosition;
         this.#stacker.armProtectionLidAngle = stacker.armProtectionLidAngle;
         this.#stacker.rotations = stacker.rotations;
+        this.#stacker.rotationDirection = stacker.rotationDirection;
         this.#stacker.baseAngle = stacker.baseAngle;
         this.#stacker.level = stacker.level;
         this.#stacker.stacks = stacker.stacks;
@@ -434,7 +437,11 @@ function updateStackerState({ stacker, floorLock }) {
                     } else if (stacker.stacks == 4) {
                         stacker.rotations += 2;
                     } else if (stacker.stacks == 5) {
-                        stacker.rotations += stacker.rotations % 3 == 0 ? 1 : 2;
+                        if (stacker.rotations % 3 == 0) {
+                            stacker.rotations += stacker.rotationDirection == 1 ? 2 : 1;
+                        } else {
+                            stacker.rotations += stacker.rotationDirection == 1 ? 1 : 2;
+                        }
                     } else {
                         stacker.rotations++;
                     }
@@ -445,9 +452,10 @@ function updateStackerState({ stacker, floorLock }) {
             }
             break;
         case STACKER_STATES.ROTATING_BASE:
-            stacker.baseAngle -= BASE_ROTATION_SPEED;
-            targetAngle = -COMPLETE_TURN_ANGLE / ROTATIONS_MAX * stacker.rotations;
-            if (stacker.baseAngle < targetAngle) {
+            stacker.baseAngle += BASE_ROTATION_SPEED * stacker.rotationDirection;
+            targetAngle = COMPLETE_TURN_ANGLE / ROTATIONS_MAX * stacker.rotations * stacker.rotationDirection;
+            if ((stacker.rotationDirection == 1 && stacker.baseAngle > targetAngle)
+                || (stacker.rotationDirection == -1 && stacker.baseAngle < targetAngle)) {
                 stacker.baseAngle = targetAngle;
                 if (stacker.rotations == ROTATIONS_MAX) {
                     stacker.rotations = BASE_INITIAL_ROTATIONS;
@@ -472,6 +480,7 @@ function updateStackerState({ stacker, floorLock }) {
         case STACKER_STATES.LOWERING_BASE:
             stacker.basePosition -= BASE_SPEED;
             if (COIN_SETTLED_POSITION_Y + stacker.position - stacker.coin.position.y > COIN_HEIGHT) {
+                stacker.rotationDirection = -stacker.rotationDirection;
                 if (stacker.stacks == 1) {
                     stacker.nextState = STACKER_STATES.FINISHING_LEVEL;
                 } else {
@@ -542,6 +551,7 @@ function updateStackerState({ stacker, floorLock }) {
             if (stacker.baseAngle > BASE_INITIAL_ANGLE) {
                 stacker.baseAngle = BASE_INITIAL_ANGLE;
                 stacker.rotations = BASE_INITIAL_ROTATIONS;
+                stacker.rotationDirection = 1;
                 stacker.nextState = STACKER_STATES.PREPARING_IDLE;
             }
             break;
