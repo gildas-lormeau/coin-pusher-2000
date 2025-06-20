@@ -215,7 +215,7 @@ export default class {
         await this.#excavator.initialize();
         this.#leftTower = new Tower({
             scene: this.#scene,
-            offsetX: -.2,
+            offsetX: -.25,
             oscillationDirection: 1,
             onShootCoin: ({ position, impulse }) => {
                 Coins.depositCoin({ position, impulse });
@@ -224,7 +224,7 @@ export default class {
         await this.#leftTower.initialize();
         this.#rightTower = new Tower({
             scene: this.#scene,
-            offsetX: .2,
+            offsetX: .25,
             oscillationDirection: -1,
             onShootCoin: ({ position, impulse }) => {
                 Coins.depositCoin({ position, impulse });

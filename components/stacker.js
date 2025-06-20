@@ -18,10 +18,10 @@ const BASE_ROTATION_CLEANUP_SPEED = Math.PI / 9;
 const ARM_PROTECTION_LID_SPEED = 0.1;
 const BASE_CLEANUP_ROTATIONS = 3;
 const COIN_SETTLED_POSITION_Y = 0.148;
-const COIN_IMPULSE_FORCE = new Vector3(0, 0, -0.000015);
+const COIN_IMPULSE_FORCE = new Vector3(0, 0, 0.000007);
 const ARM_RETRACTED_POSITION = 0;
-const ARM_CIRCUMFERENCE_POSITION = -0.08;
-const ARM_CENTER_POSITION = -0.15;
+const ARM_CIRCUMFERENCE_POSITION = 0.08;
+const ARM_CENTER_POSITION = 0.15;
 const ARM_DOOR_CLOSED_POSITION = 0;
 const ARM_DOOR_OPENED_POSITION = -0.025;
 const ROTATIONS_MAX = 6;
@@ -36,7 +36,7 @@ const STACKER_CLEANUP_POSITION = 0.15;
 const STACKER_MAX_POSITION = 0.225;
 const COMPLETE_TURN_ANGLE = Math.PI * 2;
 const ARM_PROTECTION_LID_CLOSED_ANGLE = 0;
-const ARM_PROTECTION_LID_OPENED_ANGLE = Math.PI / 2;
+const ARM_PROTECTION_LID_OPENED_ANGLE = -Math.PI / 2;
 const LEVEL_INITIAL = 0;
 const STACKS_MIN = 1;
 const STACKS_MAX = 7;
@@ -336,15 +336,15 @@ function updateStackerState({ stacker }) {
             }
             break;
         case STACKER_STATES.RAISING_ARM_PROTECTION_LID:
-            stacker.armProtectionLidAngle += ARM_PROTECTION_LID_SPEED;
-            if (stacker.armProtectionLidAngle > ARM_PROTECTION_LID_OPENED_ANGLE) {
+            stacker.armProtectionLidAngle -= ARM_PROTECTION_LID_SPEED;
+            if (stacker.armProtectionLidAngle < ARM_PROTECTION_LID_OPENED_ANGLE) {
                 stacker.armProtectionLidAngle = ARM_PROTECTION_LID_OPENED_ANGLE;
                 stacker.nextState = STACKER_STATES.LOWERING_ARM_PROTECTION_LID;
             }
             break;
         case STACKER_STATES.LOWERING_ARM_PROTECTION_LID:
-            stacker.armProtectionLidAngle -= ARM_PROTECTION_LID_SPEED;
-            if (stacker.armProtectionLidAngle < ARM_PROTECTION_LID_CLOSED_ANGLE) {
+            stacker.armProtectionLidAngle += ARM_PROTECTION_LID_SPEED;
+            if (stacker.armProtectionLidAngle > ARM_PROTECTION_LID_CLOSED_ANGLE) {
                 stacker.armProtectionLidAngle = ARM_PROTECTION_LID_CLOSED_ANGLE;
                 if (stacker.position == STACKER_CLEANUP_POSITION) {
                     stacker.nextState = STACKER_STATES.CLEANING_UP_BASE_LEFT;
@@ -400,8 +400,8 @@ function updateStackerState({ stacker }) {
             }
             break;
         case STACKER_STATES.MOVING_ARM_TO_CIRCUMFERENCE_POSITION:
-            stacker.armPosition -= ARM_SPEED;
-            if (stacker.armPosition < ARM_CIRCUMFERENCE_POSITION) {
+            stacker.armPosition += ARM_SPEED;
+            if (stacker.armPosition > ARM_CIRCUMFERENCE_POSITION) {
                 stacker.armPosition = ARM_CIRCUMFERENCE_POSITION;
                 stacker.nextState = STACKER_STATES.INITIALIZING_COIN;
             }
