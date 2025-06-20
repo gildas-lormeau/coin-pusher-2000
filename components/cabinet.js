@@ -26,14 +26,18 @@ export default class {
     DEBUG_AUTOPLAY = false;
     DEBUG_HIDE_CABINET = false;
 
-    constructor({ scene, state }) {
+    constructor({ scene }) {
         this.#scene = scene;
-        this.#state = state;
     }
 
     #scene;
-    #state;
-    #floorLocked = false;
+    #cabinet = {
+        state: {
+            score: 0,
+            coinsInPool: 0
+        },
+        floorLocked: false,
+    };
     #sensorColliders;
     #sensorListeners = {
         "left-trap": (userData) => {
@@ -54,14 +58,14 @@ export default class {
                 recycleObject(object);
                 if (this.#runs.started) {
                     if (object.objectType === Coins.TYPE) {
-                        this.#state.score++;
-                        this.#state.coinsInPool++;
+                        this.#cabinet.state.score++;
+                        this.#cabinet.state.coinsInPool++;
                     }
                     if (object.objectType === Tokens.TYPE) {
-                        this.#state.score += 5;
+                        this.#cabinet.state.score += 5;
                     }
                     if (object.objectType === Cards.TYPE) {
-                        this.#state.score += 10;
+                        this.#cabinet.state.score += 10;
                     }
                 }
             }
@@ -104,9 +108,9 @@ export default class {
         wall.initialize();
         this.#controlPanel = new ControlPanel({
             onPressDropButton: slot => {
-                if (this.#state.coinsInPool) {
+                if (this.#cabinet.state.coinsInPool) {
                     Coins.dropCoin({ slot });
-                    this.#state.coinsInPool--;
+                    this.#cabinet.state.coinsInPool--;
                 }
             },
             onPressActionButton: () => {
@@ -127,7 +131,11 @@ export default class {
             }
         });
         this.#pusher.initialize();
-        this.#scoreboard = new ScoreBoard({ scene: this.#scene, cabinet: this, state: this.#state });
+        this.#scoreboard = new ScoreBoard({
+            scene: this.#scene,
+            cabinet: this,
+            state: this.#cabinet.state
+        });
         await this.#scoreboard.initialize();
         this.#collisionsDetector = new CollisionsDetector({ scene: this.#scene });
         this.#collisionsDetector.initialize();
@@ -162,17 +170,17 @@ export default class {
         await this.#sensorGate.initialize();
         const floorLock = {
             acquire: () => {
-                if (!this.#floorLocked) {
-                    this.#floorLocked = true;
+                if (!this.#cabinet.floorLocked) {
+                    this.#cabinet.floorLocked = true;
                 }
             },
             release: () => {
-                if (this.#floorLocked) {
-                    this.#floorLocked = false;
+                if (this.#cabinet.floorLocked) {
+                    this.#cabinet.floorLocked = false;
                 }
             },
             isLocked: () => {
-                return this.#floorLocked;
+                return this.#cabinet.floorLocked;
             }
         };
         this.#reelsBox = new ReelsBox({
@@ -270,7 +278,10 @@ export default class {
         await this.#stacker.initialize();
         this.#screen = new Screen({ scene: this.#scene });
         await this.#screen.initialize();
-        this.#runs = new Runs({ state: this.#state, screen: this.#screen });
+        this.#runs = new Runs({ 
+            state: this.#cabinet.state, 
+            screen: this.#screen 
+        });
         this.#runs.initialize();
     }
 
@@ -330,7 +341,8 @@ export default class {
         const data = {};
         InstancedMeshes.save(data);
         Object.assign(data, {
-            floorLocked: this.#floorLocked,
+            floorLocked: this.#cabinet.floorLocked,
+            state: this.#cabinet.state,
             sensorCollidersHandles,
             scene: await this.#scene.save(),
             pusher: this.#pusher.save(),
@@ -369,7 +381,8 @@ export default class {
             });
         });
         InstancedMeshes.load(cabinet);
-        this.#floorLocked = cabinet.floorLocked;
+        this.#cabinet.floorLocked = cabinet.floorLocked;
+        this.#cabinet.state = cabinet.state;
         await this.#pusher.load(cabinet.pusher);
         this.#sensorGate.load(cabinet.sensorGate);
         this.#reelsBox.load(cabinet.reelsBox);

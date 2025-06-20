@@ -19,12 +19,8 @@ export default class {
     static DEBUG_AUTOPLAY = false;
     static DEBUG_HIDE_CABINET = false;
 
-    static #state = {
-        score: 0,
-        coinsInPool: 0,
-        time: 0
-    };
     static #cabinet;
+    static #time = 0;
     static #containerElement;
     static #stopped = false;
     static #restart = false;
@@ -39,10 +35,7 @@ export default class {
             camera
         });
         await this.#scene.initialize();
-        this.#cabinet = new Cabinet(({
-            scene: this.#scene,
-            state: this.#state
-        }));
+        this.#cabinet = new Cabinet(({ scene: this.#scene }));
         this.#cabinet.DEBUG_AUTOPLAY = this.DEBUG_AUTOPLAY;
         this.#cabinet.DEBUG_HIDE_CABINET = this.DEBUG_HIDE_CABINET;
         await this.#cabinet.initialize();
@@ -90,12 +83,12 @@ export default class {
             this.#stopped = false;
         }
         if (!this.#stopped) {
-            this.#cabinet.update(this.#state.time);
+            this.#cabinet.update(this.#time);
             this.#pointer.update();
             Debug.update();
             this.#scene.step();
             this.#scene.render();
-            this.#state.time += STEP_DELAY;
+            this.#time += STEP_DELAY;
         }
         if (this.DEBUG_MAX_SPEED) {
             setTimeout(() => this.#update(), 0);
@@ -106,20 +99,14 @@ export default class {
 
     static async save() {
         return {
-            state: {
-                score: this.#state.score,
-                coinsInPool: this.#state.coinsInPool,
-                time: this.#state.time
-            },
+            time: this.#time,
             cabinet: await this.#cabinet.save()
         };
     }
 
     static async load(game) {
         this.#stopped = true;
-        this.#state.score = game.state.score;
-        this.#state.coinsInPool = game.state.coinsInPool;
-        this.#state.time = game.state.time;
+        this.#time = game.time;
         await this.#cabinet.load(game.cabinet);
         this.#stopped = false;
         this.#restart = true;
