@@ -90,7 +90,7 @@ export default class {
         nextState: null,
         stacks: -1,
         levels: -1,
-        pendingDeliveries: [0],
+        pendingDeliveries: [],
         state: STACKER_STATES.IDLE,
         position: STACKER_INITIAL_POSITION,
         supportPosition: SUPPORT_INITIAL_POSITION,
