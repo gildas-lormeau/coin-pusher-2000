@@ -140,15 +140,17 @@ export default class {
                         this.#pusher.deliverBonus({ coinCount: 10, cardCount: 1, tokenCount: 1 });
                     }
                 } else {
-                    if (random < .25) {
+                    if (random < .2) {
                         this.#reelsBox.spinReels();
-                    } else if (random < .5) {
+                    } else if (random < .4) {
                         this.#excavator.pick();
-                    } else if (random < .75) {
+                    } else if (random < .6) {
                         this.#controlPanel.enableActionButton();
                         this.#coinRoller.shootCoin();
-                    } else {
+                    } else if (random < .8) {
                         this.#tower.shootCoins();
+                    } else {
+                        this.#stacker.deliver({ stacks: 7, levels: 15 });
                     }
                 }
             }

@@ -54934,6 +54934,7 @@
             "level": 0,
             "stacks": -1,
             "levels": -1,
+            "pendingDeliveries": [],
             "nextState": null,
             "coinHandle": null,
             "coinsHandles": []

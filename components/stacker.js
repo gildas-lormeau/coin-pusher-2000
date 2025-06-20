@@ -90,6 +90,7 @@ export default class {
         nextState: null,
         stacks: -1,
         levels: -1,
+        pendingDeliveries: [0],
         state: STACKER_STATES.IDLE,
         position: STACKER_INITIAL_POSITION,
         supportPosition: SUPPORT_INITIAL_POSITION,
@@ -248,6 +249,8 @@ export default class {
             this.#stacker.stacks = stacks;
             this.#stacker.levels = levels;
             this.#stacker.state = STACKER_STATES.ACTIVATING;
+        } else {
+            this.#stacker.pendingDeliveries.push({ stacks, levels });
         }
     }
 
@@ -273,6 +276,7 @@ export default class {
             level: this.#stacker.level,
             stacks: this.#stacker.stacks,
             levels: this.#stacker.levels,
+            pendingDeliveries: this.#stacker.pendingDeliveries.map(delivery => ({ stacks: delivery.stacks, levels: delivery.levels })),
             nextState: this.#stacker.nextState ? this.#stacker.nextState.description : null,
             coinHandle: this.#stacker.coin ? this.#stacker.coin.handle : null,
             coinsHandles
@@ -292,6 +296,7 @@ export default class {
         this.#stacker.level = stacker.level;
         this.#stacker.stacks = stacker.stacks;
         this.#stacker.levels = stacker.levels;
+        this.#stacker.pendingDeliveries = stacker.pendingDeliveries.map(delivery => ({ stacks: delivery.stacks, levels: delivery.levels }));
         this.#stacker.nextState = stacker.nextState ? Symbol.for(stacker.nextState) : null;
         if (stacker.coinHandle) {
             this.#stacker.coin = this.#scene.worldBodies.get(stacker.coinHandle);
@@ -516,8 +521,15 @@ function updateStackerState({ stacker }) {
         case STACKER_STATES.PREPARING_IDLE:
             stacker.coin = null;
             stacker.coins = [];
-            stacker.stacks = -1;
-            stacker.nextState = STACKER_STATES.IDLE;
+            if (stacker.pendingDeliveries.length > 0) {
+                const { stacks, levels } = stacker.pendingDeliveries.shift();
+                stacker.stacks = stacks;
+                stacker.levels = levels;
+                stacker.nextState = STACKER_STATES.ACTIVATING;
+            } else {
+                stacker.stacks = -1;
+                stacker.nextState = STACKER_STATES.IDLE;
+            }
             break;
         default:
             break;
