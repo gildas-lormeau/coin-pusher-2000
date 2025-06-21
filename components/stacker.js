@@ -187,7 +187,9 @@ export default class {
                 base.body.setNextKinematicTranslation(basePosition);
                 support.body.setNextKinematicTranslation(supportPosition);
             }
-            if (state === STACKER_STATES.LOWERING_STACKER) {
+            if (state === STACKER_STATES.LOWERING_STACKER
+                || state === STACKER_STATES.RESETTING_BASE_ROTATION
+                || state === STACKER_STATES.PREPARING_IDLE) {
                 this.#stacker.coins.forEach(coin => coin.body.sleep());
             }
             if (state === STACKER_STATES.RAISING_BASE_TO_CLEANUP_POSITION ||
