@@ -654,7 +654,11 @@ function updateLightsState({ stacker, time }) {
             break;
         case LIGHTS_STATES.ROTATING:
             stacker.lights.bulbs.forEach((bulb, indexBulb) => {
-                bulb.intensity = indexBulb % 4 < 2 ? 0 : LIGHTS_MAX_INTENSITY;
+                if (stacker.stacks === 1) {
+                    bulb.intensity = (indexBulb + stacker.level) % 4 < 2 ? 0 : LIGHTS_MAX_INTENSITY;
+                } else {
+                    bulb.intensity = indexBulb % 4 < 2 ? 0 : LIGHTS_MAX_INTENSITY;
+                }
             });
             break;
         case LIGHTS_STATES.DELIVERING:
