@@ -382,7 +382,8 @@ export default class {
         });
         InstancedMeshes.load(cabinet);
         this.#cabinet.floorLocked = cabinet.floorLocked;
-        this.#cabinet.state = cabinet.state;
+        this.#cabinet.state.score = cabinet.state.score;
+        this.#cabinet.state.coinsInPool = cabinet.state.coinsInPool;
         await this.#pusher.load(cabinet.pusher);
         this.#sensorGate.load(cabinet.sensorGate);
         this.#reelsBox.load(cabinet.reelsBox);
