@@ -9,8 +9,6 @@ const REEL_MAX_TURN_COUNT = 10;
 const REEL_MIN_TURN_COUNT = 3;
 const REEL_ON_WON_DELAY = 1500;
 const MODEL_PATH = "./../assets/reels-box.glb";
-const REEL_PREFIX_NAME = "reel-";
-const LIGHT_PREFIX_NAME = "light-";
 const LIGHTS_OPACITY_OFF = 0.2;
 const LIGHTS_OPACITY_ON = 1.0;
 const LIGHTS_COLOR = 0xfbd04a;
@@ -88,12 +86,12 @@ export default class {
 
     async initialize() {
         const scene = this.#scene;
-        const { reelsMeshes, lightsMaterials } = await initializeModel({ scene });
+        const { reelsMeshes, lightBulbsMaterials } = await initializeModel({ scene });
         this.#reelsMeshes = reelsMeshes;
-        this.#lightBulbsMaterials = lightsMaterials;
+        this.#lightBulbsMaterials = lightBulbsMaterials;
         initializeLights({
             scene,
-            lightsMaterials,
+            lightBulbsMaterials,
             lights: this.#reelsBox.lights
         });
     }
@@ -295,14 +293,14 @@ function updateLightsState({ reelsBox, time }) {
 
 async function initializeModel({ scene }) {
     const reelsMeshes = [];
-    const lightsMaterials = [];
+    const lightBulbsMaterials = [];
     const model = await scene.loadModel(MODEL_PATH);
     model.scene.traverse(child => {
         if (child.isMesh) {
             if (child.userData.reel) {
                 reelsMeshes[child.userData.index] = child;
             } else if (child.material.userData.light) {
-                lightsMaterials[child.material.userData.index] = child.material = new MeshPhongMaterial({
+                lightBulbsMaterials[child.material.userData.index] = child.material = new MeshPhongMaterial({
                     color: LIGHTS_COLOR,
                     emissive: LIGHTS_EMISSIVE_COLOR,
                     emissiveIntensity: LIGHTS_MIN_INTENSITY,
@@ -315,12 +313,12 @@ async function initializeModel({ scene }) {
     scene.addObject(model.scene);
     return {
         reelsMeshes,
-        lightsMaterials
+        lightBulbsMaterials
     };
 }
 
-function initializeLights({ lightsMaterials, lights }) {
-    lightsMaterials.forEach((_, indexMaterial) => {
+function initializeLights({ lightBulbsMaterials, lights }) {
+    lightBulbsMaterials.forEach((_, indexMaterial) => {
         lights.bulbs[indexMaterial] = {
             intensity: LIGHTS_MIN_INTENSITY,
             opacity: LIGHTS_OPACITY_OFF,
