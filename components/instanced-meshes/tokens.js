@@ -238,8 +238,8 @@ function initializePosition({ instance, hidden, position, rotation, }) {
     if (hidden) {
         instance.position.fromArray(INITIAL_HIDDEN_POSITION);
         instance.rotation.fromArray(INITIAL_HIDDEN_ROTATION);
-        instance.body.setLinvel(INITIAL_HIDDEN_LINEAR_VELOCITY);
-        instance.body.setAngvel(INITIAL_HIDDEN_ANGULAR_VELOCITY);
+        instance.body.setLinvel(INITIAL_HIDDEN_LINEAR_VELOCITY, false);
+        instance.body.setAngvel(INITIAL_HIDDEN_ANGULAR_VELOCITY, false);
     } else {
         if (position) {
             instance.position.copy(position);

@@ -190,7 +190,11 @@ export default class {
             if (state === STACKER_STATES.LOWERING_STACKER
                 || state === STACKER_STATES.RESETTING_BASE_ROTATION
                 || state === STACKER_STATES.PREPARING_IDLE) {
-                this.#stacker.coins.forEach(coin => coin.body.sleep());
+                this.#stacker.coins.forEach(coin => {
+                    coin.body.setAngvel(new Vector3(0, 0, 0), false);
+                    coin.body.setLinvel(new Vector3(0, 0, 0), false);
+                    coin.body.sleep();
+                });
             }
             if (state === STACKER_STATES.RAISING_BASE_TO_CLEANUP_POSITION ||
                 state === STACKER_STATES.RAISING_BASE ||
