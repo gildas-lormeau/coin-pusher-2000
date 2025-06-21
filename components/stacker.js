@@ -17,7 +17,7 @@ const BASE_ROTATION_SPEED = Math.PI / 12;
 const BASE_ROTATION_CLEANUP_SPEED = Math.PI / 9;
 const ARM_PROTECTION_LID_SPEED = 0.1;
 const BASE_CLEANUP_ROTATIONS = 4;
-const COIN_SETTLED_POSITION_Y = 0.148;
+const COIN_SETTLED_POSITION_Y = 0.1425;
 const COIN_IMPULSE_FORCE = new Vector3(0, 0, 0.0001);
 const ARM_RETRACTED_POSITION = 0;
 const ARM_CIRCUMFERENCE_POSITION = 0.08;
@@ -49,6 +49,11 @@ const ARM_PART_NAME = "arm";
 const ARM_PROTECTION_PART_NAME = "arm-protection";
 const ARM_PROTECTION_LID_PART_NAME = "arm-protection-lid";
 const ARM_DOOR_PART_NAME = "arm-door";
+const LIGHTS_MIN_INTENSITY = 0;
+const LIGHTS_BLINKING_DURATION = 500;
+const LIGHTS_MAX_INTENSITY = 5;
+const LIGHTS_EMISSIVE_COLOR = 0xff00ff;
+const LIGHTS_DELIVERY_BLINKING_DURATION = 150;
 
 const STACKER_STATES = {
     IDLE: Symbol.for("stacker-idle"),
@@ -78,10 +83,19 @@ const STACKER_STATES = {
     RESETTING_BASE_ROTATION: Symbol.for("stacker-resetting-base-rotation"),
     PREPARING_IDLE: Symbol.for("stacker-preparing-idle")
 };
+const LIGHTS_STATES = {
+    IDLE: Symbol.for("stacker-lights-idle"),
+    ACTIVATING: Symbol.for("stacker-lights-activating"),
+    BLINKING: Symbol.for("stacker-lights-blinking"),
+    ROTATING: Symbol.for("stacker-lights-rotating"),
+    DELIVERING: Symbol.for("stacker-lights-delivering"),
+    PREPARING_IDLE: Symbol.for("stacker-lights-preparing-idle")
+};
 
 export default class {
 
     #scene;
+    #lightBulbsMaterials;
     #floorLock;
     #onInitializeCoin;
     #dropPosition;
@@ -105,7 +119,12 @@ export default class {
         armProtectionLidAngle: ARM_PROTECTION_LID_CLOSED_ANGLE,
         rotations: BASE_INITIAL_ROTATIONS,
         rotationDirection: 1,
-        baseAngle: BASE_INITIAL_ANGLE
+        baseAngle: BASE_INITIAL_ANGLE,
+        lights: {
+            state: LIGHTS_STATES.IDLE,
+            timeRefresh: -1,
+            bulbs: []
+        }
     };
 
     constructor({ scene, floorLock, onInitializeCoin }) {
@@ -116,13 +135,24 @@ export default class {
 
     async initialize() {
         const scene = this.#scene;
-        const { parts, dropPosition, pivotPosition, armProtectionLidPivotPosition } = await initializeModel({ scene });
+        const {
+            parts,
+            dropPosition,
+            pivotPosition,
+            armProtectionLidPivotPosition,
+            lightBulbsMaterials
+        } = await initializeModel({ scene });
         this.#dropPosition = dropPosition;
         this.#pivotPosition = pivotPosition;
         this.#armProtectionLidPivotPosition = armProtectionLidPivotPosition;
+        this.#lightBulbsMaterials = lightBulbsMaterials;
         initializeColliders({
             scene,
             parts
+        });
+        initializeLights({
+            lightBulbsMaterials,
+            lights: this.#stacker.lights
         });
         parts.forEach(({ body, meshes }) => {
             meshes.forEach(({ data }) => this.#scene.addObject(data));
@@ -131,9 +161,10 @@ export default class {
         Object.assign(this.#stacker, { parts });
     }
 
-    update() {
+    update(time) {
         updateStackerState({ stacker: this.#stacker, floorLock: this.#floorLock });
-        const { parts, state } = this.#stacker;
+        updateLightsState({ stacker: this.#stacker, time });
+        const { parts, state, lights } = this.#stacker;
         if (state !== STACKER_STATES.IDLE) {
             const base = parts.get(BASE_PART_NAME);
             const support = parts.get(SUPPORT_PART_NAME);
@@ -254,8 +285,16 @@ export default class {
                 this.#stacker.coins.push(this.#stacker.coin);
             }
         }
+        if (lights.state !== LIGHTS_STATES.IDLE) {
+            lights.bulbs.forEach((bulb, indexBulb) => {
+                this.#lightBulbsMaterials[indexBulb].emissiveIntensity = bulb.intensity;
+            });
+        }
         if (this.#stacker.nextState) {
             this.#stacker.state = this.#stacker.nextState;
+        }
+        if (this.#stacker.lights.nextState) {
+            this.#stacker.lights.state = this.#stacker.lights.nextState;
         }
     }
 
@@ -297,7 +336,14 @@ export default class {
             pendingDeliveries: this.#stacker.pendingDeliveries.map(delivery => ({ stacks: delivery.stacks, levels: delivery.levels })),
             nextState: this.#stacker.nextState ? this.#stacker.nextState.description : null,
             coinHandle: this.#stacker.coin ? this.#stacker.coin.handle : null,
-            coinsHandles
+            coinsHandles,
+            lights: {
+                state: this.#stacker.lights.state.description,
+                timeRefresh: this.#stacker.lights.timeRefresh,
+                bulbs: this.#stacker.lights.bulbs.map(bulb => ({
+                    intensity: bulb.intensity
+                }))
+            }
         };
     }
 
@@ -330,6 +376,11 @@ export default class {
                 partData.body = this.#scene.worldBodies.get(loadedPart.bodyHandle);
             }
         });
+        this.#stacker.lights.state = Symbol.for(stacker.lights.state);
+        this.#stacker.lights.timeRefresh = stacker.lights.timeRefresh;
+        this.#stacker.lights.bulbs = stacker.lights.bulbs.map(bulb => ({
+            intensity: bulb.intensity
+        }));
     }
 }
 
@@ -343,6 +394,7 @@ function updateStackerState({ stacker, floorLock }) {
             if (!floorLock.isLocked()) {
                 floorLock.acquire();
                 stacker.nextState = STACKER_STATES.RAISING_STACKER_TO_CLEANUP_POSITION;
+                stacker.lights.state = LIGHTS_STATES.ACTIVATING;
             }
             break;
         case STACKER_STATES.RAISING_STACKER_TO_CLEANUP_POSITION:
@@ -431,6 +483,7 @@ function updateStackerState({ stacker, floorLock }) {
             }
             break;
         case STACKER_STATES.INITIALIZING_COIN:
+            stacker.lights.state = LIGHTS_STATES.ROTATING;
             stacker.nextState = STACKER_STATES.PUSHING_COIN;
             break;
         case STACKER_STATES.PUSHING_COIN:
@@ -539,6 +592,7 @@ function updateStackerState({ stacker, floorLock }) {
             break;
         case STACKER_STATES.LOWERING_STACKER:
             stacker.position -= STACKER_LOWERING_SPEED;
+            stacker.lights.state = LIGHTS_STATES.DELIVERING;
             if (stacker.position < STACKER_INITIAL_POSITION) {
                 stacker.position = STACKER_INITIAL_POSITION;
                 stacker.basePosition = BASE_INITIAL_POSITION;
@@ -565,6 +619,7 @@ function updateStackerState({ stacker, floorLock }) {
             floorLock.release();
             stacker.coin = null;
             stacker.coins = [];
+            stacker.lights.state = LIGHTS_STATES.PREPARING_IDLE;
             if (stacker.pendingDeliveries.length > 0) {
                 const { stacks, levels } = stacker.pendingDeliveries.shift();
                 stacker.stacks = stacks;
@@ -580,6 +635,47 @@ function updateStackerState({ stacker, floorLock }) {
     }
 }
 
+function updateLightsState({ stacker, time }) {
+    stacker.lights.nextState = null;
+    switch (stacker.lights.state) {
+        case LIGHTS_STATES.IDLE:
+            break;
+        case LIGHTS_STATES.ACTIVATING:
+            stacker.lights.timeRefresh = time;
+            stacker.lights.nextState = LIGHTS_STATES.BLINKING;
+            break;
+        case LIGHTS_STATES.BLINKING:
+            if (time - stacker.lights.timeRefresh > LIGHTS_BLINKING_DURATION) {
+                stacker.lights.timeRefresh = time;
+                stacker.lights.bulbs.forEach(bulb => {
+                    bulb.intensity = bulb.intensity > LIGHTS_MIN_INTENSITY ? 0 : LIGHTS_MAX_INTENSITY;
+                });
+            }
+            break;
+        case LIGHTS_STATES.ROTATING:
+            stacker.lights.bulbs.forEach((bulb, indexBulb) => {
+                bulb.intensity = indexBulb % 4 < 2 ? 0 : LIGHTS_MAX_INTENSITY;
+            });
+            break;
+        case LIGHTS_STATES.DELIVERING:
+            if (time - stacker.lights.timeRefresh > LIGHTS_DELIVERY_BLINKING_DURATION) {
+                stacker.lights.timeRefresh = time;
+                stacker.lights.bulbs.forEach((bulb) => {
+                    bulb.intensity = bulb.intensity == LIGHTS_MAX_INTENSITY ? 0 : LIGHTS_MAX_INTENSITY;
+                });
+            }
+            break;
+        case LIGHTS_STATES.PREPARING_IDLE:
+            stacker.lights.bulbs.forEach(bulb => {
+                bulb.intensity = LIGHTS_MIN_INTENSITY;
+            });
+            stacker.lights.timeRefresh = -1;
+            stacker.lights.nextState = LIGHTS_STATES.IDLE;
+            break;
+        default:
+    }
+}
+
 async function initializeModel({ scene }) {
     const model = await scene.loadModel(MODEL_PATH);
     const mesh = model.scene;
@@ -587,6 +683,7 @@ async function initializeModel({ scene }) {
     const dropPosition = new Vector3();
     const pivotPosition = new Vector3();
     const armProtectionLidPivotPosition = new Vector3();
+    const lightBulbsMaterials = [];
     mesh.traverse((child) => {
         if (child.isMesh) {
             const { material, geometry } = child;
@@ -613,6 +710,9 @@ async function initializeModel({ scene }) {
                     indices
                 });
             } else {
+                if (child.material.userData.light) {
+                    lightBulbsMaterials[child.material.userData.index] = child.material;
+                }
                 const name = child.userData.name;
                 const partData = getPart(parts, name);
                 partData.meshes.push({
@@ -639,7 +739,8 @@ async function initializeModel({ scene }) {
         parts,
         dropPosition,
         pivotPosition,
-        armProtectionLidPivotPosition
+        armProtectionLidPivotPosition,
+        lightBulbsMaterials
     };
 };
 
@@ -719,5 +820,14 @@ function initializeColliders({ scene, parts }) {
             collider.setCollisionGroups((1 << (indexPart % 16)) << 16 | (1 << (indexPart % 16)));
             indexPart++;
         });
+    });
+}
+
+function initializeLights({ lightBulbsMaterials, lights }) {
+    lightBulbsMaterials.forEach((material, indexMaterial) => {
+        material.emissive.setHex(LIGHTS_EMISSIVE_COLOR);
+        lights.bulbs[indexMaterial] = {
+            intensity: LIGHTS_MIN_INTENSITY
+        };
     });
 }
