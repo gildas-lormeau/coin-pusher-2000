@@ -398,7 +398,6 @@ export default class {
                 });
             });
         });
-        InstancedMeshes.load(cabinet);
         this.#cabinet.floorLocked = cabinet.floorLocked;
         this.#cabinet.state.score = cabinet.state.score;
         this.#cabinet.state.coinsInPool = cabinet.state.coinsInPool;
