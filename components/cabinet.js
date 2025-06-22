@@ -4,6 +4,7 @@ import Pusher from "./pusher.js";
 import Coins from "./instanced-meshes/coins.js";
 import Tokens from "./instanced-meshes/tokens.js";
 import Cards from "./instanced-meshes/cards.js";
+import Ingots from "./instanced-meshes/ingots.js";
 import Buttons from "./instanced-meshes/buttons.js";
 import Digits from "./instanced-meshes/digits.js";
 import CollisionsDetector from "./collisions-detector.js";
@@ -109,7 +110,8 @@ export default class {
             }),
             Tokens.initialize({ scene }),
             Buttons.initialize({ scene }),
-            Digits.initialize({ scene })
+            Digits.initialize({ scene }),
+            Ingots.initialize({ scene })
         ]);
         const wall = new Wall({ scene });
         wall.initialize();
@@ -135,6 +137,7 @@ export default class {
                 Coins.depositCoins({ position, count: reward.coinCount });
                 Tokens.depositTokens({ position, count: reward.tokenCount });
                 Cards.depositCards({ position, count: reward.cardCount });
+                Ingots.depositIngots({ position, count: reward.ingotCount });
             }
         });
         this.#pusher.initialize();
@@ -193,7 +196,12 @@ export default class {
         this.#reelsBox = new ReelsBox({
             scene,
             onBonusWon: (reels) => {
-                this.#pusher.deliverBonus({ coinCount: 10, cardCount: 1, tokenCount: 1 });
+                this.#pusher.deliverBonus({
+                    coinCount: Math.floor(5 * Math.random()) + 10,
+                    cardCount: Math.random() < 0.5 ? 1 : 0,
+                    tokenCount: Math.random() < 0.5 ? 1 : 0,
+                    ingotCount: Math.random() < 0.25 ? 1 : 0
+                });
             }
         });
         await this.#reelsBox.initialize();
@@ -298,6 +306,7 @@ export default class {
         Tokens.update();
         Buttons.update(time);
         Digits.update();
+        Ingots.update();
         this.#pusher.update();
         this.#collisionsDetector.update();
         this.#scoreboard.update(time);
@@ -354,6 +363,7 @@ export default class {
         data.coins = Coins.save();
         data.tokens = Tokens.save();
         data.buttons = Buttons.save();
+        data.ingots = Ingots.save();
         Object.assign(data, {
             floorLocked: this.#cabinet.floorLocked,
             state: this.#cabinet.state,
@@ -378,6 +388,7 @@ export default class {
         Coins.load(cabinet.coins);
         Tokens.load(cabinet.tokens);
         Buttons.load(cabinet.buttons);
+        Ingots.load(cabinet.ingots);
         this.#sensorColliders = new Map();
         this.#parts.forEach(partData => {
             partData.meshes.forEach(({ data }) => {
