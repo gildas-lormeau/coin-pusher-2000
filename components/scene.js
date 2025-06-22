@@ -125,7 +125,7 @@ export default class {
         return collider;
     }
 
-    createCuboidColliderFromBoundingBox({ mesh, height, userData, sensor }, body) {
+    createCuboidColliderFromBoundingBox({ mesh, height, userData, rotation, sensor }, body) {
         mesh.geometry.computeBoundingBox();
         const boundingBox = mesh.geometry.boundingBox;
         const worldMatrix = mesh.matrixWorld;
@@ -139,6 +139,7 @@ export default class {
             width,
             height,
             depth,
+            rotation,
             sensor,
             position: [minX + width / 2, minY - height / 2, minZ + depth / 2],
             userData

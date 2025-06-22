@@ -286,8 +286,7 @@ export default class {
     }
 
     update(time) {
-        this.#pusher.update(time);
-        InstancedMeshes.update(time);
+        this.#pusher.update();
         this.#collisionsDetector.update();
         this.#scoreboard.update(time);
         this.#controlPanel.update(time);
@@ -406,7 +405,7 @@ export default class {
     }
 
     #autoplay() {
-        if (this.#pusher.position.z > -.275 && this.#pusher.position.z < -0.272 && this.#pusher.position.z > this.lastPusherPosition) {
+        if (this.#pusher.position.z > -0.0999 && this.#pusher.position.z < -0.0997 && this.#pusher.position.z > this.lastPusherPosition) {
             Coins.dropCoins({ count: 20 });
         }
         this.lastPusherPosition = this.#pusher.position.z;
