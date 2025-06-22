@@ -142,7 +142,7 @@ export default class {
         this.#sensorGate = new SensorGate({
             scene: this.#scene,
             onCoinFallen: (instance) => {
-                Coins.enableCcd(instance);
+                Coins.enableCcd(instance, false);
             },
             onBonusWon: () => {
                 const random = Math.random();
