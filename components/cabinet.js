@@ -373,11 +373,11 @@ export default class {
     }
 
     async load(cabinet) {
+        await this.#scene.load(cabinet.scene);
         Cards.load(cabinet.cards);
         Coins.load(cabinet.coins);
         Tokens.load(cabinet.tokens);
         Buttons.load(cabinet.buttons);
-        await this.#scene.load(cabinet.scene);
         this.#sensorColliders = new Map();
         this.#parts.forEach(partData => {
             partData.meshes.forEach(({ data }) => {
@@ -401,7 +401,7 @@ export default class {
         this.#cabinet.floorLocked = cabinet.floorLocked;
         this.#cabinet.state.score = cabinet.state.score;
         this.#cabinet.state.coinsInPool = cabinet.state.coinsInPool;
-        await this.#pusher.load(cabinet.pusher);
+        this.#pusher.load(cabinet.pusher);
         this.#sensorGate.load(cabinet.sensorGate);
         this.#reelsBox.load(cabinet.reelsBox);
         this.#excavator.load(cabinet.excavator);

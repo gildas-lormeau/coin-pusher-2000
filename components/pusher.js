@@ -89,14 +89,15 @@ export default class {
     save() {
         return {
             state: this.#pusher.state.description,
+            phase: this.#pusher.phase,
             rewards: this.#pusher.rewards,
+            platformBodyHandle: this.#platform.body.handle,
             platform: {
                 position: this.#pusher.platform.position.z,
-                bodyHandle: this.#pusher.platform.body.handle
             },
+            doorBodyHandle: this.#door.body.handle,
             door: {
-                position: this.#pusher.door.position,
-                bodyHandle: this.#pusher.door.body.handle
+                position: this.#pusher.door.position
             }
         };
     }
@@ -104,8 +105,10 @@ export default class {
     load(pusher) {
         this.#pusher.state = Symbol.for(pusher.state);
         this.#pusher.rewards = pusher.rewards;
-        this.#pusher.door.body = this.#scene.worldBodies.get(pusher.door.bodyHandle);
+        this.#pusher.phase = pusher.phase;
+        this.#platform.body = this.#scene.worldBodies.get(pusher.platformBodyHandle);
         this.#pusher.platform.position.z = pusher.position;
+        this.#door.body = this.#scene.worldBodies.get(pusher.doorBodyHandle);
         this.#pusher.door.position = pusher.door.position;
     }
 }
