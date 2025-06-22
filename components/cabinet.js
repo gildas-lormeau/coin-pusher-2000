@@ -1,10 +1,11 @@
 import Wall from "./wall.js";
 import ControlPanel from "./control-panel.js";
 import Pusher from "./pusher.js";
-import InstancedMeshes from "./instanced-meshes/index.js";
 import Coins from "./instanced-meshes/coins.js";
 import Tokens from "./instanced-meshes/tokens.js";
 import Cards from "./instanced-meshes/cards.js";
+import Buttons from "./instanced-meshes/buttons.js";
+import Digits from "./instanced-meshes/digits.js";
 import CollisionsDetector from "./collisions-detector.js";
 import ScoreBoard from "./scoreboard.js";
 import SensorGate from "./sensor-gate.js";
@@ -87,24 +88,30 @@ export default class {
     #parts;
 
     async initialize() {
+        const scene = this.#scene;
         const { parts } = await initializeModel({
-            scene: this.#scene,
+            scene,
             DEBUG_HIDE_CABINET: this.DEBUG_HIDE_CABINET
         });
         this.#parts = parts;
         const { sensorColliders } = initializeColliders({
-            scene: this.#scene,
+            scene,
             sensorListeners: this.#sensorListeners,
             parts
         });
         this.#sensorColliders = sensorColliders;
-        await InstancedMeshes.initialize({
-            scene: this.#scene,
-            onSpawnedCoin: (instance) => {
-                Coins.enableCcd(instance);
-            }
-        });
-        const wall = new Wall({ scene: this.#scene });
+        await Promise.all([
+            Cards.initialize({ scene }),
+            Coins.initialize({
+                scene, onSpawnedCoin: instance => {
+                    Coins.enableCcd(instance);
+                }
+            }),
+            Tokens.initialize({ scene }),
+            Buttons.initialize({ scene }),
+            Digits.initialize({ scene })
+        ]);
+        const wall = new Wall({ scene });
         wall.initialize();
         this.#controlPanel = new ControlPanel({
             onPressDropButton: slot => {
@@ -123,7 +130,7 @@ export default class {
         });
         await this.#controlPanel.initialize();
         this.#pusher = new Pusher({
-            scene: this.#scene,
+            scene,
             depositBonus: ({ reward, position }) => {
                 Coins.depositCoins({ position, count: reward.coinCount });
                 Tokens.depositTokens({ position, count: reward.tokenCount });
@@ -132,15 +139,15 @@ export default class {
         });
         this.#pusher.initialize();
         this.#scoreboard = new ScoreBoard({
-            scene: this.#scene,
+            scene,
             cabinet: this,
             state: this.#cabinet.state
         });
         await this.#scoreboard.initialize();
-        this.#collisionsDetector = new CollisionsDetector({ scene: this.#scene });
+        this.#collisionsDetector = new CollisionsDetector({ scene });
         this.#collisionsDetector.initialize();
         this.#sensorGate = new SensorGate({
-            scene: this.#scene,
+            scene,
             onCoinFallen: (instance) => {
                 Coins.enableCcd(instance, false);
             },
@@ -184,14 +191,14 @@ export default class {
             }
         };
         this.#reelsBox = new ReelsBox({
-            scene: this.#scene,
+            scene,
             onBonusWon: (reels) => {
                 this.#pusher.deliverBonus({ coinCount: 10, cardCount: 1, tokenCount: 1 });
             }
         });
         await this.#reelsBox.initialize();
         this.#excavator = new Excavator({
-            scene: this.#scene,
+            scene,
             floorLock,
             onPick: dropPosition => {
                 const objects = [];
@@ -239,7 +246,7 @@ export default class {
         });
         await this.#excavator.initialize();
         this.#leftTower = new Tower({
-            scene: this.#scene,
+            scene,
             offsetX: -.25,
             oscillationDirection: 1,
             onShootCoin: ({ position, impulse }) => {
@@ -248,7 +255,7 @@ export default class {
         });
         await this.#leftTower.initialize();
         this.#rightTower = new Tower({
-            scene: this.#scene,
+            scene,
             offsetX: .25,
             oscillationDirection: -1,
             onShootCoin: ({ position, impulse }) => {
@@ -257,7 +264,7 @@ export default class {
         });
         await this.#rightTower.initialize();
         this.#coinRoller = new CoinRoller({
-            scene: this.#scene,
+            scene,
             onInitializeCoin: ({ position, rotation }) => Coins.depositCoin({ position, rotation }),
             onGetCoin: coinData => Coins.getCoin(coinData),
             onRecycleCoin: coin => {
@@ -271,21 +278,26 @@ export default class {
         });
         await this.#coinRoller.initialize();
         this.#stacker = new Stacker({
-            scene: this.#scene,
+            scene,
             floorLock,
             onInitializeCoin: ({ position, rotation, impulse }) => Coins.depositCoin({ position, rotation, impulse }),
         });
         await this.#stacker.initialize();
-        this.#screen = new Screen({ scene: this.#scene });
+        this.#screen = new Screen({ scene });
         await this.#screen.initialize();
-        this.#runs = new Runs({ 
-            state: this.#cabinet.state, 
-            screen: this.#screen 
+        this.#runs = new Runs({
+            state: this.#cabinet.state,
+            screen: this.#screen
         });
         this.#runs.initialize();
     }
 
     update(time) {
+        Cards.update();
+        Coins.update(time);
+        Tokens.update();
+        Buttons.update(time);
+        Digits.update();
         this.#pusher.update();
         this.#collisionsDetector.update();
         this.#scoreboard.update(time);
@@ -296,7 +308,7 @@ export default class {
         this.#leftTower.update(time);
         this.#rightTower.update(time);
         this.#coinRoller.update(time);
-        this.#stacker.update();
+        this.#stacker.update(time);
         this.#screen.update();
         this.#runs.update(time);
         this.dynamicBodies.forEach(({ object, objects }) => {
@@ -338,7 +350,10 @@ export default class {
         const sensorCollidersHandles = {};
         this.#sensorColliders.forEach((collider, key) => sensorCollidersHandles[key] = collider.handle);
         const data = {};
-        InstancedMeshes.save(data);
+        data.cards = Cards.save();
+        data.coins = Coins.save();
+        data.tokens = Tokens.save();
+        data.buttons = Buttons.save();
         Object.assign(data, {
             floorLocked: this.#cabinet.floorLocked,
             state: this.#cabinet.state,
@@ -358,6 +373,10 @@ export default class {
     }
 
     async load(cabinet) {
+        Cards.load(cabinet.cards);
+        Coins.load(cabinet.coins);
+        Tokens.load(cabinet.tokens);
+        Buttons.load(cabinet.buttons);
         await this.#scene.load(cabinet.scene);
         this.#sensorColliders = new Map();
         this.#parts.forEach(partData => {
