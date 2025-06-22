@@ -451,6 +451,9 @@ function recycleObject(object) {
     if (object.objectType === Cards.TYPE) {
         Cards.recycle(object);
     }
+    if (object.objectType === Ingots.TYPE) {
+        Ingots.recycle(object);
+    }
 }
 
 async function initializeModel({ scene, DEBUG_HIDE_CABINET }) {
