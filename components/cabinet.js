@@ -430,6 +430,8 @@ export default class {
             return Tokens.getToken(userData);
         } else if (userData.objectType === Cards.TYPE) {
             return Cards.getCard(userData);
+        } else if (userData.objectType === Ingots.TYPE) {
+            return Ingots.getIngot(userData);
         }
     }
 
