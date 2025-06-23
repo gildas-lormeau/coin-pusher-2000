@@ -201,6 +201,33 @@ export default class {
         return collider;
     }
 
+    createConvexHullCollider({ vertices, indices, userData, position, rotation, sensor, friction, restitution, density }, body = this.createFixedBody()) {
+        const colliderDesc = ColliderDesc.convexHull(vertices, indices);
+        if (position !== undefined) {
+            colliderDesc.setTranslation(...position);
+        }
+        if (rotation !== undefined) {
+            colliderDesc.setRotation(new Quaternion().setFromEuler(new Euler(...rotation)));
+        }
+        if (sensor !== undefined) {
+            colliderDesc.setSensor(sensor);
+        }
+        const collider = this.#world.createCollider(colliderDesc, body);
+        if (friction !== undefined) {
+            collider.setFriction(friction);
+        }
+        if (restitution !== undefined) {
+            collider.setRestitution(restitution);
+        }
+        if (density !== undefined) {
+            collider.setDensity(density);
+        }
+        if (userData !== undefined) {
+            collider.userData = userData;
+        }
+        return collider;
+    }
+
     connectBodiesWithSphericalJoint({ body1, body2, anchor1, anchor2 }) {
         const jointData = JointData.spherical(anchor1, anchor2);
         return this.#world.createImpulseJoint(jointData, body1, body2);

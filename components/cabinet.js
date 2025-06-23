@@ -472,8 +472,10 @@ async function initializeModel({ scene, DEBUG_HIDE_CABINET }) {
                 const position = geometry.attributes.position;
                 const vertices = [];
                 const indices = [];
-                for (let indexVertex = 0; indexVertex < index.count; indexVertex++) {
+                for (let indexVertex = 0; indexVertex < position.count; indexVertex++) {
                     vertices.push(position.getX(indexVertex), position.getY(indexVertex), position.getZ(indexVertex));
+                }
+                for (let indexVertex = 0; indexVertex < index.count; indexVertex++) {
                     indices.push(index.getX(indexVertex));
                 }
                 const partData = getPart(parts, name);
@@ -525,7 +527,7 @@ function initializeColliders({ scene, parts, sensorListeners }) {
             } else if (meshData.vertices) {
                 vertices.push(...meshData.vertices);
                 indices.push(...meshData.indices.map(index => index + offsetIndex));
-                offsetIndex += meshData.indices.length;
+                offsetIndex += Math.max(...meshData.indices) + 1;
             }
         });
         if (vertices.length > 0) {

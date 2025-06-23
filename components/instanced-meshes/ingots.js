@@ -150,8 +150,10 @@ function initializeCollider(colliderGeometry) {
     const vertices = [];
     const indices = [];
     const index = colliderGeometry.index;
-    for (let indexVertex = 0; indexVertex < index.count; indexVertex++) {
+    for (let indexVertex = 0; indexVertex < position.count; indexVertex++) {
         vertices.push(position.getX(indexVertex), position.getY(indexVertex), position.getZ(indexVertex));
+    }
+    for (let indexVertex = 0; indexVertex < index.count; indexVertex++) {
         indices.push(index.getX(indexVertex));
     }
     return { vertices, indices };
@@ -184,7 +186,7 @@ function createInstance({ scene, instances, colliderData: { vertices, indices } 
     body.setLinearDamping(LINEAR_DAMPING);
     body.setAdditionalSolverIterations(ADDITIONAL_SOLVER_ITERATIONS);
     const index = instances.length;
-    scene.createTrimeshCollider({
+    scene.createConvexHullCollider({
         userData: { objectType: TYPE, index },
         vertices,
         indices,
