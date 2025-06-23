@@ -18,7 +18,7 @@ const BASE_ROTATION_CLEANUP_SPEED = Math.PI / 9;
 const ARM_PROTECTION_LID_SPEED = 0.1;
 const BASE_CLEANUP_ROTATIONS = 4;
 const COIN_SETTLED_POSITION_Y = 0.1325;
-const COIN_IMPULSE_FORCE = new Vector3(0, 0, 0.000085);
+const COIN_IMPULSE_FORCE = new Vector3(0, 0, 0.0000925);
 const ARM_RETRACTED_POSITION = 0;
 const ARM_CIRCUMFERENCE_POSITION = 0.08;
 const ARM_CENTER_POSITION = 0.15;
@@ -526,8 +526,8 @@ function updateStackerState({ stacker, floorLock }) {
             }
             break;
         case STACKER_STATES.MOVING_ARM_TO_CENTER_POSITION:
-            stacker.armPosition -= ARM_SPEED;
-            if (stacker.armPosition < ARM_CENTER_POSITION) {
+            stacker.armPosition += ARM_SPEED;
+            if (stacker.armPosition > ARM_CENTER_POSITION) {
                 stacker.armPosition = ARM_CENTER_POSITION;
                 stacker.nextState = STACKER_STATES.INITIALIZING_COIN;
             }

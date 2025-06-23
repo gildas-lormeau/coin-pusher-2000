@@ -18,7 +18,7 @@ const ANGULAR_DAMPING = 0;
 const LINEAR_DAMPING = 0;
 const FRICTION = 0.05;
 const RESTITUTION = 0;
-const DENSITY = .5;
+const DENSITY = 4;
 const MODEL_PATH = "./../assets/ingot.glb";
 
 export default class {
