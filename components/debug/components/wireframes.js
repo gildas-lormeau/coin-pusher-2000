@@ -32,7 +32,7 @@ export default class {
             } else if (shape === 1) {
                 const halfExtents = collider.halfExtents();
                 geometry = new BoxGeometry(halfExtents.x * 2, halfExtents.y * 2, halfExtents.z * 2);
-            } else if (shape === 6) {
+            } else if (shape === 6 || shape === 9) {
                 const vertices = collider.vertices();
                 const indices = collider.indices();
                 geometry = new BufferGeometry();
