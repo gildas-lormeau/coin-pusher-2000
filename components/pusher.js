@@ -146,7 +146,7 @@ export default class {
         this.#pusher.rewards = pusher.rewards;
         this.#pusher.phase = pusher.phase;
         this.#platform.body = this.#scene.worldBodies.get(pusher.platformBodyHandle);
-        this.#pusher.platform.position.z = pusher.position;
+        this.#pusher.platform.position.z = pusher.platform.position;
         this.#door.body = this.#scene.worldBodies.get(pusher.doorBodyHandle);
         this.#pusher.door.position = pusher.door.position;
         this.#pusher.lights.state = Symbol.for(pusher.lights.state);
