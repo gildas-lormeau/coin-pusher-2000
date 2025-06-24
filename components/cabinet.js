@@ -104,8 +104,9 @@ export default class {
         await Promise.all([
             Cards.initialize({ scene }),
             Coins.initialize({
-                scene, onSpawnedCoin: instance => {
-                    Coins.enableCcd(instance);
+                scene,
+                onSpawnedCoin: instance => {
+                    Coins.enableCcd(instance, true);
                 }
             }),
             Tokens.initialize({ scene }),
