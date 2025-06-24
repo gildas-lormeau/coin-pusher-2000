@@ -9,6 +9,10 @@ const MODEL_PATH = "./../assets/pusher.glb";
 const DOOR_PART_NAME = "door";
 const PLATFORM_PART_NAME = "platform";
 const DELIVERY_POSITION = "delivery-position";
+const LIGHTS_EMISSIVE_COLOR = 0x5353A6;
+const LIGHTS_MIN_INTENSITY = 0;
+const LIGHTS_MAX_INTENSITY = 1.5;
+
 const PUSHER_STATES = {
     MOVING: Symbol.for("pusher-moving"),
     PREPARING_DELIVERY: Symbol.for("pusher-preparing-delivery"),
@@ -17,6 +21,15 @@ const PUSHER_STATES = {
     DELIVER_BONUS: Symbol.for("pusher-deliver-bonus"),
     CLOSING_DOOR: Symbol.for("pusher-closing-door")
 };
+const LIGHTS_STATES = {
+    IDLE: Symbol.for("pusher-lights-idle"),
+    ACTIVATING: Symbol.for("pusher-lights-activating"),
+    ROTATING: Symbol.for("pusher-lights-rotating"),
+    DELIVERING: Symbol.for("pusher-lights-delivering"),
+    SWITCHING_OFF: Symbol.for("pusher-lights-switching-off"),
+    PREPARING_IDLE: Symbol.for("pusher-lights-preparing-idle")
+};
+
 
 export default class {
     constructor({ scene, depositBonus }) {
@@ -30,6 +43,7 @@ export default class {
     #platform;
     #deliveryPosition;
     #depositBonus;
+    #lightBulbsMaterials;
     #pusher = {
         state: PUSHER_STATES.MOVING,
         rewards: [],
@@ -39,14 +53,23 @@ export default class {
         },
         door: {
             position: 0
+        },
+        lights: {
+            state: LIGHTS_STATES.IDLE,
+            nextState: null,
+            timeRefresh: -1,
+            headIndex: 0,
+            bulbs: []
         }
     };
 
     async initialize() {
-        const { parts, deliveryPosition } = await initializeModel({ scene: this.#scene });
+        const { parts, deliveryPosition, lightBulbsMaterials } = await initializeModel({ scene: this.#scene });
         this.#parts = parts;
         this.#deliveryPosition = deliveryPosition;
+        this.#lightBulbsMaterials = lightBulbsMaterials;
         initializeColliders({ scene: this.#scene, parts });
+        initializeLights({ lightBulbsMaterials: this.#lightBulbsMaterials, lights: this.#pusher.lights });
         this.#door = parts.get(DOOR_PART_NAME);
         this.#platform = parts.get(PLATFORM_PART_NAME);
         parts.forEach(({ body, meshes }) => {
@@ -55,8 +78,9 @@ export default class {
         });
     }
 
-    update() {
+    update(time) {
         updatePusherState({ pusher: this.#pusher });
+        updateLightsState({ pusher: this.#pusher, time });
         if (this.#pusher.state === PUSHER_STATES.DELIVERING_BONUS) {
             const reward = this.#pusher.rewards.shift();
             this.#depositBonus({
@@ -73,6 +97,14 @@ export default class {
                 data.quaternion.copy(body.rotation());
             });
         });
+        if (this.#pusher.lights.state !== LIGHTS_STATES.IDLE) {
+            this.#pusher.lights.bulbs.forEach((bulb, indexBulb) => {
+                this.#lightBulbsMaterials[indexBulb].emissiveIntensity = bulb.intensity;
+            });
+        }
+        if (this.#pusher.lights.nextState) {
+            this.#pusher.lights.state = this.#pusher.lights.nextState;
+        }
     }
 
     deliverBonus(reward) {
@@ -98,6 +130,13 @@ export default class {
             doorBodyHandle: this.#door.body.handle,
             door: {
                 position: this.#pusher.door.position
+            },
+            lights: {
+                state: this.#pusher.lights.state.description,
+                nextState: this.#pusher.lights.nextState ? this.#pusher.lights.nextState.description : null,
+                timeRefresh: this.#pusher.lights.timeRefresh,
+                headIndex: this.#pusher.lights.headIndex,
+                bulbs: this.#pusher.lights.bulbs.map(bulb => ({ intensity: bulb.intensity }))
             }
         };
     }
@@ -110,6 +149,13 @@ export default class {
         this.#pusher.platform.position.z = pusher.position;
         this.#door.body = this.#scene.worldBodies.get(pusher.doorBodyHandle);
         this.#pusher.door.position = pusher.door.position;
+        this.#pusher.lights.state = Symbol.for(pusher.lights.state);
+        this.#pusher.lights.nextState = pusher.lights.nextState ? Symbol.for(pusher.lights.nextState) : null;
+        this.#pusher.lights.timeRefresh = pusher.lights.timeRefresh;
+        this.#pusher.lights.headIndex = pusher.lights.headIndex;
+        this.#pusher.lights.bulbs = pusher.lights.bulbs.map(bulb => ({
+            intensity: bulb.intensity
+        }));
     }
 }
 
@@ -119,6 +165,9 @@ function updatePusherState({ pusher }) {
             updatePusherPosition({ pusher });
             break;
         case PUSHER_STATES.PREPARING_DELIVERY:
+            if (pusher.lights.state === LIGHTS_STATES.IDLE) {
+                pusher.lights.state = LIGHTS_STATES.ACTIVATING;
+            }
             updatePusherPosition({ pusher });
             if (pusher.platform.position.z < -DISTANCE + BLOCKING_PLATFORM_POSITION_PRECISION) {
                 pusher.platform.position.z = -DISTANCE;
@@ -133,12 +182,14 @@ function updatePusherState({ pusher }) {
             break;
         case PUSHER_STATES.DELIVERING_BONUS:
             pusher.state = PUSHER_STATES.CLOSING_DOOR;
+            pusher.lights.state = LIGHTS_STATES.DELIVERING;
             break;
         case PUSHER_STATES.CLOSING_DOOR:
             if (pusher.door.position > BLOCKING_PLATFORM_POSITION_PRECISION) {
                 pusher.door.position = pusher.door.position - DOOR_SPEED;
             } else {
                 pusher.door.position = 0;
+                pusher.lights.state = LIGHTS_STATES.PREPARING_IDLE;
                 if (pusher.rewards.length > 1) {
                     pusher.state = PUSHER_STATES.PREPARING_DELIVERY;
                 } else {
@@ -154,11 +205,58 @@ function updatePusherPosition({ pusher }) {
     pusher.platform.position.z = (Math.sin(pusher.phase) * DISTANCE);
 }
 
+
+function updateLightsState({ pusher, time }) {
+    pusher.lights.nextState = null;
+    switch (pusher.lights.state) {
+        case LIGHTS_STATES.IDLE:
+            break;
+        case LIGHTS_STATES.ACTIVATING:
+            pusher.lights.timeRefresh = time;
+            pusher.lights.nextState = LIGHTS_STATES.ROTATING;
+            break;
+        case LIGHTS_STATES.ROTATING:
+            if (time - pusher.lights.timeRefresh > 100) {
+                pusher.lights.timeRefresh = time;
+                pusher.lights.bulbs.forEach((bulb, indexBulb) => {
+                    bulb.intensity = indexBulb >= pusher.lights.headIndex * 9 && indexBulb < (pusher.lights.headIndex + 1) * 9
+                        ? LIGHTS_MAX_INTENSITY
+                        : LIGHTS_MIN_INTENSITY;
+                });
+                pusher.lights.headIndex = (pusher.lights.headIndex + 2) % 3;
+            }
+            break;
+        case LIGHTS_STATES.DELIVERING:
+        case LIGHTS_STATES.PREPARING_IDLE:
+            if (time - pusher.lights.timeRefresh > 100) {
+                const intensity = pusher.lights.bulbs[0].intensity;
+                pusher.lights.timeRefresh = time;
+                pusher.lights.bulbs.forEach((bulb) => {
+                    bulb.intensity = intensity == LIGHTS_MAX_INTENSITY ? LIGHTS_MIN_INTENSITY : LIGHTS_MAX_INTENSITY;
+                });
+            }
+            if (pusher.lights.state === LIGHTS_STATES.PREPARING_IDLE) {
+                if (pusher.platform.position.z > DISTANCE - BLOCKING_PLATFORM_POSITION_PRECISION) {
+                    pusher.lights.bulbs.forEach(bulb => {
+                        bulb.intensity = LIGHTS_MIN_INTENSITY;
+                    });
+                    pusher.lights.headIndex = 0;
+                    pusher.lights.timeRefresh = -1;
+                    pusher.lights.nextState = LIGHTS_STATES.IDLE;
+                }
+            }
+            break;
+        default:
+            break;
+    }
+}
+
 async function initializeModel({ scene }) {
     const model = await scene.loadModel(MODEL_PATH);
     const mesh = model.scene;
     const parts = new Map();
     const deliveryPosition = new Vector3();
+    const lightBulbsMaterials = [];
     mesh.traverse((child) => {
         if (child.isMesh) {
             const { material } = child;
@@ -174,6 +272,17 @@ async function initializeModel({ scene }) {
                     cuboid: userData.cuboid,
                     rotation: userData.rotation ? new Vector3().fromArray(userData.rotation) : undefined,
                     size: userData.size ? new Vector3().fromArray(userData.size) : undefined,
+                    data: child
+                });
+            } if (userData.light) {
+                lightBulbsMaterials[child.material.userData.index] = child.material;
+                const partData = getPart(parts, name);
+                partData.meshes.push({
+                    data: child
+                });
+            } else {
+                const partData = getPart(parts, name);
+                partData.meshes.push({
                     data: child
                 });
             }
@@ -193,6 +302,7 @@ async function initializeModel({ scene }) {
     });
     return {
         parts,
+        lightBulbsMaterials,
         deliveryPosition
     };
 };
@@ -214,20 +324,22 @@ function initializeColliders({ scene, parts }) {
         const { meshes, kinematic, colliders } = partData;
         const body = partData.body = kinematic ? scene.createKinematicBody() : scene.createFixedBody();
         body.setEnabled(false);
-        meshes.forEach(({ data, friction, restitution }) => {
-            const boundingBox = data.geometry.boundingBox;
-            const position = new Vector3().addVectors(boundingBox.min, boundingBox.max).multiplyScalar(0.5).toArray();
-            const size = new Vector3(boundingBox.max.x - boundingBox.min.x, boundingBox.max.y - boundingBox.min.y, boundingBox.max.z - boundingBox.min.z);
-            const collider = scene.createCuboidCollider({
-                position,
-                width: size.x,
-                height: size.y,
-                depth: size.z,
-                friction,
-                restitution,
-            }, body);
-            collider.setCollisionGroups((1 << (indexPart % 16)) << 16 | (1 << (indexPart % 16)));
-            indexPart++;
+        meshes.forEach(({ data, friction, restitution, cuboid }) => {
+            if (cuboid) {
+                const boundingBox = data.geometry.boundingBox;
+                const position = new Vector3().addVectors(boundingBox.min, boundingBox.max).multiplyScalar(0.5).toArray();
+                const size = new Vector3(boundingBox.max.x - boundingBox.min.x, boundingBox.max.y - boundingBox.min.y, boundingBox.max.z - boundingBox.min.z);
+                const collider = scene.createCuboidCollider({
+                    position,
+                    width: size.x,
+                    height: size.y,
+                    depth: size.z,
+                    friction,
+                    restitution,
+                }, body);
+                collider.setCollisionGroups((1 << (indexPart % 16)) << 16 | (1 << (indexPart % 16)));
+                indexPart++;
+            }
         });
         colliders.forEach(({ friction, restitution, position, rotation, size }) => {
             const collider = scene.createCuboidCollider({
@@ -242,5 +354,15 @@ function initializeColliders({ scene, parts }) {
             collider.setCollisionGroups((1 << (indexPart % 16)) << 16 | (1 << (indexPart % 16)));
             indexPart++;
         });
+    });
+}
+
+function initializeLights({ lightBulbsMaterials, lights }) {
+    lightBulbsMaterials.forEach((material, indexMaterial) => {
+        material.emissive.setHex(LIGHTS_EMISSIVE_COLOR);
+        material.emissiveIntensity = LIGHTS_MIN_INTENSITY;
+        lights.bulbs[indexMaterial] = {
+            intensity: LIGHTS_MIN_INTENSITY
+        };
     });
 }
