@@ -123,7 +123,8 @@ export default class {
         lights: {
             state: LIGHTS_STATES.IDLE,
             timeRefresh: -1,
-            bulbs: []
+            bulbs: [],
+            nextState: null
         }
     };
 
@@ -339,6 +340,7 @@ export default class {
             coinsHandles,
             lights: {
                 state: this.#stacker.lights.state.description,
+                nextState: this.#stacker.lights.nextState ? this.#stacker.lights.nextState.description : null,
                 timeRefresh: this.#stacker.lights.timeRefresh,
                 bulbs: this.#stacker.lights.bulbs.map(bulb => ({
                     intensity: bulb.intensity
@@ -377,6 +379,7 @@ export default class {
             }
         });
         this.#stacker.lights.state = Symbol.for(stacker.lights.state);
+        this.#stacker.lights.nextState = stacker.lights.nextState ? Symbol.for(stacker.lights.nextState) : null;
         this.#stacker.lights.timeRefresh = stacker.lights.timeRefresh;
         this.#stacker.lights.bulbs = stacker.lights.bulbs.map(bulb => ({
             intensity: bulb.intensity
@@ -828,6 +831,7 @@ function initializeColliders({ scene, parts }) {
 function initializeLights({ lightBulbsMaterials, lights }) {
     lightBulbsMaterials.forEach((material, indexMaterial) => {
         material.emissive.setHex(LIGHTS_EMISSIVE_COLOR);
+        material.emissiveIntensity = LIGHTS_MIN_INTENSITY;
         lights.bulbs[indexMaterial] = {
             intensity: LIGHTS_MIN_INTENSITY
         };
