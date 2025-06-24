@@ -177,6 +177,16 @@ async function initializeModel({ scene }) {
                     data: child
                 });
             }
+        } else if (child.userData.collider) {
+            const partData = getPart(parts, child.userData.name);
+            partData.colliders.push({
+                friction: child.userData.friction,
+                restitution: child.userData.restitution,
+                kinematic: child.userData.kinematic,
+                position: child.position,
+                rotation: new Vector3().fromArray(child.userData.rotation),
+                size: new Vector3().fromArray(child.userData.size)
+            });
         } else if (child.name === DELIVERY_POSITION) {
             deliveryPosition.copy(child.position);
         }
@@ -190,7 +200,7 @@ async function initializeModel({ scene }) {
 function getPart(parts, name) {
     let partData;
     if (!parts.has(name)) {
-        partData = { meshes: [] };
+        partData = { meshes: [], colliders: [] };
         parts.set(name, partData);
     } else {
         partData = parts.get(name);
@@ -201,31 +211,36 @@ function getPart(parts, name) {
 function initializeColliders({ scene, parts }) {
     let indexPart = 0;
     parts.forEach(partData => {
-        const { meshes, kinematic } = partData;
+        const { meshes, kinematic, colliders } = partData;
         const body = partData.body = kinematic ? scene.createKinematicBody() : scene.createFixedBody();
         body.setEnabled(false);
-        meshes.forEach(({ data, friction, restitution, rotation, cuboid, size }) => {
-            if (cuboid) {
-                let colliderSize;
-                const boundingBox = data.geometry.boundingBox;
-                const position = new Vector3().addVectors(boundingBox.min, boundingBox.max).multiplyScalar(0.5).toArray();
-                if (size) {
-                    colliderSize = size;
-                } else {
-                    colliderSize = new Vector3(boundingBox.max.x - boundingBox.min.x, boundingBox.max.y - boundingBox.min.y, boundingBox.max.z - boundingBox.min.z);
-                }
-                const collider = scene.createCuboidCollider({
-                    position,
-                    width: colliderSize.x,
-                    height: colliderSize.y,
-                    depth: colliderSize.z,
-                    rotation,
-                    friction,
-                    restitution,
-                }, body);
-                collider.setCollisionGroups((1 << (indexPart % 16)) << 16 | (1 << (indexPart % 16)));
-                indexPart++;
-            }
+        meshes.forEach(({ data, friction, restitution }) => {
+            const boundingBox = data.geometry.boundingBox;
+            const position = new Vector3().addVectors(boundingBox.min, boundingBox.max).multiplyScalar(0.5).toArray();
+            const size = new Vector3(boundingBox.max.x - boundingBox.min.x, boundingBox.max.y - boundingBox.min.y, boundingBox.max.z - boundingBox.min.z);
+            const collider = scene.createCuboidCollider({
+                position,
+                width: size.x,
+                height: size.y,
+                depth: size.z,
+                friction,
+                restitution,
+            }, body);
+            collider.setCollisionGroups((1 << (indexPart % 16)) << 16 | (1 << (indexPart % 16)));
+            indexPart++;
+        });
+        colliders.forEach(({ friction, restitution, position, rotation, size }) => {
+            const collider = scene.createCuboidCollider({
+                position,
+                width: size.x,
+                height: size.y,
+                depth: size.z,
+                rotation,
+                friction,
+                restitution,
+            }, body);
+            collider.setCollisionGroups((1 << (indexPart % 16)) << 16 | (1 << (indexPart % 16)));
+            indexPart++;
         });
     });
 }
