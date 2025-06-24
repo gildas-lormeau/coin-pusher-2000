@@ -437,10 +437,10 @@ export default class {
     }
 
     #autoplay() {
-        if (this.#pusher.position.z > -0.0999 && this.#pusher.position.z < -0.0997 && this.#pusher.position.z > this.lastPusherPosition) {
-            Coins.dropCoins({ count: 20 });
+        if (this.#pusher.phase > 2 && this.#pusher.phase < 2.05 && this.#pusher.phase > this.lastPhase) {
+            Coins.dropCoins({ count: 10 });
         }
-        this.lastPusherPosition = this.#pusher.position.z;
+        this.lastPhase = this.#pusher.phase;
     }
 }
 

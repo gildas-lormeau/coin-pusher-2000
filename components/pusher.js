@@ -2,7 +2,8 @@ import { Vector3 } from "three";
 
 const SPEED = Math.PI / 60;
 const DISTANCE = 0.10;
-const BLOCKING_PLATFORM_POSITION_PRECISION = 0.0001;
+const OPENING_DOOR_POSITION_PRECISION = 0.001;
+const CLOSING_DOOR_POSITION_PRECISION = 0.0001;
 const DOOR_SPEED = 0.003;
 const DOOR_MAX_DISTANCE = 0.3;
 const MODEL_PATH = "./../assets/pusher.glb";
@@ -44,13 +45,13 @@ export default class {
     #deliveryPosition;
     #depositBonus;
     #lightBulbsMaterials;
+    #platformPosition = new Vector3();
+    #doorPosition = new Vector3();
     #pusher = {
         state: PUSHER_STATES.MOVING,
         rewards: [],
         phase: 0,
-        platform: {
-            position: new Vector3()
-        },
+        platform: {},
         door: {
             position: 0
         },
@@ -88,9 +89,10 @@ export default class {
                 position: this.#deliveryPosition
             });
         }
-        const position = this.#pusher.platform.position;
-        this.#platform.body.setNextKinematicTranslation(position);
-        this.#door.body.setNextKinematicTranslation(new Vector3().copy(position).sub(new Vector3(0, 0, this.#pusher.door.position)));
+        this.#platformPosition.setZ(Math.sin(this.#pusher.phase) * DISTANCE);
+        this.#doorPosition.setZ(this.#pusher.door.position);
+        this.#platform.body.setNextKinematicTranslation(this.#platformPosition);
+        this.#door.body.setNextKinematicTranslation(this.#platformPosition.sub(this.#doorPosition));
         this.#parts.forEach(({ meshes, body }) => {
             meshes.forEach(({ data }) => {
                 data.position.copy(body.translation());
@@ -114,8 +116,8 @@ export default class {
         }
     }
 
-    get position() {
-        return this.#pusher.platform.position;
+    get phase() {
+        return this.#pusher.phase;
     }
 
     save() {
@@ -124,9 +126,6 @@ export default class {
             phase: this.#pusher.phase,
             rewards: this.#pusher.rewards,
             platformBodyHandle: this.#platform.body.handle,
-            platform: {
-                position: this.#pusher.platform.position.z,
-            },
             doorBodyHandle: this.#door.body.handle,
             door: {
                 position: this.#pusher.door.position
@@ -146,7 +145,6 @@ export default class {
         this.#pusher.rewards = pusher.rewards;
         this.#pusher.phase = pusher.phase;
         this.#platform.body = this.#scene.worldBodies.get(pusher.platformBodyHandle);
-        this.#pusher.platform.position.z = pusher.platform.position;
         this.#door.body = this.#scene.worldBodies.get(pusher.doorBodyHandle);
         this.#pusher.door.position = pusher.door.position;
         this.#pusher.lights.state = Symbol.for(pusher.lights.state);
@@ -162,16 +160,15 @@ export default class {
 function updatePusherState({ pusher }) {
     switch (pusher.state) {
         case PUSHER_STATES.MOVING:
-            updatePusherPosition({ pusher });
-            break;
         case PUSHER_STATES.PREPARING_DELIVERY:
-            if (pusher.lights.state === LIGHTS_STATES.IDLE) {
-                pusher.lights.state = LIGHTS_STATES.ACTIVATING;
-            }
-            updatePusherPosition({ pusher });
-            if (pusher.platform.position.z < -DISTANCE + BLOCKING_PLATFORM_POSITION_PRECISION) {
-                pusher.platform.position.z = -DISTANCE;
-                pusher.state = PUSHER_STATES.OPENING_DOOR;
+            pusher.phase = (pusher.phase + SPEED) % (Math.PI * 2);
+            if (pusher.state === PUSHER_STATES.PREPARING_DELIVERY) {
+                if (pusher.lights.state === LIGHTS_STATES.IDLE) {
+                    pusher.lights.state = LIGHTS_STATES.ACTIVATING;
+                }
+                if (pusher.phase > Math.PI * 1.5 && pusher.phase < Math.PI * 1.5 + OPENING_DOOR_POSITION_PRECISION) {
+                    pusher.state = PUSHER_STATES.OPENING_DOOR;
+                }
             }
             break;
         case PUSHER_STATES.OPENING_DOOR:
@@ -185,7 +182,7 @@ function updatePusherState({ pusher }) {
             pusher.lights.state = LIGHTS_STATES.DELIVERING;
             break;
         case PUSHER_STATES.CLOSING_DOOR:
-            if (pusher.door.position > BLOCKING_PLATFORM_POSITION_PRECISION) {
+            if (pusher.door.position > CLOSING_DOOR_POSITION_PRECISION) {
                 pusher.door.position = pusher.door.position - DOOR_SPEED;
             } else {
                 pusher.door.position = 0;
@@ -199,12 +196,6 @@ function updatePusherState({ pusher }) {
             break;
     }
 }
-
-function updatePusherPosition({ pusher }) {
-    pusher.phase = (pusher.phase + SPEED) % (Math.PI * 2);
-    pusher.platform.position.z = (Math.sin(pusher.phase) * DISTANCE);
-}
-
 
 function updateLightsState({ pusher, time }) {
     pusher.lights.nextState = null;
@@ -236,7 +227,7 @@ function updateLightsState({ pusher, time }) {
                 });
             }
             if (pusher.lights.state === LIGHTS_STATES.PREPARING_IDLE) {
-                if (pusher.platform.position.z > DISTANCE - BLOCKING_PLATFORM_POSITION_PRECISION) {
+                if (pusher.phase > Math.PI / 2 && pusher.phase < Math.PI / 2 + 0.1) {
                     pusher.lights.bulbs.forEach(bulb => {
                         bulb.intensity = LIGHTS_MIN_INTENSITY;
                     });
