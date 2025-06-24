@@ -544,8 +544,8 @@ function updateStackerState({ stacker, floorLock }) {
             }
             break;
         case STACKER_STATES.MOVING_ARM_BACK_TO_CIRCUMFERENCE_POSITION:
-            stacker.armPosition += ARM_SPEED;
-            if (stacker.armPosition > ARM_CIRCUMFERENCE_POSITION) {
+            stacker.armPosition -= ARM_SPEED;
+            if (stacker.armPosition < ARM_CIRCUMFERENCE_POSITION) {
                 stacker.armPosition = ARM_CIRCUMFERENCE_POSITION;
                 stacker.nextState = STACKER_STATES.FINISHING_LEVEL;
             }
