@@ -796,7 +796,7 @@ function initializeColliders({ scene, parts }) {
                 if (meshData.vertices) {
                     vertices.push(...meshData.vertices);
                     indices.push(...meshData.indices.map(index => index + offsetIndex));
-                     offsetIndex += Math.max(...meshData.indices) + 1;
+                    offsetIndex += Math.max(...meshData.indices) + 1;
                 }
             });
             if (vertices.length > 0) {
