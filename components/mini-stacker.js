@@ -272,6 +272,11 @@ export default class {
             if (state === STACKER_STATES.PUSHING_COIN) {
                 this.#stacker.coin.body.applyImpulse(COIN_IMPULSE_FORCE, true);
             }
+            if (state === STACKER_STATES.LOWERING_BASE) {
+                this.#stacker.coin.body.setRotation(new Quaternion(COIN_ROTATION.x, COIN_ROTATION.y, COIN_ROTATION.z, 1), false);
+                const position = this.#stacker.coin.body.translation();
+                this.#stacker.coin.body.setTranslation(new Vector3(this.#offsetX, position.y, this.#pivotPosition.z), false);
+            }
         }
         if (lights.state !== LIGHTS_STATES.IDLE) {
             lights.bulbs.forEach((bulb, indexBulb) => {
