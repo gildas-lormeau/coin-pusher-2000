@@ -158,9 +158,7 @@ export default class {
             onBonusWon: () => {
                 const random = Math.random();
                 if (this.DEBUG_AUTOPLAY) {
-                    if (random < .5) {
-                        this.#pusher.deliverBonus({ coinCount: 10, cardCount: 1, tokenCount: 1 });
-                    }
+                    this.#pusher.deliverBonus({ coinCount: 10, cardCount: Math.random() < 0.5 ? 1 : 0, tokenCount: Math.random() < 0.5 ? 1 : 0, ingotCount: Math.random() < 0.5 ? 1 : 0 });
                 } else {
                     if (random < .2) {
                         this.#reelsBox.spinReels();
