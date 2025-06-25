@@ -15,6 +15,7 @@ import Excavator from "./excavator.js";
 import Tower from "./tower.js";
 import CoinRoller from "./coin-roller.js";
 import Stacker from "./stacker.js";
+import MiniStacker from "./mini-stacker.js";
 import Screen from "./screen.js";
 import Runs from "./runs.js";
 
@@ -84,6 +85,8 @@ export default class {
     #rightTower;
     #coinRoller;
     #stacker;
+    #leftStacker;
+    #rightStacker;
     #screen;
     #runs;
     #parts;
@@ -290,6 +293,18 @@ export default class {
             onInitializeCoin: ({ position, rotation, impulse }) => Coins.depositCoin({ position, rotation, impulse }),
         });
         await this.#stacker.initialize();
+        this.#leftStacker = new MiniStacker({
+            scene,
+            onInitializeCoin: ({ position, rotation, impulse }) => Coins.depositCoin({ position, rotation, impulse }),
+            offsetX: -0.4
+        });
+        await this.#leftStacker.initialize();
+        this.#rightStacker = new MiniStacker({
+            scene,
+            onInitializeCoin: ({ position, rotation, impulse }) => Coins.depositCoin({ position, rotation, impulse }),
+            offsetX: 0.4
+        });
+        await this.#rightStacker.initialize();
         this.#screen = new Screen({ scene });
         await this.#screen.initialize();
         this.#runs = new Runs({
@@ -317,6 +332,8 @@ export default class {
         this.#rightTower.update(time);
         this.#coinRoller.update(time);
         this.#stacker.update(time);
+        this.#leftStacker.update(time);
+        this.#rightStacker.update(time);
         this.#screen.update();
         this.#runs.update(time);
         this.dynamicBodies.forEach(({ object, objects }) => {
@@ -376,6 +393,8 @@ export default class {
             rightTower: this.#rightTower.save(),
             coinRoller: this.#coinRoller.save(),
             stacker: this.#stacker.save(),
+            leftStacker: this.#leftStacker.save(),
+            rightStacker: this.#rightStacker.save(),
             runs: this.#runs.save()
         });
         return data;
@@ -419,6 +438,8 @@ export default class {
         this.#rightTower.load(cabinet.rightTower);
         this.#coinRoller.load(cabinet.coinRoller);
         this.#stacker.load(cabinet.stacker);
+        this.#leftStacker.load(cabinet.leftStacker);
+        this.#rightStacker.load(cabinet.rightStacker);
         this.#runs.load(cabinet.runs);
     }
 
