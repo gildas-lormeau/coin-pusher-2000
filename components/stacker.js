@@ -18,7 +18,7 @@ const BASE_ROTATION_CLEANUP_SPEED = Math.PI / 9;
 const ARM_PROTECTION_LID_SPEED = 0.1;
 const BASE_CLEANUP_ROTATIONS = 4;
 const COIN_SETTLED_POSITION_Y = 0.135;
-const COIN_IMPULSE_FORCE = new Vector3(0, 0, 0.00009);
+const COIN_IMPULSE_FORCE = new Vector3(0, 0, 0.00001);
 const ARM_RETRACTED_POSITION = 0;
 const ARM_CIRCUMFERENCE_POSITION = 0.08;
 const ARM_CENTER_POSITION = 0.15;
@@ -280,10 +280,12 @@ export default class {
                 position.setY(position.y + this.#stacker.position);
                 this.#stacker.coin = this.#onInitializeCoin({
                     position,
-                    rotation: COIN_ROTATION,
-                    impulse: COIN_IMPULSE_FORCE
+                    rotation: COIN_ROTATION
                 });
                 this.#stacker.coins.push(this.#stacker.coin);
+            }
+            if (state === STACKER_STATES.PUSHING_COIN) {
+                this.#stacker.coin.body.applyImpulse(COIN_IMPULSE_FORCE, true);
             }
         }
         if (lights.state !== LIGHTS_STATES.IDLE) {
