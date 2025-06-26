@@ -3,8 +3,8 @@ import { PerspectiveCamera } from "three";
 const POSITION = [0, 2, 4.95];
 const FOV = 20;
 const ASPECT = innerWidth / innerHeight;
-const NEAR = 0.1;
-const FAR = 1000;
+const NEAR = 0.01;
+const FAR = 100;
 const LOOK_AT = [0, 0.5, 0];
 
 export default class {
