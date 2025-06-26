@@ -37,7 +37,8 @@ export default class {
     #cabinet = {
         state: {
             score: 0,
-            coinsInPool: 0
+            points: 0,
+            coins: 0
         },
         floorLocked: false,
     };
@@ -62,13 +63,16 @@ export default class {
                 if (this.#runs.started) {
                     if (object.objectType === Coins.TYPE) {
                         this.#cabinet.state.score++;
-                        this.#cabinet.state.coinsInPool++;
+                        this.#cabinet.state.points++;
+                        this.#cabinet.state.coins++;
                     }
                     if (object.objectType === Tokens.TYPE) {
                         this.#cabinet.state.score += 5;
+                        this.#cabinet.state.points += 5;
                     }
                     if (object.objectType === Cards.TYPE) {
                         this.#cabinet.state.score += 10;
+                        this.#cabinet.state.points += 10;
                     }
                 }
             }
@@ -121,9 +125,9 @@ export default class {
         wall.initialize();
         this.#controlPanel = new ControlPanel({
             onPressDropButton: slot => {
-                if (this.#cabinet.state.coinsInPool) {
+                if (this.#cabinet.state.coins) {
                     Coins.dropCoin({ slot });
-                    this.#cabinet.state.coinsInPool--;
+                    this.#cabinet.state.coins--;
                 }
             },
             onPressActionButton: () => {
@@ -362,8 +366,8 @@ export default class {
         return this.#excavator.joints;
     }
 
-    get coinCount() {
-        return Coins.coinCount;
+    get coinsInPlay() {
+        return Coins.usedCoins;
     }
 
     get dynamicBodies() {
@@ -432,7 +436,8 @@ export default class {
         });
         this.#cabinet.floorLocked = cabinet.floorLocked;
         this.#cabinet.state.score = cabinet.state.score;
-        this.#cabinet.state.coinsInPool = cabinet.state.coinsInPool;
+        this.#cabinet.state.points = cabinet.state.points;
+        this.#cabinet.state.coins = cabinet.state.coins;
         this.#pusher.load(cabinet.pusher);
         this.#sensorGate.load(cabinet.sensorGate);
         this.#reelsBox.load(cabinet.reelsBox);

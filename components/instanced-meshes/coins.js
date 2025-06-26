@@ -179,7 +179,7 @@ export default class {
         return this.#instances.filter(instance => instance.used).map(instance => ({ object: instance, objects: this, body: instance.body }));
     }
 
-    static get coinCount() {
+    static get usedCoins() {
         return this.#instances.filter(instance => instance.used).length;
     }
 

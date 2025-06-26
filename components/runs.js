@@ -95,7 +95,7 @@ function updateRunsState({ run, state, currentRun, time }) {
     switch (run.state) {
         case RUNS_STATES.STARTING_RUNS:
             run.step = 0;
-            state.coinsInPool = 100;
+            state.coins = 100;
             run.state = RUNS_STATES.STARTING_RUN;
             break;
         case RUNS_STATES.STARTING_RUN:

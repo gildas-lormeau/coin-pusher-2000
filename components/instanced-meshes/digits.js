@@ -1,6 +1,6 @@
 import { Vector3, Quaternion, Matrix4, Euler, InstancedMesh } from "three";
 
-const MAX_INSTANCES = 16;
+const MAX_INSTANCES = 24;
 const WIDTH = 0.04;
 const HEIGHT = 0.055;
 const DEPTH = 0.002;

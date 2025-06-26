@@ -1,13 +1,17 @@
 import DigitsPanel from "./digits-panel.js";
 
-const DIGITS_COUNT_SCORE = 6;
-const COLOR_SCORE = 2;
-const POSITION_SCORE = [0.6, .88, -0.33];
+const DIGITS_COUNT_SCORE = 8;
+const COLOR_SCORE = 0;
+const POSITION_SCORE = [-0.135, 1.11, -0.33];
 const ROTATION_SCORE = [0, 0, 0];
 const DIGITS_COUNT_COINS = 6;
 const COLOR_COINS = 0;
-const POSITION_COINS = [0.6, 1.11, -0.33];
+const POSITION_COINS = [0.7, 1.11, -0.33];
 const ROTATION_COINS = [0, 0, 0];
+const DIGITS_COUNT_POINTS = 6;
+const COLOR_POINTS = 0;
+const POSITION_POINTS = [0.34, 1.11, -0.33];
+const ROTATION_POINTS = [0, 0, 0];
 const DIGITS_COUNT_COINS_IN_PLAY = 4;
 const COLOR_COINS_IN_PLAY = 0;
 const POSITION_COINS_IN_PLAY = [-0.8275, 0.22, 0.77];
@@ -26,7 +30,8 @@ export default class {
     #cabinet;
     #state;
     #score;
-    #coinsInPool;
+    #points;
+    #coins;
     #coinsInPlay;
 
     async initialize() {
@@ -38,14 +43,22 @@ export default class {
             color: COLOR_SCORE
         });
         await this.#score.initialize();
-        this.#coinsInPool = new DigitsPanel({
+        this.#points = new DigitsPanel({
+            scene: this.#scene,
+            position: POSITION_POINTS,
+            rotation: ROTATION_POINTS,
+            digitsCount: DIGITS_COUNT_POINTS,
+            color: COLOR_POINTS
+        });
+        await this.#points.initialize();
+        this.#coins = new DigitsPanel({
             scene: this.#scene,
             position: POSITION_COINS,
             rotation: ROTATION_COINS,
             digitsCount: DIGITS_COUNT_COINS,
             color: COLOR_COINS
         });
-        await this.#coinsInPool.initialize();
+        await this.#coins.initialize();
         this.#coinsInPlay = new DigitsPanel({
             scene: this.#scene,
             position: POSITION_COINS_IN_PLAY,
@@ -59,11 +72,13 @@ export default class {
 
     update(time) {
         this.#score.set(this.#state.score);
-        this.#coinsInPool.set(this.#state.coinsInPool);
-        this.#coinsInPlay.set(this.#cabinet.coinCount);
+        this.#points.set(this.#state.points);
+        this.#coins.set(this.#state.coins);
+        this.#coinsInPlay.set(this.#cabinet.coinsInPlay);
         this.#score.update(time);
-        this.#coinsInPool.update(time);
+        this.#coins.update(time);
         this.#coinsInPlay.update(time);
+        this.#points.update(time);
     }
 
 }
