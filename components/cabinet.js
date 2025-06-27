@@ -324,16 +324,6 @@ export default class {
             this.#screen.initialize(),
             this.#runs.initialize()
         ]);
-
-        setTimeout(() => {
-            this.#sweepers.sweepFloor();
-            this.#stacker.deliver({ stacks: 2, levels: 5 });
-            this.#leftStacker.deliver({ levels: 5 });
-            this.#rightStacker.deliver({ levels: 5 });
-            this.#leftTower.shootCoins();
-            this.#rightTower.shootCoins();
-            this.#excavator.pick();
-        }, 1000);
     }
 
     update(time) {
