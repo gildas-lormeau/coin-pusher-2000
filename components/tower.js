@@ -30,6 +30,7 @@ export default class {
     #initPosition;
     #offsetX;
     #oscillationDirection;
+    #canActivate;
     #onShootCoin;
     #turret;
     #turretPosition = new Vector3();
@@ -46,8 +47,9 @@ export default class {
         timeLastShot: -1
     };
 
-    constructor({ scene, onShootCoin, offsetX = 0, oscillationDirection = -1 }) {
+    constructor({ scene, canActivate, onShootCoin, offsetX = 0, oscillationDirection = -1 }) {
         this.#scene = scene;
+        this.#canActivate = canActivate;
         this.#onShootCoin = onShootCoin;
         this.#offsetX = offsetX;
         this.#oscillationDirection = oscillationDirection;
@@ -68,7 +70,8 @@ export default class {
         updateTowerState({
             tower: this.#tower,
             time,
-            oscillationDirection: this.#oscillationDirection
+            oscillationDirection: this.#oscillationDirection,
+            canActivate: () => this.#canActivate(this)
         });
         const { state, parts, angle, position } = this.#tower;
         if (state !== TOWER_STATES.IDLE) {
@@ -130,18 +133,24 @@ export default class {
             }
         });
     }
+
+    get active() {
+        return this.#tower.state !== TOWER_STATES.IDLE && this.#tower.state !== TOWER_STATES.ACTIVATING;
+    }
 }
 
-function updateTowerState({ tower, time, oscillationDirection }) {
+function updateTowerState({ tower, time, oscillationDirection, canActivate }) {
     switch (tower.state) {
         case TOWER_STATES.ACTIVATING:
-            if (tower.position < POSITION_UP_Y) {
-                tower.position += DELTA_POSITION_STEP;
-            } else {
-                tower.timeActive = time;
-                tower.timeLastShot = time;
-                tower.position = POSITION_UP_Y;
-                tower.state = TOWER_STATES.SHOOTING_COINS;
+            if (canActivate()) {
+                if (tower.position < POSITION_UP_Y) {
+                    tower.position += DELTA_POSITION_STEP;
+                } else {
+                    tower.timeActive = time;
+                    tower.timeLastShot = time;
+                    tower.position = POSITION_UP_Y;
+                    tower.state = TOWER_STATES.SHOOTING_COINS;
+                }
             }
             break;
         case TOWER_STATES.SHOOTING_COINS:

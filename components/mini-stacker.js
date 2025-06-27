@@ -87,6 +87,7 @@ export default class {
 
     #scene;
     #lightBulbsMaterials;
+    #canActivate;
     #onInitializeCoin;
     #dropPosition;
     #pivotPosition;
@@ -116,9 +117,10 @@ export default class {
         }
     };
 
-    constructor({ scene, onInitializeCoin, offsetX = 0 }) {
+    constructor({ scene, canActivate, onInitializeCoin, offsetX = 0 }) {
         this.#scene = scene;
         this.#offsetX = offsetX;
+        this.#canActivate = canActivate;
         this.#onInitializeCoin = onInitializeCoin;
     }
 
@@ -152,7 +154,10 @@ export default class {
     }
 
     update(time) {
-        updateStackerState({ stacker: this.#stacker });
+        updateStackerState({
+            stacker: this.#stacker,
+            canActivate: () => this.#canActivate(this)
+        });
         updateLightsState({ stacker: this.#stacker, time });
         const { parts, state, lights } = this.#stacker;
         if (state !== STACKER_STATES.IDLE) {
@@ -369,16 +374,22 @@ export default class {
             intensity: bulb.intensity
         }));
     }
+
+    get active() {
+        return this.#stacker.state !== STACKER_STATES.IDLE && this.#stacker.state !== STACKER_STATES.ACTIVATING;
+    }
 }
 
-function updateStackerState({ stacker }) {
+function updateStackerState({ stacker, canActivate }) {
     stacker.nextState = null;
     switch (stacker.state) {
         case STACKER_STATES.IDLE:
             break;
         case STACKER_STATES.ACTIVATING:
-            stacker.nextState = STACKER_STATES.RAISING_STACKER_TO_CLEANUP_POSITION;
-            stacker.lights.state = LIGHTS_STATES.ACTIVATING;
+            if (canActivate()) {
+                stacker.nextState = STACKER_STATES.RAISING_STACKER_TO_CLEANUP_POSITION;
+                stacker.lights.state = LIGHTS_STATES.ACTIVATING;
+            }
             break;
         case STACKER_STATES.RAISING_STACKER_TO_CLEANUP_POSITION:
             stacker.position += STACKER_RAISING_SPEED;

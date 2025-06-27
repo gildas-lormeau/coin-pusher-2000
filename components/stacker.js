@@ -96,7 +96,7 @@ export default class {
 
     #scene;
     #lightBulbsMaterials;
-    #floorLock;
+    #canActivate;
     #onInitializeCoin;
     #dropPosition;
     #pivotPosition;
@@ -128,9 +128,9 @@ export default class {
         }
     };
 
-    constructor({ scene, floorLock, onInitializeCoin }) {
+    constructor({ scene, canActivate, onInitializeCoin }) {
         this.#scene = scene;
-        this.#floorLock = floorLock;
+        this.#canActivate = canActivate;
         this.#onInitializeCoin = onInitializeCoin;
     }
 
@@ -163,7 +163,10 @@ export default class {
     }
 
     update(time) {
-        updateStackerState({ stacker: this.#stacker, floorLock: this.#floorLock });
+        updateStackerState({
+            stacker: this.#stacker,
+            canActivate: () => this.#canActivate(this)
+        });
         updateLightsState({ stacker: this.#stacker, time });
         const { parts, state, lights } = this.#stacker;
         if (state !== STACKER_STATES.IDLE) {
@@ -387,17 +390,20 @@ export default class {
             intensity: bulb.intensity
         }));
     }
+
+    get active() {
+        return this.#stacker.state !== STACKER_STATES.IDLE && this.#stacker.state !== STACKER_STATES.ACTIVATING;
+    }
 }
 
-function updateStackerState({ stacker, floorLock }) {
+function updateStackerState({ stacker, canActivate }) {
     let targetAngle;
     stacker.nextState = null;
     switch (stacker.state) {
         case STACKER_STATES.IDLE:
             break;
         case STACKER_STATES.ACTIVATING:
-            if (!floorLock.isLocked()) {
-                floorLock.acquire();
+            if (canActivate()) {
                 stacker.nextState = STACKER_STATES.RAISING_STACKER_TO_CLEANUP_POSITION;
                 stacker.lights.state = LIGHTS_STATES.ACTIVATING;
             }
@@ -617,7 +623,6 @@ function updateStackerState({ stacker, floorLock }) {
             }
             break;
         case STACKER_STATES.PREPARING_IDLE:
-            floorLock.release();
             stacker.coin = null;
             stacker.coins = [];
             stacker.lights.state = LIGHTS_STATES.PREPARING_IDLE;

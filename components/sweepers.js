@@ -53,6 +53,7 @@ const SWEEPERS_STATES = {
 export default class {
 
     #scene;
+    #canActivate;
     #leftPivotPosition;
     #rightPivotPosition;
     #leftDoorPivotPosition;
@@ -90,8 +91,9 @@ export default class {
         nextState: null
     };
 
-    constructor({ scene }) {
+    constructor({ scene, canActivate }) {
         this.#scene = scene;
+        this.#canActivate = canActivate;
     }
 
     async initialize() {
@@ -119,7 +121,7 @@ export default class {
     }
 
     update(time) {
-        updateSweepersState({ sweepers: this.#sweepers });
+        updateSweepersState({ sweepers: this.#sweepers, canActivate: () => this.#canActivate(this) });
         const { parts, state } = this.#sweepers;
         if (state !== SWEEPERS_STATES.IDLE) {
             parts.forEach(({ meshes, body }) => {
@@ -248,15 +250,21 @@ export default class {
             }
         });
     }
+
+    get active() {
+        return this.#sweepers.state !== SWEEPERS_STATES.IDLE && this.#sweepers.state !== SWEEPERS_STATES.ACTIVATING;
+    }
 }
 
-function updateSweepersState({ sweepers }) {
+function updateSweepersState({ sweepers, canActivate }) {
     sweepers.nextState = null;
     switch (sweepers.state) {
         case SWEEPERS_STATES.IDLE:
             break;
         case SWEEPERS_STATES.ACTIVATING:
-            sweepers.nextState = SWEEPERS_STATES.OPENING_DOORS;
+            if (canActivate()) {
+                sweepers.nextState = SWEEPERS_STATES.OPENING_DOORS;
+            }
             break;
         case SWEEPERS_STATES.OPENING_DOORS:
             sweepers.doorsRotation += DOORS_ROTATION_SPEED;

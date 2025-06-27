@@ -40,8 +40,7 @@ export default class {
             score: 0,
             points: 0,
             coins: 0
-        },
-        floorLocked: false,
+        }
     };
     #sensorColliders;
     #sensorListeners = {
@@ -79,6 +78,7 @@ export default class {
             }
         }
     };
+    #floorAccessInfo = new Map();
     #controlPanel;
     #pusher;
     #scoreboard;
@@ -110,21 +110,7 @@ export default class {
             parts
         });
         this.#sensorColliders = sensorColliders;
-        await Promise.all([
-            Cards.initialize({ scene }),
-            Coins.initialize({
-                scene,
-                onSpawnedCoin: instance => {
-                    Coins.enableCcd(instance, true);
-                }
-            }),
-            Tokens.initialize({ scene }),
-            Buttons.initialize({ scene }),
-            Digits.initialize({ scene }),
-            Ingots.initialize({ scene })
-        ]);
         const wall = new Wall({ scene });
-        wall.initialize();
         this.#controlPanel = new ControlPanel({
             onPressDropButton: slot => {
                 if (this.#cabinet.state.coins) {
@@ -140,7 +126,6 @@ export default class {
                 this.#runs.start();
             }
         });
-        await this.#controlPanel.initialize();
         this.#pusher = new Pusher({
             scene,
             depositBonus: ({ reward, position }) => {
@@ -150,15 +135,12 @@ export default class {
                 Ingots.depositIngots({ position, count: reward.ingotCount });
             }
         });
-        this.#pusher.initialize();
         this.#scoreboard = new ScoreBoard({
             scene,
             cabinet: this,
             state: this.#cabinet.state
         });
-        await this.#scoreboard.initialize();
         this.#collisionsDetector = new CollisionsDetector({ scene });
-        this.#collisionsDetector.initialize();
         this.#sensorGate = new SensorGate({
             scene,
             onCoinFallen: (instance) => {
@@ -188,22 +170,6 @@ export default class {
                 }
             }
         });
-        await this.#sensorGate.initialize();
-        const floorLock = {
-            acquire: () => {
-                if (!this.#cabinet.floorLocked) {
-                    this.#cabinet.floorLocked = true;
-                }
-            },
-            release: () => {
-                if (this.#cabinet.floorLocked) {
-                    this.#cabinet.floorLocked = false;
-                }
-            },
-            isLocked: () => {
-                return this.#cabinet.floorLocked;
-            }
-        };
         this.#reelsBox = new ReelsBox({
             scene,
             onBonusWon: (reels) => {
@@ -215,10 +181,9 @@ export default class {
                 });
             }
         });
-        await this.#reelsBox.initialize();
         this.#excavator = new Excavator({
             scene,
-            floorLock,
+            canActivate: caller => this.#canActivate(caller),
             onPick: dropPosition => {
                 const objects = [];
                 for (let i = 0; i < 30 + Math.floor(Math.random() * 10); i++) {
@@ -263,25 +228,24 @@ export default class {
                 }
             }
         });
-        await this.#excavator.initialize();
         this.#leftTower = new Tower({
             scene,
             offsetX: -.25,
             oscillationDirection: 1,
+            canActivate: caller => this.#canActivate(caller),
             onShootCoin: ({ position, impulse }) => {
                 Coins.depositCoin({ position, impulse });
             }
         });
-        await this.#leftTower.initialize();
         this.#rightTower = new Tower({
             scene,
             offsetX: .25,
             oscillationDirection: -1,
+            canActivate: caller => this.#canActivate(caller),
             onShootCoin: ({ position, impulse }) => {
                 Coins.depositCoin({ position, impulse });
             }
         });
-        await this.#rightTower.initialize();
         this.#coinRoller = new CoinRoller({
             scene,
             onInitializeCoin: ({ position, rotation }) => Coins.depositCoin({ position, rotation }),
@@ -295,36 +259,71 @@ export default class {
                 this.#controlPanel.disableActionButton();
             }
         });
-        await this.#coinRoller.initialize();
         this.#stacker = new Stacker({
             scene,
-            floorLock,
+            canActivate: caller => this.#canActivate(caller),
             onInitializeCoin: ({ position, rotation, impulse }) => Coins.depositCoin({ position, rotation, impulse }),
         });
-        await this.#stacker.initialize();
         this.#leftStacker = new MiniStacker({
             scene,
+            canActivate: caller => this.#canActivate(caller),
             onInitializeCoin: ({ position, rotation, impulse }) => Coins.depositCoin({ position, rotation, impulse }),
             offsetX: -0.4
         });
-        await this.#leftStacker.initialize();
         this.#rightStacker = new MiniStacker({
             scene,
+            canActivate: caller => this.#canActivate(caller),
             onInitializeCoin: ({ position, rotation, impulse }) => Coins.depositCoin({ position, rotation, impulse }),
             offsetX: 0.4
         });
-        await this.#rightStacker.initialize();
         this.#sweepers = new Sweepers({
-            scene
+            scene,
+            canActivate: caller => this.#canActivate(caller)
         });
-        await this.#sweepers.initialize();
         this.#screen = new Screen({ scene });
-        await this.#screen.initialize();
         this.#runs = new Runs({
             state: this.#cabinet.state,
             screen: this.#screen
         });
-        this.#runs.initialize();
+        this.#floorAccessInfo.set(this.#leftStacker, new Set([this.#sweepers]));
+        this.#floorAccessInfo.set(this.#rightStacker, new Set([this.#sweepers]));
+        this.#floorAccessInfo.set(this.#stacker, new Set([this.#sweepers, this.#excavator]));
+        this.#floorAccessInfo.set(this.#sweepers, null);
+        this.#floorAccessInfo.set(this.#excavator, new Set([this.#sweepers, this.#stacker]));
+        this.#floorAccessInfo.set(this.#leftTower, new Set([this.#sweepers]));
+        this.#floorAccessInfo.set(this.#rightTower, new Set([this.#sweepers]));
+        await Promise.all([
+            Cards.initialize({ scene }),
+            Coins.initialize({
+                scene,
+                onSpawnedCoin: instance => {
+                    Coins.enableCcd(instance, true);
+                }
+            }),
+            Tokens.initialize({ scene }),
+            Buttons.initialize({ scene }),
+            Digits.initialize({ scene }),
+            Ingots.initialize({ scene })
+        ]);
+        await Promise.all([
+            wall.initialize(),
+            this.#collisionsDetector.initialize(),
+            this.#controlPanel.initialize(),
+            this.#pusher.initialize(),
+            this.#scoreboard.initialize(),
+            this.#sensorGate.initialize(),
+            this.#reelsBox.initialize(),
+            this.#excavator.initialize(),
+            this.#leftTower.initialize(),
+            this.#rightTower.initialize(),
+            this.#coinRoller.initialize(),
+            this.#stacker.initialize(),
+            this.#leftStacker.initialize(),
+            this.#rightStacker.initialize(),
+            this.#sweepers.initialize(),
+            this.#screen.initialize(),
+            this.#runs.initialize()
+        ]);
     }
 
     update(time) {
@@ -395,7 +394,6 @@ export default class {
         data.buttons = Buttons.save();
         data.ingots = Ingots.save();
         Object.assign(data, {
-            floorLocked: this.#cabinet.floorLocked,
             state: this.#cabinet.state,
             sensorCollidersHandles,
             scene: await this.#scene.save(),
@@ -442,7 +440,6 @@ export default class {
                 });
             });
         });
-        this.#cabinet.floorLocked = cabinet.floorLocked;
         this.#cabinet.state.score = cabinet.state.score;
         this.#cabinet.state.points = cabinet.state.points;
         this.#cabinet.state.coins = cabinet.state.coins;
@@ -469,6 +466,17 @@ export default class {
             return Cards.getCard(userData);
         } else if (userData.objectType === Ingots.TYPE) {
             return Ingots.getIngot(userData);
+        }
+    }
+
+    #canActivate(caller) {
+        const info = this.#floorAccessInfo.get(caller);
+        if (info) {
+            const excludedParts = Array.from(info).filter(part => part !== caller);
+            return !excludedParts.find(part => part.active);
+        } else {
+            const otherParts = Array.from(this.#floorAccessInfo.keys()).filter(part => part !== caller);
+            return !otherParts.find(part => part.active);
         }
     }
 
