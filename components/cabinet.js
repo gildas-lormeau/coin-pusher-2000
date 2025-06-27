@@ -16,6 +16,7 @@ import Tower from "./tower.js";
 import CoinRoller from "./coin-roller.js";
 import Stacker from "./stacker.js";
 import MiniStacker from "./mini-stacker.js";
+import Sweepers from "./sweepers.js";
 import Screen from "./screen.js";
 import Runs from "./runs.js";
 
@@ -91,6 +92,7 @@ export default class {
     #stacker;
     #leftStacker;
     #rightStacker;
+    #sweepers;
     #screen;
     #runs;
     #parts;
@@ -312,6 +314,10 @@ export default class {
             offsetX: 0.4
         });
         await this.#rightStacker.initialize();
+        this.#sweepers = new Sweepers({
+            scene
+        });
+        await this.#sweepers.initialize();
         this.#screen = new Screen({ scene });
         await this.#screen.initialize();
         this.#runs = new Runs({
@@ -341,6 +347,7 @@ export default class {
         this.#stacker.update(time);
         this.#leftStacker.update(time);
         this.#rightStacker.update(time);
+        this.#sweepers.update(time);
         this.#screen.update();
         this.#runs.update(time);
         this.dynamicBodies.forEach(({ object, objects }) => {
@@ -402,6 +409,7 @@ export default class {
             stacker: this.#stacker.save(),
             leftStacker: this.#leftStacker.save(),
             rightStacker: this.#rightStacker.save(),
+            sweepers: this.#sweepers.save(),
             runs: this.#runs.save()
         });
         return data;
@@ -448,6 +456,7 @@ export default class {
         this.#stacker.load(cabinet.stacker);
         this.#leftStacker.load(cabinet.leftStacker);
         this.#rightStacker.load(cabinet.rightStacker);
+        this.#sweepers.load(cabinet.sweepers);
         this.#runs.load(cabinet.runs);
     }
 
