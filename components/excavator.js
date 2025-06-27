@@ -241,7 +241,7 @@ export default class {
     }
 
     get active() {
-    return this.#excavator.state !== EXCAVATOR_STATES.IDLE && this.#excavator.state !== EXCAVATOR_STATES.ACTIVATING;
+        return this.#excavator.state !== EXCAVATOR_STATES.IDLE && this.#excavator.state !== EXCAVATOR_STATES.ACTIVATING;
     }
 
     pick() {
