@@ -223,6 +223,7 @@ export default class {
         });
         return {
             state: this.#sweepers.state.description,
+            nextState: this.#sweepers.nextState ? this.#sweepers.nextState.description : null,
             parts,
             position: this.#sweepers.position,
             rotation: this.#sweepers.rotation,
@@ -236,6 +237,7 @@ export default class {
 
     load(sweepers) {
         this.#sweepers.state = Symbol.for(sweepers.state);
+        this.#sweepers.nextState = sweepers.nextState ? Symbol.for(sweepers.nextState) : null;
         this.#sweepers.position = sweepers.position;
         this.#sweepers.rotation = sweepers.rotation;
         this.#sweepers.translation = sweepers.translation;
