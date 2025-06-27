@@ -78,7 +78,7 @@ export default class {
             }
         }
     };
-    #floorAccessInfo = new Map();
+    #floorAccessRules = new Map();
     #controlPanel;
     #pusher;
     #scoreboard;
@@ -285,13 +285,13 @@ export default class {
             state: this.#cabinet.state,
             screen: this.#screen
         });
-        this.#floorAccessInfo.set(this.#leftStacker, new Set([this.#sweepers]));
-        this.#floorAccessInfo.set(this.#rightStacker, new Set([this.#sweepers]));
-        this.#floorAccessInfo.set(this.#stacker, new Set([this.#sweepers, this.#excavator]));
-        this.#floorAccessInfo.set(this.#sweepers, null);
-        this.#floorAccessInfo.set(this.#excavator, new Set([this.#sweepers, this.#stacker]));
-        this.#floorAccessInfo.set(this.#leftTower, new Set([this.#sweepers]));
-        this.#floorAccessInfo.set(this.#rightTower, new Set([this.#sweepers]));
+        this.#floorAccessRules.set(this.#leftStacker, new Set([this.#sweepers]));
+        this.#floorAccessRules.set(this.#rightStacker, new Set([this.#sweepers]));
+        this.#floorAccessRules.set(this.#stacker, new Set([this.#sweepers, this.#excavator]));
+        this.#floorAccessRules.set(this.#sweepers, null);
+        this.#floorAccessRules.set(this.#excavator, new Set([this.#sweepers, this.#stacker]));
+        this.#floorAccessRules.set(this.#leftTower, new Set([this.#sweepers]));
+        this.#floorAccessRules.set(this.#rightTower, new Set([this.#sweepers]));
         await Promise.all([
             Cards.initialize({ scene }),
             Coins.initialize({
@@ -324,6 +324,16 @@ export default class {
             this.#screen.initialize(),
             this.#runs.initialize()
         ]);
+
+        setTimeout(() => {
+            this.#sweepers.sweepFloor();
+            this.#stacker.deliver({ stacks: 2, levels: 5 });
+            this.#leftStacker.deliver({ levels: 5 });
+            this.#rightStacker.deliver({ levels: 5 });
+            this.#leftTower.shootCoins();
+            this.#rightTower.shootCoins();
+            this.#excavator.pick();
+        }, 1000);
     }
 
     update(time) {
@@ -470,12 +480,12 @@ export default class {
     }
 
     #canActivate(caller) {
-        const info = this.#floorAccessInfo.get(caller);
+        const info = this.#floorAccessRules.get(caller);
         if (info) {
             const excludedParts = Array.from(info).filter(part => part !== caller);
             return !excludedParts.find(part => part.active);
         } else {
-            const otherParts = Array.from(this.#floorAccessInfo.keys()).filter(part => part !== caller);
+            const otherParts = Array.from(this.#floorAccessRules.keys()).filter(part => part !== caller);
             return !otherParts.find(part => part.active);
         }
     }
