@@ -151,19 +151,21 @@ export default class {
                 if (this.DEBUG_AUTOPLAY) {
                     this.#pusher.deliverBonus({ coinCount: 10, cardCount: Math.random() < 0.5 ? 1 : 0, tokenCount: Math.random() < 0.5 ? 1 : 0, ingotCount: Math.random() < 0.5 ? 1 : 0 });
                 } else {
-                    if (random < .16) {
+                    if (random < .14) {
                         this.#reelsBox.spinReels();
-                    } else if (random < .32) {
+                    } else if (random < .28) {
                         this.#excavator.pick();
-                    } else if (random < .5) {
+                    } else if (random < .43) {
                         this.#controlPanel.enableActionButton();
                         this.#coinRoller.shootCoin();
-                    } else if (random < .66) {
+                    } else if (random < .57) {
                         this.#leftTower.shootCoins();
                         this.#rightTower.shootCoins();
-                    } else if (random < .84) {
+                    } else if (random < .71) {
                         this.#leftStacker.deliver({ levels: 30 });
                         this.#rightStacker.deliver({ levels: 30 });
+                    } else if (random < .86) {
+                        this.#sweepers.sweepFloor();
                     } else {
                         this.#stacker.deliver({ stacks: 7, levels: 15 });
                     }
