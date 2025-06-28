@@ -18,6 +18,7 @@ import Stacker from "./stacker.js";
 import MiniStacker from "./mini-stacker.js";
 import Sweepers from "./sweepers.js";
 import Screen from "./screen.js";
+import CardReader from "./card-reader.js";
 import Runs from "./runs.js";
 
 const MIN_POSITION_Y_OBJECTS = -1;
@@ -94,6 +95,7 @@ export default class {
     #rightStacker;
     #sweepers;
     #screen;
+    #cardReader;
     #runs;
     #parts;
 
@@ -283,6 +285,12 @@ export default class {
             canActivate: caller => this.#canActivate(caller)
         });
         this.#screen = new Screen({ scene });
+        this.#cardReader = new CardReader({
+            scene,
+            onCardRead: card => {
+                // TODO
+            }
+        });
         this.#runs = new Runs({
             state: this.#cabinet.state,
             screen: this.#screen
@@ -324,6 +332,7 @@ export default class {
             this.#rightStacker.initialize(),
             this.#sweepers.initialize(),
             this.#screen.initialize(),
+            this.#cardReader.initialize(),
             this.#runs.initialize()
         ]);
     }
@@ -350,6 +359,7 @@ export default class {
         this.#rightStacker.update(time);
         this.#sweepers.update(time);
         this.#screen.update();
+        this.#cardReader.update();
         this.#runs.update(time);
         this.dynamicBodies.forEach(({ object, objects }) => {
             if (object.position.y < MIN_POSITION_Y_OBJECTS) {
@@ -410,6 +420,7 @@ export default class {
             leftStacker: this.#leftStacker.save(),
             rightStacker: this.#rightStacker.save(),
             sweepers: this.#sweepers.save(),
+            cardReader: this.#cardReader.save(),
             runs: this.#runs.save()
         });
         return data;
@@ -456,6 +467,7 @@ export default class {
         this.#leftStacker.load(cabinet.leftStacker);
         this.#rightStacker.load(cabinet.rightStacker);
         this.#sweepers.load(cabinet.sweepers);
+        this.#cardReader.load(cabinet.cardReader);
         this.#runs.load(cabinet.runs);
     }
 
