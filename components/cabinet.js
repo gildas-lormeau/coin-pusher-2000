@@ -19,6 +19,7 @@ import MiniStacker from "./mini-stacker.js";
 import Sweepers from "./sweepers.js";
 import Screen from "./screen.js";
 import CardReader from "./card-reader.js";
+import TokenSlot from "./token-slot.js";
 import Runs from "./runs.js";
 
 const MIN_POSITION_Y_OBJECTS = -1;
@@ -96,6 +97,7 @@ export default class {
     #sweepers;
     #screen;
     #cardReader;
+    #tokenSlot;
     #runs;
     #parts;
 
@@ -291,6 +293,12 @@ export default class {
                 // TODO
             }
         });
+        this.#tokenSlot = new TokenSlot({
+            scene,
+            onTokenInserted: token => {
+                // TODO
+            }
+        });
         this.#runs = new Runs({
             state: this.#cabinet.state,
             screen: this.#screen
@@ -333,6 +341,7 @@ export default class {
             this.#sweepers.initialize(),
             this.#screen.initialize(),
             this.#cardReader.initialize(),
+            this.#tokenSlot.initialize(),
             this.#runs.initialize()
         ]);
     }
@@ -360,6 +369,7 @@ export default class {
         this.#sweepers.update(time);
         this.#screen.update();
         this.#cardReader.update();
+        this.#tokenSlot.update();
         this.#runs.update(time);
         this.dynamicBodies.forEach(({ object, objects }) => {
             if (object.position.y < MIN_POSITION_Y_OBJECTS) {
@@ -421,6 +431,7 @@ export default class {
             rightStacker: this.#rightStacker.save(),
             sweepers: this.#sweepers.save(),
             cardReader: this.#cardReader.save(),
+            tokenSlot: this.#tokenSlot.save(),
             runs: this.#runs.save()
         });
         return data;
@@ -468,6 +479,7 @@ export default class {
         this.#rightStacker.load(cabinet.rightStacker);
         this.#sweepers.load(cabinet.sweepers);
         this.#cardReader.load(cabinet.cardReader);
+        this.#tokenSlot.load(cabinet.tokenSlot);
         this.#runs.load(cabinet.runs);
     }
 

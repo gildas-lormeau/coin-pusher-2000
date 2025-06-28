@@ -1,29 +1,29 @@
 import { Vector3, Quaternion } from "three";
 
-const MODEL_PATH = "./../assets/card-reader.glb";
+const MODEL_PATH = "./../assets/token-slot.glb";
 const INSERT_POSITION = "insert-position";
-const CARD_INITIAL_POSITION = 0;
+const TOKEN_INITIAL_POSITION = 0;
 
-const CARS_READER_STATES = {
-    IDLE: Symbol.for("card-reader-idle"),
-    ACTIVATING: Symbol.for("card-reader-activating")
+const TOKEN_SLOT_STATES = {
+    IDLE: Symbol.for("token-slot-idle"),
+    ACTIVATING: Symbol.for("token-slot-activating")
 };
 
 export default class {
 
     #scene;
     #insertPosition;
-    #onCardRead;
-    #cardReader = {
-        state: CARS_READER_STATES.IDLE,
-        cardPosition: CARD_INITIAL_POSITION,
-        pendingCards: [],
+    #onTokenInserted;
+    #tokenSlot = {
+        state: TOKEN_SLOT_STATES.IDLE,
+        cardPosition: TOKEN_INITIAL_POSITION,
+        pendingTokens: [],
         nextState: null
     };
 
-    constructor({ scene, onCardRead }) {
+    constructor({ scene, onTokenInserted }) {
         this.#scene = scene;
-        this.#onCardRead = onCardRead;
+        this.#onTokenInserted = onTokenInserted;
     }
 
     async initialize() {
@@ -31,25 +31,25 @@ export default class {
         const { parts, insertPosition } = await initializeModel({ scene });
         this.#insertPosition = insertPosition;
         parts.forEach(({ meshes }) => meshes.forEach(({ data }) => this.#scene.addObject(data)));
-        Object.assign(this.#cardReader, { parts });
+        Object.assign(this.#tokenSlot, { parts });
     }
 
     update() {
-        updateCardReaderState({ cardReader: this.#cardReader });
-        const { parts, state } = this.#cardReader;
-        if (state !== CARS_READER_STATES.IDLE) {
+        updateTokenSlotState({ tokenSlot: this.#tokenSlot });
+        const { parts, state } = this.#tokenSlot;
+        if (state !== TOKEN_SLOT_STATES.IDLE) {
             // TODO
         }
-        if (this.#cardReader.nextState) {
-            this.#cardReader.state = this.#cardReader.nextState;
+        if (this.#tokenSlot.nextState) {
+            this.#tokenSlot.state = this.#tokenSlot.nextState;
         }
     }
 
-    readCard(card) {
-        if (this.#cardReader.state === CARS_READER_STATES.IDLE) {
-            this.#cardReader.state = CARS_READER_STATES.ACTIVATING;
+    insertToken(token) {
+        if (this.#tokenSlot.state === TOKEN_SLOT_STATES.IDLE) {
+            this.#tokenSlot.state = TOKEN_SLOT_STATES.ACTIVATING;
         } else {
-            this.#cardReader.pendingCards.push(card);
+            this.#tokenSlot.pendingTokens.push(token);
         }
     }
 
@@ -57,17 +57,17 @@ export default class {
         // TODO
     }
 
-    load(cardReader) {
+    load(tokenSlot) {
         // TODO
     }
 }
 
-function updateCardReaderState({ cardReader }) {
-    cardReader.nextState = null;
-    switch (cardReader.state) {
-        case CARS_READER_STATES.IDLE:
+function updateTokenSlotState({ tokenSlot }) {
+    tokenSlot.nextState = null;
+    switch (tokenSlot.state) {
+        case TOKEN_SLOT_STATES.IDLE:
             break;
-        case CARS_READER_STATES.ACTIVATING:
+        case TOKEN_SLOT_STATES.ACTIVATING:
             // TODO
             break;
         default:
