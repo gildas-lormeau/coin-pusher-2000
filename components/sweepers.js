@@ -58,6 +58,12 @@ export default class {
     #rightPivotPosition;
     #leftDoorPivotPosition;
     #rightDoorPivotPosition;
+    #leftBase;
+    #rightBase;
+    #leftDoor;
+    #rightDoor;
+    #leftSweeper;
+    #rightSweeper;
     #leftBasePosition = new Vector3();
     #rightBasePosition = new Vector3();
     #leftBaseRotation = new Quaternion();
@@ -118,6 +124,12 @@ export default class {
             body.setEnabled(true);
         });
         Object.assign(this.#sweepers, { parts });
+        this.#leftBase = parts.get(LEFT_BASE_PART_NAME);
+        this.#rightBase = parts.get(RIGHT_BASE_PART_NAME);
+        this.#leftSweeper = parts.get(LEFT_SWEEPER_PART_NAME);
+        this.#rightSweeper = parts.get(RIGHT_SWEEPER_PART_NAME);
+        this.#leftDoor = parts.get(LEFT_DOOR_PART_NAME);
+        this.#rightDoor = parts.get(RIGHT_DOOR_PART_NAME);
     }
 
     update(time) {
@@ -130,12 +142,6 @@ export default class {
                     data.quaternion.copy(body.rotation());
                 });
             });
-            const leftBase = parts.get(LEFT_BASE_PART_NAME);
-            const rightBase = parts.get(RIGHT_BASE_PART_NAME);
-            const leftSweeper = parts.get(LEFT_SWEEPER_PART_NAME);
-            const rightSweeper = parts.get(RIGHT_SWEEPER_PART_NAME);
-            const leftDoor = parts.get(LEFT_DOOR_PART_NAME);
-            const rightDoor = parts.get(RIGHT_DOOR_PART_NAME);
             this.#leftBasePosition.set(this.#sweepers.position, 0, 0);
             this.#rightBasePosition.set(-this.#sweepers.position, 0, 0);
             this.#leftBaseRotation.setFromAxisAngle(Y_AXIS, -this.#sweepers.rotation);
@@ -188,18 +194,18 @@ export default class {
                 .sub(this.#rightDoorPivotPosition)
                 .applyQuaternion(this.#rightDoorRotation)
                 .add(this.#rightDoorPivotPosition);
-            leftBase.body.setNextKinematicTranslation(this.#leftBasePosition);
-            rightBase.body.setNextKinematicTranslation(this.#rightBasePosition);
-            leftSweeper.body.setNextKinematicTranslation(this.#leftSweeperPosition);
-            rightSweeper.body.setNextKinematicTranslation(this.#rightSweeperPosition);
-            leftDoor.body.setNextKinematicTranslation(this.#leftDoorPosition);
-            rightDoor.body.setNextKinematicTranslation(this.#rightDoorPosition);
-            leftBase.body.setNextKinematicRotation(this.#leftBaseRotation);
-            rightBase.body.setNextKinematicRotation(this.#rightBaseRotation);
-            leftSweeper.body.setNextKinematicRotation(this.#leftSweeperRotation);
-            rightSweeper.body.setNextKinematicRotation(this.#rightSweeperRotation);
-            leftDoor.body.setNextKinematicRotation(this.#leftDoorRotation);
-            rightDoor.body.setNextKinematicRotation(this.#rightDoorRotation);
+            this.#leftBase.body.setNextKinematicTranslation(this.#leftBasePosition);
+            this.#rightBase.body.setNextKinematicTranslation(this.#rightBasePosition);
+            this.#leftSweeper.body.setNextKinematicTranslation(this.#leftSweeperPosition);
+            this.#rightSweeper.body.setNextKinematicTranslation(this.#rightSweeperPosition);
+            this.#leftDoor.body.setNextKinematicTranslation(this.#leftDoorPosition);
+            this.#rightDoor.body.setNextKinematicTranslation(this.#rightDoorPosition);
+            this.#leftBase.body.setNextKinematicRotation(this.#leftBaseRotation);
+            this.#rightBase.body.setNextKinematicRotation(this.#rightBaseRotation);
+            this.#leftSweeper.body.setNextKinematicRotation(this.#leftSweeperRotation);
+            this.#rightSweeper.body.setNextKinematicRotation(this.#rightSweeperRotation);
+            this.#leftDoor.body.setNextKinematicRotation(this.#leftDoorRotation);
+            this.#rightDoor.body.setNextKinematicRotation(this.#rightDoorRotation);
         }
         if (this.#sweepers.nextState) {
             this.#sweepers.state = this.#sweepers.nextState;
