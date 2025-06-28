@@ -132,7 +132,7 @@ export default class {
         this.#rightDoor = parts.get(RIGHT_DOOR_PART_NAME);
     }
 
-    update(time) {
+    update() {
         updateSweepersState({ sweepers: this.#sweepers, canActivate: () => this.#canActivate(this) });
         const { parts, state } = this.#sweepers;
         if (state !== SWEEPERS_STATES.IDLE) {
