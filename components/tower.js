@@ -20,8 +20,7 @@ const TOWER_STATES = {
     ACTIVATING: Symbol.for("tower-activating"),
     SHOOTING_COINS: Symbol.for("tower-shooting-coins"),
     SHOOTING_COIN: Symbol.for("tower-shooting-coin"),
-    MOVING_DOWN: Symbol.for("tower-moving-down"),
-    PREPARING_IDLE: Symbol.for("tower-preparing-idle")
+    MOVING_DOWN: Symbol.for("tower-moving-down")
 };
 
 export default class {
@@ -88,6 +87,9 @@ export default class {
             this.#turret.body.setNextKinematicTranslation(this.#turretPosition.set(0, 0, 0).sub(this.#initPosition).applyQuaternion(rotation).add(this.#initPosition).setY(position));
             this.#turret.body.setNextKinematicRotation(rotation);
             this.#stand.body.setNextKinematicTranslation(this.#standPosition.setY(position));
+            if (this.#tower.nextState) {
+                this.#tower.state = this.#tower.nextState;
+            }
         }
     }
 
@@ -108,6 +110,7 @@ export default class {
         });
         return {
             state: this.#tower.state.description,
+            nextState: this.#tower.nextState ? this.#tower.nextState.description : null,
             parts,
             position: this.#tower.position,
             angle: this.#tower.angle,
@@ -120,6 +123,7 @@ export default class {
 
     load(tower) {
         this.#tower.state = Symbol.for(tower.state);
+        this.#tower.nextState = tower.nextState ? Symbol.for(tower.nextState) : null;
         this.#tower.oscillationCount = tower.oscillationCount;
         this.#tower.pendingShots = tower.pendingShots;
         this.#tower.timeActive = tower.timeActive;
@@ -140,6 +144,7 @@ export default class {
 }
 
 function updateTowerState({ tower, time, oscillationDirection, canActivate }) {
+    tower.nextState = null;
     switch (tower.state) {
         case TOWER_STATES.ACTIVATING:
             if (canActivate()) {
@@ -149,7 +154,7 @@ function updateTowerState({ tower, time, oscillationDirection, canActivate }) {
                     tower.timeActive = time;
                     tower.timeLastShot = time;
                     tower.position = POSITION_UP_Y;
-                    tower.state = TOWER_STATES.SHOOTING_COINS;
+                    tower.nextState = TOWER_STATES.SHOOTING_COINS;
                 }
             }
             break;
@@ -159,7 +164,7 @@ function updateTowerState({ tower, time, oscillationDirection, canActivate }) {
                 tower.angle = Math.sin(phase) * ANGLE_AMPLITUDE * oscillationDirection;
                 tower.oscillationCount = Math.floor(phase / (2 * Math.PI));
                 if (time - tower.timeLastShot > DELAY_SHOOT) {
-                    tower.state = TOWER_STATES.SHOOTING_COIN;
+                    tower.nextState = TOWER_STATES.SHOOTING_COIN;
                 }
             } else if (tower.pendingShots) {
                 tower.pendingShots--;
@@ -169,23 +174,20 @@ function updateTowerState({ tower, time, oscillationDirection, canActivate }) {
                 tower.timeActive = -1;
                 tower.oscillationCount = 0;
                 tower.angle = ANGLE_IDLE;
-                tower.state = TOWER_STATES.MOVING_DOWN;
+                tower.nextState = TOWER_STATES.MOVING_DOWN;
             }
             break;
         case TOWER_STATES.SHOOTING_COIN:
             tower.timeLastShot = time;
-            tower.state = TOWER_STATES.SHOOTING_COINS;
+            tower.nextState = TOWER_STATES.SHOOTING_COINS;
             break;
         case TOWER_STATES.MOVING_DOWN:
             if (tower.position > 0) {
                 tower.position -= DELTA_POSITION_STEP;
             } else {
                 tower.position = POSITION_DOWN_Y;
-                tower.state = TOWER_STATES.PREPARING_IDLE;
+                tower.nextState = TOWER_STATES.IDLE;
             }
-            break;
-        case TOWER_STATES.PREPARING_IDLE:
-            tower.state = TOWER_STATES.IDLE;
             break;
         default:
             break;
