@@ -28,13 +28,13 @@ export default class {
     static #pointer;
 
     static async initialize() {
-        const camera = new Camera();
+        const camera = new Camera(this.width / this.height);
         this.#containerElement = document.body;
         this.#scene = new Scene({
             containerElement: this.#containerElement,
             camera
         });
-        await this.#scene.initialize();
+        await this.#scene.initialize(this.width, this.height);
         this.#cabinet = new Cabinet(({ scene: this.#scene }));
         this.#cabinet.DEBUG_AUTOPLAY = this.DEBUG_AUTOPLAY;
         this.#cabinet.DEBUG_HIDE_CABINET = this.DEBUG_HIDE_CABINET;
@@ -47,7 +47,7 @@ export default class {
             camera,
             interactiveObjects: this.#cabinet.interactiveObjects
         });
-        this.#pointer.initialize();
+        this.#pointer.initialize(this.width, this.height);
         Debug.DEBUG_COLLIDERS = this.DEBUG_COLLIDERS;
         Debug.DEBUG_FPS = this.DEBUG_FPS;
         Debug.DEBUG_POLYGONS = this.DEBUG_POLYGONS;
@@ -113,8 +113,8 @@ export default class {
     }
 
     static #onWindowResize() {
-        this.#scene.resize(innerWidth, innerHeight);
-        this.#cabinet.resize(innerWidth, innerHeight);
+        this.#scene.resize(this.width, this.height);
+        this.#cabinet.resize(this.width, this.height);
     }
 
     static #onContainerResize() {
@@ -122,5 +122,13 @@ export default class {
         const height = this.#containerElement.clientHeight;
         this.#scene.resize(width, height);
         this.#cabinet.resize(width, height);
+    }
+
+    static get width() {
+        return innerWidth;
+    }
+
+    static get height() {
+        return innerHeight;
     }
 }

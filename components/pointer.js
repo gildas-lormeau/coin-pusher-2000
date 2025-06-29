@@ -13,10 +13,10 @@ export default class {
     #position = new Vector2();
     #raycaster = new Raycaster();
 
-    initialize() {
+    initialize(width, height) {
         addEventListener("mousemove", event => {
-            this.#position.x = (event.clientX / innerWidth) * 2 - 1;
-            this.#position.y = -(event.clientY / innerHeight) * 2 + 1;
+            this.#position.x = (event.clientX / width) * 2 - 1;
+            this.#position.y = -(event.clientY / height) * 2 + 1;
             this.#raycaster.setFromCamera(this.#position, this.#camera);
             const intersects = this.#raycaster.intersectObjects(this.#scene.children);
             if (intersects.length && this.#interactiveObjects.includes(intersects[0].object)) {
