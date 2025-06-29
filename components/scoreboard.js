@@ -2,15 +2,15 @@ import DigitsPanel from "./digits-panel.js";
 
 const DIGITS_COUNT_SCORE = 8;
 const COLOR_SCORE = 0;
-const POSITION_SCORE = [-0.14, 1.115, -0.33];
+const POSITION_SCORE = [-0.35, 1.115, -0.33];
 const ROTATION_SCORE = [0, 0, 0];
 const DIGITS_COUNT_COINS = 4;
 const COLOR_COINS = 0;
-const POSITION_COINS = [0.78, 1.115, -0.33];
+const POSITION_COINS = [0.8, 1.115, -0.33];
 const ROTATION_COINS = [0, 0, 0];
 const DIGITS_COUNT_POINTS = 6;
 const COLOR_POINTS = 0;
-const POSITION_POINTS = [0.36, 1.115, -0.33];
+const POSITION_POINTS = [0.15, 1.115, -0.33];
 const ROTATION_POINTS = [0, 0, 0];
 const DIGITS_COUNT_COINS_IN_PLAY = 4;
 const COLOR_COINS_IN_PLAY = 0;
