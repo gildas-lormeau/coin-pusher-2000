@@ -169,7 +169,7 @@ export default class {
                         this.#leftStacker.deliver({ levels: 30 });
                         this.#rightStacker.deliver({ levels: 30 });
                     } else if (random < .86) {
-                        this.#sweepers.sweepFloor();
+                        this.#sweepers.sweepFloor({ level: 5 });
                     } else {
                         this.#stacker.deliver({ stacks: 7, levels: 15 });
                     }

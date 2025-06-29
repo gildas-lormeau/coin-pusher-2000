@@ -7,6 +7,8 @@ const LEFT_SWEEPER_PART_NAME = "left-sweeper";
 const RIGHT_SWEEPER_PART_NAME = "right-sweeper";
 const LEFT_DOOR_PART_NAME = "left-door";
 const RIGHT_DOOR_PART_NAME = "right-door";
+const LEFT_FLAP_PART_NAME = "left-flap";
+const RIGHT_FLAP_PART_NAME = "right-flap";
 const LEFT_PIVOT_POSITION = "left-pivot-position";
 const RIGHT_PIVOT_POSITION = "right-pivot-position";
 const LEFT_DOOR_PIVOT_POSITION = "left-door-pivot-position";
@@ -22,6 +24,8 @@ const BASE_POSITION = 0.08;
 const BASE_TRANSLATION = 0.07;
 const BASE_ROTATION_SPEED = 0.01;
 const DOORS_OPENED_ANGLE = Math.PI / 2;
+const FLAPS_DEPLOYED_POSITION = 0.01;
+const FLAPS_SPEED = 0.001;
 const SWEEPING_MAX_ANGLE = Math.PI;
 const SWEEPING_AXIS_ANGLE = Math.PI / 2;
 const SWEEPING_SPEED = 0.02;
@@ -32,6 +36,7 @@ const SWEEPERS_INITIAL_TRANSLATION = 0;
 const SWEEPERS_INITIAL_SWEEPERS_ROTATION_Z = 0;
 const SWEEPERS_INITIAL_SWEEPERS_ROTATION_Y = 0;
 const SWEEPERS_INITIAL_DOORS_ROTATION = 0;
+const SWEEPERS_INITIAL_FLAPS_POSITION = 0;
 
 const SWEEPERS_STATES = {
     IDLE: Symbol.for("sweepers-idle"),
@@ -41,8 +46,10 @@ const SWEEPERS_STATES = {
     ROTATING_BASE: Symbol.for("sweepers-rotating-base"),
     TRANSLATING_BASE: Symbol.for("sweepers-translating-base"),
     ROTATING_SWEEPERS: Symbol.for("sweepers-rotating-sweepers"),
+    DEPLOYING_FLAPS: Symbol.for("sweepers-deploying-flaps"),
     SWEEPING: Symbol.for("sweepers-sweeping"),
     SWEEPING_BACK: Symbol.for("sweepers-sweeping-back"),
+    RETRACTING_FLAPS: Symbol.for("sweepers-retracting-flaps"),
     ROTATING_SWEEPERS_BACK: Symbol.for("sweepers-rotating-sweepers-back"),
     TRANSLATING_BASE_BACK: Symbol.for("sweepers-translating-base-back"),
     ROTATING_BASE_BACK: Symbol.for("sweepers-rotating-base-back"),
@@ -64,6 +71,8 @@ export default class {
     #rightDoor;
     #leftSweeper;
     #rightSweeper;
+    #leftFlap;
+    #rightFlap;
     #leftBasePosition = new Vector3();
     #rightBasePosition = new Vector3();
     #leftBaseRotation = new Quaternion();
@@ -79,11 +88,15 @@ export default class {
     #rightSweeperRotationY = new Quaternion();
     #rightSweeperRotationZ = new Quaternion();
     #leftDoorRotationAxis = new Vector3();
+    #leftFlapBasePosition = new Vector3();
+    #leftFlapPosition = new Vector3();
     #rightDoorRotationAxis = new Vector3();
     #leftDoorPosition = new Vector3();
     #rightDoorPosition = new Vector3();
     #leftDoorRotation = new Quaternion();
     #rightDoorRotation = new Quaternion();
+    #rightFlapBasePosition = new Vector3();
+    #rightFlapPosition = new Vector3();
     #sweepers = {
         parts: null,
         state: SWEEPERS_STATES.IDLE,
@@ -93,7 +106,9 @@ export default class {
         sweepersRotationZ: SWEEPERS_INITIAL_SWEEPERS_ROTATION_Z,
         sweepersRotationY: SWEEPERS_INITIAL_SWEEPERS_ROTATION_Y,
         doorsRotation: SWEEPERS_INITIAL_DOORS_ROTATION,
-        pendingSweeps: 0,
+        flapsPosition: SWEEPERS_INITIAL_FLAPS_POSITION,
+        level: 0,
+        pendingSweeps: [],
         nextState: null
     };
 
@@ -130,6 +145,8 @@ export default class {
         this.#rightSweeper = parts.get(RIGHT_SWEEPER_PART_NAME);
         this.#leftDoor = parts.get(LEFT_DOOR_PART_NAME);
         this.#rightDoor = parts.get(RIGHT_DOOR_PART_NAME);
+        this.#leftFlap = parts.get(LEFT_FLAP_PART_NAME);
+        this.#rightFlap = parts.get(RIGHT_FLAP_PART_NAME);
     }
 
     update() {
@@ -160,6 +177,8 @@ export default class {
                 .applyQuaternion(this.#leftBaseRotation);
             this.#rightBaseTranslation.set(-this.#sweepers.translation, 0, 0)
                 .applyQuaternion(this.#rightBaseRotation);
+            this.#leftFlapBasePosition.set(-this.#sweepers.flapsPosition, 0, 0);
+            this.#rightFlapBasePosition.set(this.#sweepers.flapsPosition, 0, 0);
             this.#leftSweeperPosition.copy(this.#leftBasePosition)
                 .sub(this.#leftPivotPosition)
                 .applyQuaternion(this.#leftSweeperRotation)
@@ -167,6 +186,18 @@ export default class {
                 .add(this.#leftBaseTranslation);
             this.#rightSweeperPosition.copy(this.#rightBasePosition)
                 .sub(this.#rightPivotPosition)
+                .applyQuaternion(this.#rightSweeperRotation)
+                .add(this.#rightPivotPosition)
+                .add(this.#rightBaseTranslation);
+            this.#leftFlapPosition.copy(this.#leftBasePosition)
+                .sub(this.#leftPivotPosition)
+                .add(this.#leftFlapBasePosition)
+                .applyQuaternion(this.#leftSweeperRotation)
+                .add(this.#leftPivotPosition)
+                .add(this.#leftBaseTranslation);
+            this.#rightFlapPosition.copy(this.#rightBasePosition)
+                .sub(this.#rightPivotPosition)
+                .add(this.#rightFlapBasePosition)
                 .applyQuaternion(this.#rightSweeperRotation)
                 .add(this.#rightPivotPosition)
                 .add(this.#rightBaseTranslation);
@@ -198,6 +229,12 @@ export default class {
             this.#rightBase.body.setNextKinematicTranslation(this.#rightBasePosition);
             this.#leftSweeper.body.setNextKinematicTranslation(this.#leftSweeperPosition);
             this.#rightSweeper.body.setNextKinematicTranslation(this.#rightSweeperPosition);
+
+            this.#leftFlap.body.setNextKinematicTranslation(this.#leftFlapPosition);
+            this.#rightFlap.body.setNextKinematicTranslation(this.#rightFlapPosition);
+            this.#leftFlap.body.setNextKinematicRotation(this.#leftSweeperRotation);
+            this.#rightFlap.body.setNextKinematicRotation(this.#rightSweeperRotation);
+
             this.#leftDoor.body.setNextKinematicTranslation(this.#leftDoorPosition);
             this.#rightDoor.body.setNextKinematicTranslation(this.#rightDoorPosition);
             this.#leftBase.body.setNextKinematicRotation(this.#leftBaseRotation);
@@ -212,11 +249,13 @@ export default class {
         }
     }
 
-    sweepFloor() {
+    sweepFloor({ level } = { level: 0 }) {
+        level = Math.max(0, Math.min(10, level)) / 10;
         if (this.#sweepers.state === SWEEPERS_STATES.IDLE) {
+            this.#sweepers.level = level;
             this.#sweepers.state = SWEEPERS_STATES.ACTIVATING;
         } else {
-            this.#sweepers.pendingSweeps++;
+            this.#sweepers.pendingSweeps.push({ level });
         }
     }
 
@@ -237,7 +276,7 @@ export default class {
             sweepersRotationZ: this.#sweepers.sweepersRotationZ,
             sweepersRotationY: this.#sweepers.sweepersRotationY,
             doorsRotation: this.#sweepers.doorsRotation,
-            pendingSweeps: this.#sweepers.pendingSweeps,
+            pendingSweeps: this.#sweepers.pendingSweeps.map(sweep => ({ level: sweep.level })),
         };
     }
 
@@ -250,7 +289,7 @@ export default class {
         this.#sweepers.sweepersRotationZ = sweepers.sweepersRotationZ;
         this.#sweepers.sweepersRotationY = sweepers.sweepersRotationY;
         this.#sweepers.doorsRotation = sweepers.doorsRotation;
-        this.#sweepers.pendingSweeps = sweepers.pendingSweeps;
+        this.#sweepers.pendingSweeps = sweepers.pendingSweeps.map(sweep => ({ level: sweep.level }));
         this.#sweepers.parts.forEach((partData, name) => {
             const loadedPart = sweepers.parts[name];
             if (loadedPart) {
@@ -306,6 +345,13 @@ function updateSweepersState({ sweepers, canActivate }) {
             sweepers.sweepersRotationZ += SWEEPERS_AXIS_ROTATION_SPEED;
             if (sweepers.sweepersRotationZ > SWEEPING_AXIS_ANGLE) {
                 sweepers.sweepersRotationZ = SWEEPING_AXIS_ANGLE;
+                sweepers.nextState = SWEEPERS_STATES.DEPLOYING_FLAPS;
+            }
+            break;
+        case SWEEPERS_STATES.DEPLOYING_FLAPS:
+            sweepers.flapsPosition += FLAPS_SPEED;
+            if (sweepers.flapsPosition > FLAPS_DEPLOYED_POSITION * sweepers.level) {
+                sweepers.flapsPosition = FLAPS_DEPLOYED_POSITION * sweepers.level;
                 sweepers.nextState = SWEEPERS_STATES.SWEEPING;
             }
             break;
@@ -313,6 +359,13 @@ function updateSweepersState({ sweepers, canActivate }) {
             sweepers.sweepersRotationY += SWEEPING_SPEED;
             if (sweepers.sweepersRotationY > SWEEPING_MAX_ANGLE) {
                 sweepers.sweepersRotationY = SWEEPING_MAX_ANGLE;
+                sweepers.nextState = SWEEPERS_STATES.RETRACTING_FLAPS;
+            }
+            break;
+        case SWEEPERS_STATES.RETRACTING_FLAPS:
+            sweepers.flapsPosition -= FLAPS_SPEED;
+            if (sweepers.flapsPosition < SWEEPERS_INITIAL_FLAPS_POSITION) {
+                sweepers.flapsPosition = SWEEPERS_INITIAL_FLAPS_POSITION;
                 sweepers.nextState = SWEEPERS_STATES.ROTATING_SWEEPERS_BACK;
             }
             break;
@@ -327,8 +380,9 @@ function updateSweepersState({ sweepers, canActivate }) {
             sweepers.sweepersRotationY -= SWEEPING_SPEED * 1.5;
             if (sweepers.sweepersRotationY < SWEEPERS_INITIAL_SWEEPERS_ROTATION_Y) {
                 sweepers.sweepersRotationY = SWEEPERS_INITIAL_SWEEPERS_ROTATION_Y;
-                if (sweepers.pendingSweeps > 0) {
-                    sweepers.pendingSweeps--;
+                if (sweepers.pendingSweeps.length) {
+                    const { level } = sweepers.pendingSweeps.shift();
+                    sweepers.level = level;
                     sweepers.nextState = SWEEPERS_STATES.OPENING_DOORS;
                 } else {
                     sweepers.nextState = SWEEPERS_STATES.TRANSLATING_BASE_BACK;
