@@ -20,17 +20,16 @@ const LIGHTS_DELAY_ROTATING = 150;
 const REELS_BOX_STATES = {
     IDLE: Symbol.for("reels-box-idle"),
     ACTIVATING: Symbol.for("reels-box-activating"),
-    ACTIVE: Symbol.for("reels-box-active"),
+    SPINNING_REELS: Symbol.for("reels-box-spinning-reels"),
     STOPPING: Symbol.for("reels-box-stopping"),
-    SETTLED: Symbol.for("reels-box-settled")
+    DELIVERING_BONUS: Symbol.for("reels-box-delivering-bonus")
 };
 const REEL_STATES = {
     IDLE: Symbol.for("reel-idle"),
     STARTING: Symbol.for("reel-starting"),
     ACCELERATING: Symbol.for("reel-accelerating"),
     SPINNING: Symbol.for("reel-spinning"),
-    DECELERATING: Symbol.for("reel-decelerating"),
-    SETTLED: Symbol.for("reel-settled")
+    DECELERATING: Symbol.for("reel-decelerating")
 };
 const LIGHTS_STATES = {
     IDLE: Symbol.for("reels-box-lights-idle"),
@@ -38,8 +37,7 @@ const LIGHTS_STATES = {
     ROTATING: Symbol.for("reels-box-lights-rotating"),
     STARTING_BLINKING: Symbol.for("reels-box-lights-starting-blinking"),
     BLINKING: Symbol.for("reels-box-lights-blinking"),
-    STOPPING_BLINKING: Symbol.for("reels-box-lights-stopping-blinking"),
-    PREPARING_IDLE: Symbol.for("reels-box-lights-preparing-idle")
+    STOPPING_BLINKING: Symbol.for("reels-box-lights-stopping-blinking")
 };
 
 export default class {
@@ -54,23 +52,27 @@ export default class {
     #onBonusWon;
     #reelsBox = {
         state: REELS_BOX_STATES.IDLE,
+        nextState: null,
         pendingSpins: 0,
         timeNextSpin: -1,
         timeActive: -1,
         reels: [{
             state: REEL_STATES.IDLE,
+            nextState: null,
             index: 0,
             rotation: 0,
             targetIndex: -1,
             targetRotation: -1
         }, {
             state: REEL_STATES.IDLE,
+            nextState: null,
             index: 0,
             rotation: 0,
             targetIndex: -1,
             targetRotation: -1
         }, {
             state: REEL_STATES.IDLE,
+            nextState: null,
             index: 0,
             rotation: 0,
             targetIndex: -1,
@@ -78,6 +80,7 @@ export default class {
         }],
         lights: {
             state: LIGHTS_STATES.IDLE,
+            nextState: null,
             headIndex: 0,
             timeRefresh: -1,
             bulbs: []
@@ -99,12 +102,12 @@ export default class {
     update(time) {
         const reelsBox = this.#reelsBox;
         const { state, reels, lights } = reelsBox;
-        updateReelsBoxState({ reelsBox, time });
-        updateLightsState({ reelsBox, time });
-        reels.forEach(reel => updateReelState({ reel }));
         if (state !== REELS_BOX_STATES.IDLE) {
+            updateReelsBoxState({ reelsBox, time });
+            updateLightsState({ reelsBox, time });
+            reels.forEach(reel => updateReelState({ reel }));
             reels.forEach((reel, indexReel) => this.#reelsMeshes[indexReel].rotation.x = reel.rotation);
-            if (state === REELS_BOX_STATES.SETTLED) {
+            if (state === REELS_BOX_STATES.DELIVERING_BONUS) {
                 this.#onBonusWon(reels.map(reel => reel.index));
             }
         }
@@ -114,23 +117,37 @@ export default class {
                 this.#lightBulbsMaterials[indexBulb].opacity = bulb.opacity;
             });
         }
+        if (reelsBox.nextState) {
+            reelsBox.state = reelsBox.nextState;
+        }
+        reels.forEach(reel => {
+            if (reel.nextState) {
+                reel.state = reel.nextState;
+            }
+        });
+        if (lights.nextState) {
+            lights.state = lights.nextState;
+        }
     }
 
     spinReels() {
-        this.#reelsBox.pendingSpins++;
         if (this.#reelsBox.state === REELS_BOX_STATES.IDLE) {
             this.#reelsBox.state = REELS_BOX_STATES.ACTIVATING;
+        } else {
+            this.#reelsBox.pendingSpins++;
         }
     }
 
     save() {
         return {
             state: this.#reelsBox.state.description,
+            nextState: this.#reelsBox.nextState ? this.#reelsBox.nextState.description : null,
             pendingSpins: this.#reelsBox.pendingSpins,
             timeNextSpin: this.#reelsBox.timeNextSpin,
             timeActive: this.#reelsBox.timeActive,
             reels: this.#reelsBox.reels.map(reel => ({
                 state: reel.state.description,
+                nextState: reel.nextState ? reel.nextState.description : null,
                 index: reel.index,
                 rotation: reel.rotation,
                 targetIndex: reel.targetIndex,
@@ -149,11 +166,13 @@ export default class {
 
     load(reelsBox) {
         this.#reelsBox.state = Symbol.for(reelsBox.state);
+        this.#reelsBox.nextState = reelsBox.nextState ? Symbol.for(reelsBox.nextState) : null;
         this.#reelsBox.pendingSpins = reelsBox.pendingSpins;
         this.#reelsBox.timeNextSpin = reelsBox.timeNextSpin;
         this.#reelsBox.timeActive = reelsBox.timeActive;
         this.#reelsBox.reels.forEach((reel, indexReel) => {
             reel.state = Symbol.for(reelsBox.reels[indexReel].state);
+            reel.nextState = reelsBox.reels[indexReel].nextState ? Symbol.for(reelsBox.reels[indexReel].nextState) : null;
             reel.index = reelsBox.reels[indexReel].index;
             reel.rotation = reelsBox.reels[indexReel].rotation;
             reel.targetIndex = reelsBox.reels[indexReel].targetIndex;
@@ -170,38 +189,40 @@ export default class {
 }
 
 function updateReelsBoxState({ reelsBox, time }) {
+    reelsBox.nextState = null;
     switch (reelsBox.state) {
         case REELS_BOX_STATES.ACTIVATING:
             reelsBox.reels.forEach(reel => reel.state = REEL_STATES.STARTING);
-            reelsBox.state = REELS_BOX_STATES.ACTIVE;
+            reelsBox.nextState = REELS_BOX_STATES.SPINNING_REELS;
             reelsBox.lights.state = LIGHTS_STATES.STARTING_ROTATING;
             break;
-        case REELS_BOX_STATES.ACTIVE:
+        case REELS_BOX_STATES.SPINNING_REELS:
             if (reelsBox.reels.every(reel => reel.state === REEL_STATES.IDLE)) {
                 reelsBox.timeActive = time;
-                reelsBox.state = REELS_BOX_STATES.STOPPING;
+                reelsBox.nextState = REELS_BOX_STATES.STOPPING;
                 reelsBox.lights.state = LIGHTS_STATES.STARTING_BLINKING;
             }
             break;
         case REELS_BOX_STATES.STOPPING:
             if (time - reelsBox.timeActive > REEL_ON_WON_DELAY) {
                 reelsBox.timeActive = -1;
-                reelsBox.pendingSpins--;
-                reelsBox.state = REELS_BOX_STATES.SETTLED;
+                reelsBox.nextState = REELS_BOX_STATES.DELIVERING_BONUS;
                 reelsBox.lights.state = LIGHTS_STATES.STOPPING_BLINKING;
             }
             break;
-        case REELS_BOX_STATES.SETTLED:
+        case REELS_BOX_STATES.DELIVERING_BONUS:
             if (reelsBox.pendingSpins > 0) {
-                reelsBox.state = REELS_BOX_STATES.ACTIVATING;
+                reelsBox.pendingSpins--;
+                reelsBox.nextState = REELS_BOX_STATES.ACTIVATING;
             } else {
-                reelsBox.state = REELS_BOX_STATES.IDLE;
+                reelsBox.nextState = REELS_BOX_STATES.IDLE;
             }
             break;
     }
 }
 
 function updateReelState({ reel }) {
+    reel.nextState = null;
     switch (reel.state) {
         case REEL_STATES.IDLE:
             break;
@@ -212,20 +233,20 @@ function updateReelState({ reel }) {
             reel.targetRotation = reel.rotation + (turnsCount * Math.PI * 2) + (distanceNewItem * ((Math.PI * 2) / MAX_ITEMS));
             reel.previousRotation = reel.rotation;
             reel.currentSpeed = 0;
-            reel.state = REEL_STATES.ACCELERATING;
+            reel.nextState = REEL_STATES.ACCELERATING;
             break;
         case REEL_STATES.ACCELERATING:
             if (reel.currentSpeed < REEL_MAX_SPEED) {
                 reel.currentSpeed += REEL_ACCELERATION;
             }
             if (reel.rotation - reel.previousRotation > Math.PI || reel.targetRotation - reel.rotation < 0) {
-                reel.state = REEL_STATES.SPINNING;
+                reel.nextState = REEL_STATES.SPINNING;
             }
             reel.rotation += reel.currentSpeed;
             break;
         case REEL_STATES.SPINNING:
             if (reel.targetRotation - reel.rotation < Math.PI) {
-                reel.state = REEL_STATES.DECELERATING;
+                reel.nextState = REEL_STATES.DECELERATING;
             }
             reel.rotation += reel.currentSpeed;
             break;
@@ -236,27 +257,25 @@ function updateReelState({ reel }) {
                 reel.currentSpeed = REEL_MIN_SPEED;
             }
             if (reel.targetRotation - reel.rotation < 0) {
-                reel.state = REEL_STATES.SETTLED;
+                reel.index = reel.targetIndex;
+                reel.rotation = reel.index * ((Math.PI * 2) / MAX_ITEMS);
+                reel.targetIndex = -1;
+                reel.targetRotation = -1;
+                reel.nextState = REEL_STATES.IDLE;
             }
             reel.rotation += reel.currentSpeed;
-            break;
-        case REEL_STATES.SETTLED:
-            reel.state = REEL_STATES.IDLE;
-            reel.index = reel.targetIndex;
-            reel.rotation = reel.index * ((Math.PI * 2) / MAX_ITEMS);
-            reel.targetIndex = -1;
-            reel.targetRotation = -1;
             break;
     }
 }
 
 function updateLightsState({ reelsBox, time }) {
+    reelsBox.lights.nextState = null;
     switch (reelsBox.lights.state) {
         case LIGHTS_STATES.IDLE:
             break;
         case LIGHTS_STATES.STARTING_ROTATING:
             reelsBox.lights.timeRefresh = time;
-            reelsBox.lights.state = LIGHTS_STATES.ROTATING;
+            reelsBox.lights.nextState = LIGHTS_STATES.ROTATING;
             break;
         case LIGHTS_STATES.ROTATING:
             if (time - reelsBox.lights.timeRefresh > LIGHTS_DELAY_ROTATING) {
@@ -271,7 +290,7 @@ function updateLightsState({ reelsBox, time }) {
             reelsBox.lights.bulbs.forEach((bulb, indexBulb) => enableBulb(bulb, indexBulb % 2 === 0));
             reelsBox.lights.headIndex = 0;
             reelsBox.lights.timeRefresh = -1;
-            reelsBox.lights.state = LIGHTS_STATES.BLINKING;
+            reelsBox.lights.nextState = LIGHTS_STATES.BLINKING;
             break;
         case LIGHTS_STATES.BLINKING:
             if (time - reelsBox.lights.timeRefresh > LIGHTS_DELAY_BLINKING) {
@@ -282,10 +301,7 @@ function updateLightsState({ reelsBox, time }) {
         case LIGHTS_STATES.STOPPING_BLINKING:
             reelsBox.lights.bulbs.forEach(bulb => enableBulb(bulb, false));
             reelsBox.lights.timeRefresh = -1;
-            reelsBox.lights.state = LIGHTS_STATES.PREPARING_IDLE;
-            break;
-        case LIGHTS_STATES.PREPARING_IDLE:
-            reelsBox.lights.state = LIGHTS_STATES.IDLE;
+            reelsBox.lights.nextState = LIGHTS_STATES.IDLE;
             break;
         default:
     }
