@@ -61,6 +61,8 @@ export default class {
             nextState: null,
             index: 0,
             rotation: 0,
+            previousRotation: 0,
+            currentSpeed: 0,
             targetIndex: -1,
             targetRotation: -1
         }, {
@@ -68,6 +70,8 @@ export default class {
             nextState: null,
             index: 0,
             rotation: 0,
+            previousRotation: 0,
+            currentSpeed: 0,
             targetIndex: -1,
             targetRotation: -1
         }, {
@@ -75,6 +79,8 @@ export default class {
             nextState: null,
             index: 0,
             rotation: 0,
+            previousRotation: 0,
+            currentSpeed: 0,
             targetIndex: -1,
             targetRotation: -1
         }],
@@ -150,6 +156,8 @@ export default class {
                 nextState: reel.nextState ? reel.nextState.description : null,
                 index: reel.index,
                 rotation: reel.rotation,
+                previousRotation: reel.previousRotation,
+                currentSpeed: reel.currentSpeed,
                 targetIndex: reel.targetIndex,
                 targetRotation: reel.targetRotation
             })),
@@ -177,6 +185,8 @@ export default class {
             reel.rotation = reelsBox.reels[indexReel].rotation;
             reel.targetIndex = reelsBox.reels[indexReel].targetIndex;
             reel.targetRotation = reelsBox.reels[indexReel].targetRotation;
+            reel.previousRotation = reelsBox.reels[indexReel].previousRotation;
+            reel.currentSpeed = reelsBox.reels[indexReel].currentSpeed;
             this.#reelsMeshes[indexReel].rotation.x = reel.rotation;
         });
         this.#reelsBox.lights.state = Symbol.for(reelsBox.lights.state);
@@ -259,11 +269,14 @@ function updateReelState({ reel }) {
             if (reel.targetRotation - reel.rotation < 0) {
                 reel.index = reel.targetIndex;
                 reel.rotation = reel.index * ((Math.PI * 2) / MAX_ITEMS);
+                reel.previousRotation = reel.rotation;
                 reel.targetIndex = -1;
                 reel.targetRotation = -1;
+                reel.currentSpeed = 0;
                 reel.nextState = REEL_STATES.IDLE;
+            } else {
+                reel.rotation += reel.currentSpeed;
             }
-            reel.rotation += reel.currentSpeed;
             break;
     }
 }
