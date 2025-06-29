@@ -49,6 +49,7 @@ export default class {
     #doorPosition = new Vector3();
     #pusher = {
         state: PUSHER_STATES.MOVING,
+        nextState: null,
         rewards: [],
         phase: 0,
         platform: {},
@@ -104,6 +105,9 @@ export default class {
                 this.#lightBulbsMaterials[indexBulb].emissiveIntensity = bulb.intensity;
             });
         }
+        if (this.#pusher.nextState) {
+            this.#pusher.state = this.#pusher.nextState;
+        }
         if (this.#pusher.lights.nextState) {
             this.#pusher.lights.state = this.#pusher.lights.nextState;
         }
@@ -123,6 +127,7 @@ export default class {
     save() {
         return {
             state: this.#pusher.state.description,
+            nextState: this.#pusher.nextState ? this.#pusher.nextState.description : null,
             phase: this.#pusher.phase,
             rewards: this.#pusher.rewards,
             platformBodyHandle: this.#platform.body.handle,
@@ -142,6 +147,7 @@ export default class {
 
     load(pusher) {
         this.#pusher.state = Symbol.for(pusher.state);
+        this.#pusher.nextState = pusher.nextState ? Symbol.for(pusher.nextState) : null;
         this.#pusher.rewards = pusher.rewards;
         this.#pusher.phase = pusher.phase;
         this.#platform.body = this.#scene.worldBodies.get(pusher.platformBodyHandle);
@@ -158,6 +164,7 @@ export default class {
 }
 
 function updatePusherState({ pusher }) {
+    pusher.nextState = null;
     switch (pusher.state) {
         case PUSHER_STATES.MOVING:
         case PUSHER_STATES.PREPARING_DELIVERY:
@@ -167,18 +174,18 @@ function updatePusherState({ pusher }) {
                     pusher.lights.state = LIGHTS_STATES.ACTIVATING;
                 }
                 if (pusher.phase > Math.PI * 1.5 && pusher.phase < Math.PI * 1.5 + OPENING_DOOR_POSITION_PRECISION) {
-                    pusher.state = PUSHER_STATES.OPENING_DOOR;
+                    pusher.nextState = PUSHER_STATES.OPENING_DOOR;
                 }
             }
             break;
         case PUSHER_STATES.OPENING_DOOR:
             pusher.door.position = pusher.door.position + DOOR_SPEED;
             if (pusher.door.position > DOOR_MAX_DISTANCE) {
-                pusher.state = PUSHER_STATES.DELIVERING_BONUS;
+                pusher.nextState = PUSHER_STATES.DELIVERING_BONUS;
             }
             break;
         case PUSHER_STATES.DELIVERING_BONUS:
-            pusher.state = PUSHER_STATES.CLOSING_DOOR;
+            pusher.nextState = PUSHER_STATES.CLOSING_DOOR;
             pusher.lights.state = LIGHTS_STATES.DELIVERING;
             break;
         case PUSHER_STATES.CLOSING_DOOR:
@@ -188,9 +195,9 @@ function updatePusherState({ pusher }) {
                 pusher.door.position = 0;
                 pusher.lights.state = LIGHTS_STATES.PREPARING_IDLE;
                 if (pusher.rewards.length > 1) {
-                    pusher.state = PUSHER_STATES.PREPARING_DELIVERY;
+                    pusher.nextState = PUSHER_STATES.PREPARING_DELIVERY;
                 } else {
-                    pusher.state = PUSHER_STATES.MOVING;
+                    pusher.nextState = PUSHER_STATES.MOVING;
                 }
             }
             break;
