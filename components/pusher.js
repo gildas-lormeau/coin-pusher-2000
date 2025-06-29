@@ -129,7 +129,7 @@ export default class {
             state: this.#pusher.state.description,
             nextState: this.#pusher.nextState ? this.#pusher.nextState.description : null,
             phase: this.#pusher.phase,
-            rewards: this.#pusher.rewards,
+            rewards: [...this.#pusher.rewards],
             platformBodyHandle: this.#platform.body.handle,
             doorBodyHandle: this.#door.body.handle,
             door: {
