@@ -359,6 +359,7 @@ export default class {
         this.#controlPanel.update(time);
         this.#sensorGate.update(time);
         this.#reelsBox.update(time);
+        this.#sweepers.update(time);
         this.#excavator.update(time);
         this.#leftTower.update(time);
         this.#rightTower.update(time);
