@@ -17,7 +17,7 @@ const COIN_IMPULSE_STRENGTH = 0.00003;
 const COIN_IMPULSE = new Vector3(0, 0, -1).multiplyScalar(COIN_IMPULSE_STRENGTH);
 const MAX_DELAY_MOVING_COIN = 1500;
 const MIN_LAUNCHER_POSITION = 0.0001;
-const INITIALIZATION_COIN_POSITION = 0.1695;
+const INITIALIZATION_COIN_POSITION = 0.09;
 const COIN_ROTATION = new Vector3(Math.PI / 2, 0, Math.PI / 2);
 const MIN_TRAP_POSITION = 0.0001;
 const MAX_TRAP_POSITION = 0.25 - MIN_TRAP_POSITION;
@@ -155,6 +155,7 @@ export default class {
             if (state === COIN_ROLLER_STATES.MOVING_LAUNCHER) {
                 coin.body.setEnabledTranslations(true, true, true);
                 coin.body.setEnabledRotations(false, false, false);
+                coin.body.sleep();
                 coin.body.setNextKinematicTranslation(launcherPosition);
             }
             if (state === COIN_ROLLER_STATES.DELIVERING_COIN) {
