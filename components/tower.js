@@ -6,10 +6,10 @@ const TURRET_PART_NAME = "turret";
 const INIT_POSITION_PART_NAME = "init-position";
 const POSITION_UP_Y = 0.1;
 const POSITION_DOWN_Y = 0;
-const ANGLE_IDLE = 0;
-const ANGLE_AMPLITUDE = Math.PI / 6;
-const DELTA_POSITION_STEP = 0.002;
-const DELAY_SHOOT = 180;
+const ANGLE_AMPLITUDE = Math.PI / 7;
+const TRANSLATION_SPEED = 0.002;
+const ROTATION_SPEED = 0.02;
+const SHOOT_DURATION = 10;
 const IMPULSE_STRENGTH = 0.00005;
 const IMPULSE_DIRECTION = new Vector3(0, 0, -1);
 const Y_AXIS = new Vector3(0, 1, 0);
@@ -40,10 +40,9 @@ export default class {
         pendingShots: 0,
         parts: null,
         position: POSITION_DOWN_Y,
-        angle: ANGLE_IDLE,
         oscillationCount: 0,
-        timeActive: -1,
-        timeLastShot: -1
+        phase: 0,
+        frameLastShot: -1
     };
 
     constructor({ scene, canActivate, onShootCoin, offsetX = 0, oscillationDirection = -1 }) {
@@ -65,20 +64,18 @@ export default class {
         this.#stand = this.#tower.parts.get(STAND_PART_NAME);
     }
 
-    update(time) {
+    update() {
         updateTowerState({
             tower: this.#tower,
-            time,
-            oscillationDirection: this.#oscillationDirection,
             canActivate: () => this.#canActivate(this)
         });
-        const { state, parts, angle, position } = this.#tower;
+        const { state, parts, phase, position } = this.#tower;
         if (state !== TOWER_STATES.IDLE) {
             parts.forEach(({ meshes, body }) => meshes.forEach(({ data }) => {
                 data.position.copy(body.translation());
                 data.quaternion.copy(body.rotation());
             }));
-            const rotation = new Quaternion().setFromAxisAngle(Y_AXIS, angle);
+            const rotation = new Quaternion().setFromAxisAngle(Y_AXIS, Math.sin(phase) * ANGLE_AMPLITUDE * this.#oscillationDirection);
             if (state === TOWER_STATES.SHOOTING_COIN) {
                 const position = this.#initPosition.clone().setY(this.#initPosition.y + POSITION_UP_Y);
                 const impulse = IMPULSE_DIRECTION.clone().applyQuaternion(rotation).normalize().multiplyScalar(IMPULSE_STRENGTH);
@@ -113,11 +110,10 @@ export default class {
             nextState: this.#tower.nextState ? this.#tower.nextState.description : null,
             parts,
             position: this.#tower.position,
-            angle: this.#tower.angle,
             oscillationCount: this.#tower.oscillationCount,
             pendingShots: this.#tower.pendingShots,
-            timeActive: this.#tower.timeActive,
-            timeLastShot: this.#tower.timeLastShot
+            phase: this.#tower.phase,
+            frameLastShot: this.#tower.frameLastShot
         };
     }
 
@@ -126,10 +122,9 @@ export default class {
         this.#tower.nextState = tower.nextState ? Symbol.for(tower.nextState) : null;
         this.#tower.oscillationCount = tower.oscillationCount;
         this.#tower.pendingShots = tower.pendingShots;
-        this.#tower.timeActive = tower.timeActive;
-        this.#tower.timeLastShot = tower.timeLastShot;
+        this.#tower.phase = tower.phase;
+        this.#tower.frameLastShot = tower.frameLastShot;
         this.#tower.position = tower.position;
-        this.#tower.angle = tower.angle;
         this.#tower.parts.forEach((partData, name) => {
             const loadedPart = tower.parts[name];
             if (loadedPart) {
@@ -143,16 +138,16 @@ export default class {
     }
 }
 
-function updateTowerState({ tower, time, oscillationDirection, canActivate }) {
+function updateTowerState({ tower, canActivate }) {
     tower.nextState = null;
     switch (tower.state) {
         case TOWER_STATES.ACTIVATING:
             if (canActivate()) {
+                tower.phase = 0;
                 if (tower.position < POSITION_UP_Y) {
-                    tower.position += DELTA_POSITION_STEP;
+                    tower.position += TRANSLATION_SPEED;
                 } else {
-                    tower.timeActive = time;
-                    tower.timeLastShot = time;
+                    tower.frameLastShot = 0;
                     tower.position = POSITION_UP_Y;
                     tower.nextState = TOWER_STATES.SHOOTING_COINS;
                 }
@@ -160,32 +155,32 @@ function updateTowerState({ tower, time, oscillationDirection, canActivate }) {
             break;
         case TOWER_STATES.SHOOTING_COINS:
             if (tower.oscillationCount < 1) {
-                const phase = (time - tower.timeActive) * DELTA_POSITION_STEP;
-                tower.angle = Math.sin(phase) * ANGLE_AMPLITUDE * oscillationDirection;
-                tower.oscillationCount = Math.floor(phase / (2 * Math.PI));
-                if (time - tower.timeLastShot > DELAY_SHOOT) {
+                tower.phase += ROTATION_SPEED;
+                tower.oscillationCount = Math.floor(tower.phase / (2 * Math.PI));
+                tower.frameLastShot++;
+                if (tower.frameLastShot > SHOOT_DURATION) {
                     tower.nextState = TOWER_STATES.SHOOTING_COIN;
                 }
             } else if (tower.pendingShots) {
                 tower.pendingShots--;
-                tower.timeActive = time;
+                tower.phase += ROTATION_SPEED;
                 tower.oscillationCount = 0;
             } else {
-                tower.timeActive = -1;
+                tower.phase = 0;
                 tower.oscillationCount = 0;
-                tower.angle = ANGLE_IDLE;
                 tower.nextState = TOWER_STATES.MOVING_DOWN;
             }
             break;
         case TOWER_STATES.SHOOTING_COIN:
-            tower.timeLastShot = time;
+            tower.frameLastShot = 0;
             tower.nextState = TOWER_STATES.SHOOTING_COINS;
             break;
         case TOWER_STATES.MOVING_DOWN:
             if (tower.position > 0) {
-                tower.position -= DELTA_POSITION_STEP;
+                tower.position -= TRANSLATION_SPEED;
             } else {
                 tower.position = POSITION_DOWN_Y;
+                tower.frameLastShot = -1;
                 tower.nextState = TOWER_STATES.IDLE;
             }
             break;

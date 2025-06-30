@@ -361,8 +361,8 @@ export default class {
         this.#reelsBox.update();
         this.#sweepers.update();
         this.#excavator.update();
-        this.#leftTower.update(time);
-        this.#rightTower.update(time);
+        this.#leftTower.update();
+        this.#rightTower.update();
         this.#coinRoller.update();
         this.#stacker.update(time);
         this.#leftStacker.update(time);
