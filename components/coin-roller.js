@@ -182,7 +182,7 @@ export default class {
 
     save() {
         const sensorCollidersHandles = {};
-        // this.#sensorColliders.forEach((collider, key) => sensorCollidersHandles[key] = collider.handle);
+        this.#sensorColliders.forEach((collider, key) => sensorCollidersHandles[key] = collider.handle);
         return {
             state: this.#coinRoller.state.description,
             nextState: this.#coinRoller.nextState ? this.#coinRoller.nextState.description : null,
