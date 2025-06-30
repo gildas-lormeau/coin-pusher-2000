@@ -356,7 +356,7 @@ export default class {
         this.#pusher.update();
         this.#collisionsDetector.update();
         this.#scoreboard.update();
-        this.#controlPanel.update(time);
+        this.#controlPanel.update();
         this.#sensorGate.update();
         this.#reelsBox.update(time);
         this.#sweepers.update(time);

@@ -57,7 +57,7 @@ export default class {
         Buttons.blink(this.#startButton, true);
     }
 
-    update(time) {
+    update() {
         // do nothing
     }
 
