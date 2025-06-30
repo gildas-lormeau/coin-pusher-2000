@@ -155,7 +155,7 @@ export default class {
             lights.forEach((light, index) => {
                 const material = this.#lightsMaterials[index];
                 if (light.on) {
-                    material.emissiveIntensity = light.intensity;
+                    material.emissiveIntensity = Math.max(LIGHTS_MIN_INTENSITY, LIGHTS_MAX_INTENSITY * (1 - light.refreshes / LIGHTS_REMANENCE_DURATION));
                 } else {
                     material.emissiveIntensity = 0;
                 }
@@ -197,7 +197,6 @@ export default class {
             pendingShots: this.#coinRoller.pendingShots,
             lights: this.#coinRoller.lights.map(light => ({
                 on: light.on,
-                intensity: light.intensity,
                 refreshes: light.refreshes
             })),
             lightsHeadIndex: this.#coinRoller.lightsHeadIndex,
@@ -246,7 +245,6 @@ export default class {
         }
         this.#coinRoller.lights = coinRoller.lights.map(light => ({
             on: light.on,
-            intensity: light.intensity,
             refreshes: light.refreshes
         }));
         this.#coinRoller.lightsHeadIndex = coinRoller.lightsHeadIndex;
@@ -351,7 +349,6 @@ function updateLightsState({ coinRoller }) {
     if (coinRoller.state === COIN_ROLLER_STATES.IDLE || coinRoller.state === COIN_ROLLER_STATES.CLOSING_DOORS) {
         lights.forEach(light => {
             light.on = false;
-            light.intensity = 0;
             light.refreshes = -1;
         });
     } else if (coinRoller.lightsRefreshes !== -1) {
@@ -372,14 +369,11 @@ function updateLightsState({ coinRoller }) {
             const maxIndex = lightsDirection > 0 ? lightsHeadIndex : lightsHeadIndex + headSize;
             if (index >= minIndex && index <= maxIndex) {
                 light.on = true;
-                light.intensity = LIGHTS_MAX_INTENSITY;
                 light.refreshes = 0;
             } else if (light.refreshes > -1 && light.refreshes < LIGHTS_REMANENCE_DURATION) {
-                light.intensity = Math.max(LIGHTS_MIN_INTENSITY, LIGHTS_MAX_INTENSITY * (1 - light.refreshes / LIGHTS_REMANENCE_DURATION));
                 light.refreshes++;
             } else {
                 light.on = false;
-                light.intensity = 0;
                 light.refreshes = -1;
             }
         });
@@ -516,7 +510,6 @@ function initializeLights({ lightsMaterials, lights }) {
     lightsMaterials.forEach((_, indexMaterial) => {
         lights[indexMaterial] = {
             on: false,
-            intensity: 0,
             refreshes: -1
         };
     });
