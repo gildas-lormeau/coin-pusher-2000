@@ -7,7 +7,7 @@ const REEL_ACCELERATION = Math.PI / 90;
 const REEL_DECELERATION = Math.PI / 60;
 const REEL_MAX_TURN_COUNT = 10;
 const REEL_MIN_TURN_COUNT = 3;
-const REEL_ON_WON_DELAY = 1500;
+const REEL_ON_WON_DURATION = 100;
 const MODEL_PATH = "./../assets/reels-box.glb";
 const LIGHTS_OPACITY_OFF = 0.2;
 const LIGHTS_OPACITY_ON = 1.0;
@@ -15,8 +15,8 @@ const LIGHTS_COLOR = 0xfbd04a;
 const LIGHTS_EMISSIVE_COLOR = 0xfbd04a;
 const LIGHTS_MIN_INTENSITY = 0;
 const LIGHTS_MAX_INTENSITY = 1.5;
-const LIGHTS_DELAY_BLINKING = 50;
-const LIGHTS_DELAY_ROTATING = 150;
+const LIGHTS_BLINKING_DURATION = 5;
+const LIGHTS_ROTATING_DURATION = 10;
 const REELS_BOX_STATES = {
     IDLE: Symbol.for("reels-box-idle"),
     ACTIVATING: Symbol.for("reels-box-activating"),
@@ -54,8 +54,7 @@ export default class {
         state: REELS_BOX_STATES.IDLE,
         nextState: null,
         pendingSpins: 0,
-        timeNextSpin: -1,
-        timeActive: -1,
+        frameActive: -1,
         reels: [{
             state: REEL_STATES.IDLE,
             nextState: null,
@@ -88,7 +87,7 @@ export default class {
             state: LIGHTS_STATES.IDLE,
             nextState: null,
             headIndex: 0,
-            timeRefresh: -1,
+            frameLastRefresh: -1,
             bulbs: []
         }
     };
@@ -105,12 +104,12 @@ export default class {
         });
     }
 
-    update(time) {
+    update() {
         const reelsBox = this.#reelsBox;
         const { state, reels, lights } = reelsBox;
         if (state !== REELS_BOX_STATES.IDLE) {
-            updateReelsBoxState({ reelsBox, time });
-            updateLightsState({ reelsBox, time });
+            updateReelsBoxState({ reelsBox });
+            updateLightsState({ reelsBox });
             reels.forEach(reel => updateReelState({ reel }));
             reels.forEach((reel, indexReel) => this.#reelsMeshes[indexReel].rotation.x = reel.rotation);
             if (state === REELS_BOX_STATES.DELIVERING_BONUS) {
@@ -149,8 +148,7 @@ export default class {
             state: this.#reelsBox.state.description,
             nextState: this.#reelsBox.nextState ? this.#reelsBox.nextState.description : null,
             pendingSpins: this.#reelsBox.pendingSpins,
-            timeNextSpin: this.#reelsBox.timeNextSpin,
-            timeActive: this.#reelsBox.timeActive,
+            frameActive: this.#reelsBox.frameActive,
             reels: this.#reelsBox.reels.map(reel => ({
                 state: reel.state.description,
                 nextState: reel.nextState ? reel.nextState.description : null,
@@ -164,7 +162,7 @@ export default class {
             lights: {
                 state: this.#reelsBox.lights.state.description,
                 headIndex: this.#reelsBox.lights.headIndex,
-                timeRefresh: this.#reelsBox.lights.timeRefresh,
+                frameLastRefresh: this.#reelsBox.lights.frameLastRefresh,
                 bulbs: this.#reelsBox.lights.bulbs.map(bulb => ({
                     intensity: bulb.intensity
                 }))
@@ -176,8 +174,7 @@ export default class {
         this.#reelsBox.state = Symbol.for(reelsBox.state);
         this.#reelsBox.nextState = reelsBox.nextState ? Symbol.for(reelsBox.nextState) : null;
         this.#reelsBox.pendingSpins = reelsBox.pendingSpins;
-        this.#reelsBox.timeNextSpin = reelsBox.timeNextSpin;
-        this.#reelsBox.timeActive = reelsBox.timeActive;
+        this.#reelsBox.frameActive = reelsBox.frameActive;
         this.#reelsBox.reels.forEach((reel, indexReel) => {
             reel.state = Symbol.for(reelsBox.reels[indexReel].state);
             reel.nextState = reelsBox.reels[indexReel].nextState ? Symbol.for(reelsBox.reels[indexReel].nextState) : null;
@@ -191,14 +188,14 @@ export default class {
         });
         this.#reelsBox.lights.state = Symbol.for(reelsBox.lights.state);
         this.#reelsBox.lights.headIndex = reelsBox.lights.headIndex;
-        this.#reelsBox.lights.timeRefresh = reelsBox.lights.timeRefresh;
+        this.#reelsBox.lights.frameLastRefresh = reelsBox.lights.frameLastRefresh;
         this.#reelsBox.lights.bulbs.forEach((bulb, indexBulb) => {
             bulb.intensity = reelsBox.lights.bulbs[indexBulb].intensity;
         });
     }
 }
 
-function updateReelsBoxState({ reelsBox, time }) {
+function updateReelsBoxState({ reelsBox }) {
     reelsBox.nextState = null;
     switch (reelsBox.state) {
         case REELS_BOX_STATES.ACTIVATING:
@@ -208,14 +205,15 @@ function updateReelsBoxState({ reelsBox, time }) {
             break;
         case REELS_BOX_STATES.SPINNING_REELS:
             if (reelsBox.reels.every(reel => reel.state === REEL_STATES.IDLE)) {
-                reelsBox.timeActive = time;
+                reelsBox.frameActive = 0;
                 reelsBox.nextState = REELS_BOX_STATES.STOPPING;
                 reelsBox.lights.state = LIGHTS_STATES.STARTING_BLINKING;
             }
             break;
         case REELS_BOX_STATES.STOPPING:
-            if (time - reelsBox.timeActive > REEL_ON_WON_DELAY) {
-                reelsBox.timeActive = -1;
+            reelsBox.frameActive++;
+            if (reelsBox.frameActive > REEL_ON_WON_DURATION) {
+                reelsBox.frameActive;
                 reelsBox.nextState = REELS_BOX_STATES.DELIVERING_BONUS;
                 reelsBox.lights.state = LIGHTS_STATES.STOPPING_BLINKING;
             }
@@ -281,39 +279,41 @@ function updateReelState({ reel }) {
     }
 }
 
-function updateLightsState({ reelsBox, time }) {
+function updateLightsState({ reelsBox }) {
     reelsBox.lights.nextState = null;
     switch (reelsBox.lights.state) {
         case LIGHTS_STATES.IDLE:
             break;
         case LIGHTS_STATES.STARTING_ROTATING:
-            reelsBox.lights.timeRefresh = time;
+            reelsBox.lights.frameLastRefresh = 0;
             reelsBox.lights.nextState = LIGHTS_STATES.ROTATING;
             break;
         case LIGHTS_STATES.ROTATING:
-            if (time - reelsBox.lights.timeRefresh > LIGHTS_DELAY_ROTATING) {
+            reelsBox.lights.frameLastRefresh++;
+            if (reelsBox.lights.frameLastRefresh > LIGHTS_ROTATING_DURATION) {
                 reelsBox.lights.headIndex = (reelsBox.lights.headIndex + 1) % 3;
                 reelsBox.lights.bulbs.forEach((bulb, indexBulb) => {
                     enableBulb(bulb, indexBulb % 3 === reelsBox.lights.headIndex || (indexBulb + 1) % 3 === reelsBox.lights.headIndex);
                 });
-                reelsBox.lights.timeRefresh = time;
+                reelsBox.lights.frameLastRefresh = 0;
             }
             break;
         case LIGHTS_STATES.STARTING_BLINKING:
             reelsBox.lights.bulbs.forEach((bulb, indexBulb) => enableBulb(bulb, indexBulb % 2 === 0));
             reelsBox.lights.headIndex = 0;
-            reelsBox.lights.timeRefresh = -1;
+            reelsBox.lights.frameLastRefresh = 0;
             reelsBox.lights.nextState = LIGHTS_STATES.BLINKING;
             break;
         case LIGHTS_STATES.BLINKING:
-            if (time - reelsBox.lights.timeRefresh > LIGHTS_DELAY_BLINKING) {
+            reelsBox.lights.frameLastRefresh++;
+            if (reelsBox.lights.frameLastRefresh > LIGHTS_BLINKING_DURATION) {
                 reelsBox.lights.bulbs.forEach(bulb => enableBulb(bulb, bulb.intensity === LIGHTS_MIN_INTENSITY));
-                reelsBox.lights.timeRefresh = time;
+                reelsBox.lights.frameLastRefresh = 0;
             }
             break;
         case LIGHTS_STATES.STOPPING_BLINKING:
             reelsBox.lights.bulbs.forEach(bulb => enableBulb(bulb, false));
-            reelsBox.lights.timeRefresh = -1;
+            reelsBox.lights.frameLastRefresh = -1;
             reelsBox.lights.nextState = LIGHTS_STATES.IDLE;
             break;
         default:
@@ -351,7 +351,7 @@ function initializeLights({ lightBulbsMaterials, lights }) {
         lights.bulbs[indexMaterial] = {
             intensity: LIGHTS_MIN_INTENSITY,
             opacity: LIGHTS_OPACITY_OFF,
-            timeRefresh: -1
+            frameLastRefresh: -1
         };
     });
 }
