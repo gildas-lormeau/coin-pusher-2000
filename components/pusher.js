@@ -13,6 +13,7 @@ const DELIVERY_POSITION = "delivery-position";
 const LIGHTS_EMISSIVE_COLOR = 0x5353A6;
 const LIGHTS_MIN_INTENSITY = 0;
 const LIGHTS_MAX_INTENSITY = 1.5;
+const LIGHTS_ON_DURATION = 10; // ms
 
 const PUSHER_STATES = {
     MOVING: Symbol.for("pusher-moving"),
@@ -59,7 +60,7 @@ export default class {
         lights: {
             state: LIGHTS_STATES.IDLE,
             nextState: null,
-            timeRefresh: -1,
+            frameLastRefresh: -1,
             headIndex: 0,
             bulbs: []
         }
@@ -80,9 +81,9 @@ export default class {
         });
     }
 
-    update(time) {
+    update() {
         updatePusherState({ pusher: this.#pusher });
-        updateLightsState({ pusher: this.#pusher, time });
+        updateLightsState({ pusher: this.#pusher });
         if (this.#pusher.state === PUSHER_STATES.DELIVERING_BONUS) {
             const reward = this.#pusher.rewards.shift();
             this.#depositBonus({
@@ -138,7 +139,7 @@ export default class {
             lights: {
                 state: this.#pusher.lights.state.description,
                 nextState: this.#pusher.lights.nextState ? this.#pusher.lights.nextState.description : null,
-                timeRefresh: this.#pusher.lights.timeRefresh,
+                frameLastRefresh: this.#pusher.lights.frameLastRefresh,
                 headIndex: this.#pusher.lights.headIndex,
                 bulbs: this.#pusher.lights.bulbs.map(bulb => ({ intensity: bulb.intensity }))
             }
@@ -155,7 +156,7 @@ export default class {
         this.#pusher.door.position = pusher.door.position;
         this.#pusher.lights.state = Symbol.for(pusher.lights.state);
         this.#pusher.lights.nextState = pusher.lights.nextState ? Symbol.for(pusher.lights.nextState) : null;
-        this.#pusher.lights.timeRefresh = pusher.lights.timeRefresh;
+        this.#pusher.lights.frameLastRefresh = pusher.lights.frameLastRefresh;
         this.#pusher.lights.headIndex = pusher.lights.headIndex;
         this.#pusher.lights.bulbs = pusher.lights.bulbs.map(bulb => ({
             intensity: bulb.intensity
@@ -204,18 +205,19 @@ function updatePusherState({ pusher }) {
     }
 }
 
-function updateLightsState({ pusher, time }) {
+function updateLightsState({ pusher }) {
     pusher.lights.nextState = null;
     switch (pusher.lights.state) {
         case LIGHTS_STATES.IDLE:
             break;
         case LIGHTS_STATES.ACTIVATING:
-            pusher.lights.timeRefresh = time;
+            pusher.lights.frameLastRefresh = 0;
             pusher.lights.nextState = LIGHTS_STATES.ROTATING;
             break;
         case LIGHTS_STATES.ROTATING:
-            if (time - pusher.lights.timeRefresh > 100) {
-                pusher.lights.timeRefresh = time;
+            pusher.lights.frameLastRefresh++;
+            if (pusher.lights.frameLastRefresh > LIGHTS_ON_DURATION) {
+                pusher.lights.frameLastRefresh = 0;
                 pusher.lights.bulbs.forEach((bulb, indexBulb) => {
                     bulb.intensity = indexBulb >= pusher.lights.headIndex * 9 && indexBulb < (pusher.lights.headIndex + 1) * 9
                         ? LIGHTS_MAX_INTENSITY
@@ -226,9 +228,10 @@ function updateLightsState({ pusher, time }) {
             break;
         case LIGHTS_STATES.DELIVERING:
         case LIGHTS_STATES.PREPARING_IDLE:
-            if (time - pusher.lights.timeRefresh > 100) {
+            pusher.lights.frameLastRefresh++;
+            if (pusher.lights.frameLastRefresh > LIGHTS_ON_DURATION) {
                 const intensity = pusher.lights.bulbs[0].intensity;
-                pusher.lights.timeRefresh = time;
+                pusher.lights.frameLastRefresh = 0;
                 pusher.lights.bulbs.forEach((bulb) => {
                     bulb.intensity = intensity == LIGHTS_MAX_INTENSITY ? LIGHTS_MIN_INTENSITY : LIGHTS_MAX_INTENSITY;
                 });
@@ -239,7 +242,7 @@ function updateLightsState({ pusher, time }) {
                         bulb.intensity = LIGHTS_MIN_INTENSITY;
                     });
                     pusher.lights.headIndex = 0;
-                    pusher.lights.timeRefresh = -1;
+                    pusher.lights.frameLastRefresh = -1;
                     pusher.lights.nextState = LIGHTS_STATES.IDLE;
                 }
             }

@@ -353,7 +353,7 @@ export default class {
         Buttons.update();
         Digits.update();
         Ingots.update();
-        this.#pusher.update(time);
+        this.#pusher.update();
         this.#collisionsDetector.update();
         this.#scoreboard.update();
         this.#controlPanel.update(time);
