@@ -1,11 +1,9 @@
 import { Vector3, MeshPhongMaterial } from "three";
 
-const SPEED = .001;
-const SPEED_TRAP = .002;
+const SPEED = .02;
+const SPEED_TRAP = .01;
 const SPEED_DOORS = .003;
 const DISTANCE = 0.13;
-const DISTANCE_TRAP = 0.25;
-const START_ANGLE = -Math.PI / 2;
 const MODEL_PATH = "./../assets/coin-roller.glb";
 const LAUNCHER_PART_NAME = "launcher";
 const TRAP_DOOR_PART_NAME = "trap-door";
@@ -15,11 +13,9 @@ const INIT_POSITION = "init-position";
 const BONUS_VALUES = ["slot-3", "slot-2", "slot-1"];
 const COIN_IMPULSE_STRENGTH = 0.00003;
 const COIN_IMPULSE = new Vector3(0, 0, -1).multiplyScalar(COIN_IMPULSE_STRENGTH);
-const MAX_DELAY_MOVING_COIN = 1500;
-const MIN_LAUNCHER_POSITION = 0.0001;
 const INITIALIZATION_COIN_POSITION = 0.09;
 const COIN_ROTATION = new Vector3(Math.PI / 2, 0, Math.PI / 2);
-const MIN_TRAP_POSITION = 0.0001;
+const MIN_TRAP_POSITION = 0;
 const MAX_TRAP_POSITION = 0.25 - MIN_TRAP_POSITION;
 const MIN_DOORS_POSITION = 0;
 const MAX_DOORS_POSITION = 0.03;
@@ -27,9 +23,9 @@ const LIGHTS_COLOR = 0xFFFFFF;
 const LIGHTS_EMISSIVE_COLOR = 0xFF00FF;
 const LIGHTS_MIN_INTENSITY = 0;
 const LIGHTS_MAX_INTENSITY = 1;
-const LIGHTS_REMANENCE_DURATION = 300;
+const LIGHTS_ON_DURATION = 2;
+const LIGHTS_REMANENCE_DURATION = 30;
 const LIGHTS_HEAD_SIZE = 8;
-const LIGHTS_SPEED_DELAY = 40;
 const CABINET_COLLISION_GROUP = 0x00010001;
 
 const COIN_ROLLER_STATES = {
@@ -45,8 +41,7 @@ const COIN_ROLLER_STATES = {
     OPENING_TRAP: Symbol.for("coin-roller-opening-trap"),
     CLOSING_TRAP: Symbol.for("coin-roller-closing-trap"),
     MOVING_LAUNCHER_TO_BASE: Symbol.for("coin-roller-moving-launcher-to-base"),
-    CLOSING_DOORS: Symbol.for("coin-roller-closing-doors"),
-    PREPARING_IDLE: Symbol.for("coin-roller-preparing-idle")
+    CLOSING_DOORS: Symbol.for("coin-roller-closing-doors")
 };
 
 export default class {
@@ -59,16 +54,20 @@ export default class {
     #initPosition;
     #sensorColliders = new Map();
     #lightsMaterials = [];
+    #launcherPosition = new Vector3();
+    #trapPosition = new Vector3();
+    #doorsPosition = new Vector3();
     #coinRoller = {
         state: COIN_ROLLER_STATES.IDLE,
+        nextState: null,
         pendingShots: 0,
-        timeActive: -1,
-        timeMovingCoin: -1,
-        timeOpeningTrap: -1,
+        launcherPhase: 0,
+        trapPosition: 0,
+        doorsPosition: 0,
         lights: [],
         lightsHeadIndex: -1,
         lightsDirection: 1,
-        timeLightsRefresh: -1
+        lightsRefreshes: -1
     };
 
     constructor({ scene, onInitializeCoin, onRecycleCoin, onBonusWon, onGetCoin }) {
@@ -122,15 +121,9 @@ export default class {
         this.#coinRoller.doors = this.#coinRoller.parts.get(DOORS_PART_NAME);
     }
 
-    update(time) {
-        updateCoinRollerState({
-            coinRoller: this.#coinRoller,
-            time
-        });
-        updateLightsState({
-            coinRoller: this.#coinRoller,
-            time
-        });
+    update() {
+        updateCoinRollerState({ coinRoller: this.#coinRoller });
+        updateLightsState({ coinRoller: this.#coinRoller });
         const { parts, state, launcher, trap, coin, doors, lights } = this.#coinRoller;
         if (state !== COIN_ROLLER_STATES.IDLE) {
             parts.forEach(({ meshes, body }) => {
@@ -139,15 +132,12 @@ export default class {
                     data.quaternion.copy(body.rotation());
                 });
             });
-            const launcherPosition = launcher.body.translation();
-            launcherPosition.x = launcher.position;
-            launcher.body.setNextKinematicTranslation(launcherPosition);
-            const trapPosition = trap.body.translation();
-            trapPosition.z = trap.position;
-            trap.body.setNextKinematicTranslation(trapPosition);
-            const doorsPosition = doors.body.translation();
-            doorsPosition.x = doors.position;
-            doors.body.setNextKinematicTranslation(doorsPosition);
+            this.#launcherPosition.setX(-Math.cos(this.#coinRoller.launcherPhase) * DISTANCE + DISTANCE);
+            this.#trapPosition.z = this.#coinRoller.trapPosition;
+            this.#doorsPosition.x = this.#coinRoller.doorsPosition;
+            launcher.body.setNextKinematicTranslation(this.#launcherPosition);
+            trap.body.setNextKinematicTranslation(this.#trapPosition);
+            doors.body.setNextKinematicTranslation(this.#doorsPosition);
             if (state === COIN_ROLLER_STATES.INITIALIZING) {
                 this.#coinRoller.coin = this.#onInitializeCoin({ position: this.#initPosition, rotation: COIN_ROTATION });
                 this.#coinRoller.coin.body.setEnabledTranslations(false, true, true);
@@ -156,7 +146,7 @@ export default class {
                 coin.body.setEnabledTranslations(true, true, true);
                 coin.body.setEnabledRotations(false, false, false);
                 coin.body.sleep();
-                coin.body.setNextKinematicTranslation(launcherPosition);
+                coin.body.setNextKinematicTranslation(this.#launcherPosition);
             }
             if (state === COIN_ROLLER_STATES.DELIVERING_COIN) {
                 coin.body.setEnabledRotations(true, true, true);
@@ -170,6 +160,9 @@ export default class {
                     material.emissiveIntensity = 0;
                 }
             });
+            if (this.#coinRoller.nextState) {
+                this.#coinRoller.state = this.#coinRoller.nextState;
+            }
         }
     }
 
@@ -189,41 +182,27 @@ export default class {
 
     save() {
         const sensorCollidersHandles = {};
-        this.#sensorColliders.forEach((collider, key) => sensorCollidersHandles[key] = collider.handle);
-        let coin;
-        if (this.#coinRoller.coin) {
-            coin = {
-                index: this.#coinRoller.coin.index
-            };
-        }
+        // this.#sensorColliders.forEach((collider, key) => sensorCollidersHandles[key] = collider.handle);
         return {
             state: this.#coinRoller.state.description,
+            nextState: this.#coinRoller.nextState ? this.#coinRoller.nextState.description : null,
             sensorCollidersHandles,
-            coin,
-            launcher: {
-                bodyHandle: this.#coinRoller.launcher.body.handle,
-                position: this.#coinRoller.launcher.position
-            },
-            trap: {
-                bodyHandle: this.#coinRoller.trap.body.handle,
-                position: this.#coinRoller.trap.position
-            },
-            doors: {
-                bodyHandle: this.#coinRoller.doors.body.handle,
-                position: this.#coinRoller.doors.position
-            },
-            timeActive: this.#coinRoller.timeActive,
-            timeMovingCoin: this.#coinRoller.timeMovingCoin,
-            timeOpeningTrap: this.#coinRoller.timeOpeningTrap,
+            coinIndex: this.#coinRoller.coin ? this.#coinRoller.coin.index : null,
+            launcherBodyHandle: this.#coinRoller.launcher.body.handle,
+            trapBodyHandle: this.#coinRoller.trap.body.handle,
+            doorsBodyHandle: this.#coinRoller.doors.body.handle,
+            launcherPhase: this.#coinRoller.launcherPhase,
+            trapPosition: this.#coinRoller.trapPosition,
+            doorsPosition: this.#coinRoller.doorsPosition,
             pendingShots: this.#coinRoller.pendingShots,
             lights: this.#coinRoller.lights.map(light => ({
                 on: light.on,
                 intensity: light.intensity,
-                lastVisited: light.lastVisited
+                refreshes: light.refreshes
             })),
             lightsHeadIndex: this.#coinRoller.lightsHeadIndex,
             lightsDirection: this.#coinRoller.lightsDirection,
-            timeLightsRefresh: this.#coinRoller.timeLightsRefresh
+            lightsRefreshes: this.#coinRoller.lightsRefreshes
         };
     }
 
@@ -254,142 +233,131 @@ export default class {
             });
         });
         this.#coinRoller.state = Symbol.for(coinRoller.state);
-        this.#coinRoller.timeActive = coinRoller.timeActive;
-        this.#coinRoller.timeMovingCoin = coinRoller.timeMovingCoin;
-        this.#coinRoller.timeOpeningTrap = coinRoller.timeOpeningTrap;
+        this.#coinRoller.nextState = coinRoller.nextState ? Symbol.for(coinRoller.nextState) : null;
+        this.#coinRoller.launcherPhase = coinRoller.launcherPhase;
         this.#coinRoller.pendingShots = coinRoller.pendingShots;
-        this.#coinRoller.launcher.body = this.#scene.worldBodies.get(coinRoller.launcher.bodyHandle);
-        this.#coinRoller.launcher.position = coinRoller.launcher.position;
-        this.#coinRoller.trap.body = this.#scene.worldBodies.get(coinRoller.trap.bodyHandle);
-        this.#coinRoller.trap.position = coinRoller.trap.position;
-        this.#coinRoller.doors.body = this.#scene.worldBodies.get(coinRoller.doors.bodyHandle);
-        this.#coinRoller.doors.position = coinRoller.doors.position;
-        if (coinRoller.coin) {
-            this.#coinRoller.coin = this.#onGetCoin(coinRoller.coin);
+        this.#coinRoller.launcher.body = this.#scene.worldBodies.get(coinRoller.launcherBodyHandle);
+        this.#coinRoller.trap.body = this.#scene.worldBodies.get(coinRoller.trapBodyHandle);
+        this.#coinRoller.doors.body = this.#scene.worldBodies.get(coinRoller.doorsBodyHandle);
+        this.#coinRoller.trapPosition = coinRoller.trapPosition;
+        this.#coinRoller.doorsPosition = coinRoller.doorsPosition;
+        if (coinRoller.coinIndex) {
+            this.#coinRoller.coin = this.#onGetCoin({ index: coinRoller.coinIndex });
         }
         this.#coinRoller.lights = coinRoller.lights.map(light => ({
             on: light.on,
             intensity: light.intensity,
-            lastVisited: light.lastVisited
+            refreshes: light.refreshes
         }));
         this.#coinRoller.lightsHeadIndex = coinRoller.lightsHeadIndex;
         this.#coinRoller.lightsDirection = coinRoller.lightsDirection;
-        this.#coinRoller.timeLightsRefresh = coinRoller.timeLightsRefresh;
+        this.#coinRoller.lightsRefreshes = coinRoller.lightsRefreshes;
     }
 }
 
-function updateCoinRollerState({ coinRoller, time }) {
+function updateCoinRollerState({ coinRoller }) {
+    coinRoller.nextState = null;
     switch (coinRoller.state) {
         case COIN_ROLLER_STATES.IDLE:
             break;
         case COIN_ROLLER_STATES.ACTIVATING:
-            coinRoller.timeLightsRefresh = time;
+            coinRoller.lightsRefreshes = 0;
             coinRoller.lightsHeadIndex = 0;
-            coinRoller.state = COIN_ROLLER_STATES.OPENING_DOORS;
+            coinRoller.nextState = COIN_ROLLER_STATES.OPENING_DOORS;
             break;
         case COIN_ROLLER_STATES.OPENING_DOORS:
-            coinRoller.doors.position += SPEED_DOORS;
-            if (coinRoller.doors.position > MAX_DOORS_POSITION) {
-                coinRoller.state = COIN_ROLLER_STATES.INITIALIZING;
+            coinRoller.doorsPosition += SPEED_DOORS;
+            if (coinRoller.doorsPosition > MAX_DOORS_POSITION) {
+                coinRoller.nextState = COIN_ROLLER_STATES.INITIALIZING;
             }
             break;
         case COIN_ROLLER_STATES.INITIALIZING:
-            coinRoller.state = COIN_ROLLER_STATES.INITIALIZING_COIN;
+            coinRoller.nextState = COIN_ROLLER_STATES.INITIALIZING_COIN;
             break;
         case COIN_ROLLER_STATES.INITIALIZING_COIN:
             if (coinRoller.coin.position.z < INITIALIZATION_COIN_POSITION) {
-                coinRoller.timeActive = time;
-                coinRoller.state = COIN_ROLLER_STATES.MOVING_LAUNCHER;
+                coinRoller.nextState = COIN_ROLLER_STATES.MOVING_LAUNCHER;
             }
             break;
         case COIN_ROLLER_STATES.MOVING_LAUNCHER:
-            updateLauncherPosition({ coinRoller, time });
+            updateLauncherPosition({ coinRoller });
             break;
         case COIN_ROLLER_STATES.TRIGGERING_COIN:
-            updateLauncherPosition({ coinRoller, time });
-            coinRoller.state = COIN_ROLLER_STATES.DELIVERING_COIN;
-            coinRoller.timeMovingCoin = time;
+            updateLauncherPosition({ coinRoller });
+            coinRoller.nextState = COIN_ROLLER_STATES.DELIVERING_COIN;
             break;
         case COIN_ROLLER_STATES.DELIVERING_COIN:
-            updateLauncherPosition({ coinRoller, time });
-            coinRoller.state = COIN_ROLLER_STATES.MOVING_COIN;
+            updateLauncherPosition({ coinRoller });
+            coinRoller.nextState = COIN_ROLLER_STATES.MOVING_COIN;
             break;
         case COIN_ROLLER_STATES.MOVING_COIN:
-            updateLauncherPosition({ coinRoller, time });
-            if (time - coinRoller.timeMovingCoin > MAX_DELAY_MOVING_COIN) {
-                coinRoller.state = COIN_ROLLER_STATES.OPENING_TRAP;
-                coinRoller.timeOpeningTrap = time;
+            updateLauncherPosition({ coinRoller });
+            if (coinRoller.coin && coinRoller.coin.linearSpeed < .0001) {
+                coinRoller.nextState = COIN_ROLLER_STATES.OPENING_TRAP;
             } else if (!coinRoller.coin) {
-                coinRoller.state = COIN_ROLLER_STATES.MOVING_LAUNCHER_TO_BASE;
+                coinRoller.nextState = COIN_ROLLER_STATES.MOVING_LAUNCHER_TO_BASE;
             }
             break;
         case COIN_ROLLER_STATES.OPENING_TRAP:
-            if (coinRoller.launcher.position >= MIN_LAUNCHER_POSITION) {
-                updateLauncherPosition({ coinRoller, time });
+            if (coinRoller.launcherPhase > 0.05) {
+                updateLauncherPosition({ coinRoller });
             }
-            updateTrapPosition({ coinRoller, time });
-            if (coinRoller.trap.position > MAX_TRAP_POSITION) {
-                coinRoller.state = COIN_ROLLER_STATES.CLOSING_TRAP;
+            coinRoller.trapPosition += SPEED_TRAP;
+            if (coinRoller.trapPosition > MAX_TRAP_POSITION) {
+                coinRoller.nextState = COIN_ROLLER_STATES.CLOSING_TRAP;
             }
             break;
         case COIN_ROLLER_STATES.CLOSING_TRAP:
-            if (coinRoller.launcher.position >= MIN_LAUNCHER_POSITION) {
-                updateLauncherPosition({ coinRoller, time });
+            if (coinRoller.launcherPhase > 0.05) {
+                updateLauncherPosition({ coinRoller });
             }
-            updateTrapPosition({ coinRoller, time });
-            if (coinRoller.trap.position < MIN_TRAP_POSITION) {
-                coinRoller.trap.position = 0;
-                coinRoller.state = COIN_ROLLER_STATES.MOVING_LAUNCHER_TO_BASE;
-                coinRoller.timeOpeningTrap = -1;
+            coinRoller.trapPosition -= SPEED_TRAP;
+            if (coinRoller.trapPosition < MIN_TRAP_POSITION) {
+                coinRoller.trapPosition = 0;
+                coinRoller.nextState = COIN_ROLLER_STATES.MOVING_LAUNCHER_TO_BASE;
             }
             break;
         case COIN_ROLLER_STATES.MOVING_LAUNCHER_TO_BASE:
-            if (coinRoller.launcher.position >= MIN_LAUNCHER_POSITION) {
-                updateLauncherPosition({ coinRoller, time });
+            if (coinRoller.launcherPhase > 0.05) {
+                updateLauncherPosition({ coinRoller });
             } else {
-                coinRoller.launcher.position = 0;
-                coinRoller.timeMovingCoin = -1;
-                coinRoller.timeActive = -1;
+                coinRoller.launcherPhase = 0;
                 if (coinRoller.pendingShots) {
                     coinRoller.pendingShots--;
-                    coinRoller.state = COIN_ROLLER_STATES.ACTIVATING;
+                    coinRoller.nextState = COIN_ROLLER_STATES.ACTIVATING;
                 } else {
-                    coinRoller.state = COIN_ROLLER_STATES.CLOSING_DOORS;
+                    coinRoller.nextState = COIN_ROLLER_STATES.CLOSING_DOORS;
                 }
             }
             break;
         case COIN_ROLLER_STATES.CLOSING_DOORS:
-            coinRoller.doors.position -= SPEED_DOORS;
-            if (coinRoller.doors.position < MIN_DOORS_POSITION) {
-                coinRoller.doors.position = 0;
-                coinRoller.timeLightsRefresh = -1;
+            coinRoller.doorsPosition -= SPEED_DOORS;
+            if (coinRoller.doorsPosition < MIN_DOORS_POSITION) {
+                coinRoller.doorsPosition = 0;
+                coinRoller.lightsRefreshes = -1;
                 coinRoller.lightsHeadIndex = -1;
                 coinRoller.lightsDirection = 1;
-                coinRoller.state = COIN_ROLLER_STATES.PREPARING_IDLE;
+                coinRoller.nextState = COIN_ROLLER_STATES.IDLE;
             }
-            break;
-        case COIN_ROLLER_STATES.PREPARING_IDLE:
-            coinRoller.state = COIN_ROLLER_STATES.IDLE;
             break;
         default:
             break;
     }
 }
-function updateLightsState({ coinRoller, time }) {
+function updateLightsState({ coinRoller }) {
     const { lights, lightsHeadIndex, lightsDirection } = coinRoller;
     const lightsCount = lights.length;
     const headSize = LIGHTS_HEAD_SIZE;
-    const remanenceDuration = LIGHTS_REMANENCE_DURATION;
     if (coinRoller.state === COIN_ROLLER_STATES.IDLE || coinRoller.state === COIN_ROLLER_STATES.CLOSING_DOORS) {
         lights.forEach(light => {
             light.on = false;
             light.intensity = 0;
-            light.lastVisited = -1;
+            light.refreshes = -1;
         });
-    } else if (coinRoller.timeLightsRefresh !== -1) {
-        const elapsedTime = time - coinRoller.timeLightsRefresh;
-        if (elapsedTime > LIGHTS_SPEED_DELAY) {
-            coinRoller.timeLightsRefresh = time;
+    } else if (coinRoller.lightsRefreshes !== -1) {
+        coinRoller.lightsRefreshes++;
+        if (coinRoller.lightsRefreshes > LIGHTS_ON_DURATION) {
+            coinRoller.lightsRefreshes = 0;
             coinRoller.lightsHeadIndex += lightsDirection;
             if (coinRoller.lightsHeadIndex > lightsCount) {
                 coinRoller.lightsDirection = -1;
@@ -405,24 +373,21 @@ function updateLightsState({ coinRoller, time }) {
             if (index >= minIndex && index <= maxIndex) {
                 light.on = true;
                 light.intensity = LIGHTS_MAX_INTENSITY;
-                light.lastVisited = time;
-            } else if (light.lastVisited > -1 && time - light.lastVisited < remanenceDuration) {
-                const elapsedTime = time - light.lastVisited;
-                light.intensity = Math.max(LIGHTS_MIN_INTENSITY, LIGHTS_MAX_INTENSITY * (1 - elapsedTime / remanenceDuration));
+                light.refreshes = 0;
+            } else if (light.refreshes > -1 && light.refreshes < LIGHTS_REMANENCE_DURATION) {
+                light.intensity = Math.max(LIGHTS_MIN_INTENSITY, LIGHTS_MAX_INTENSITY * (1 - light.refreshes / LIGHTS_REMANENCE_DURATION));
+                light.refreshes++;
             } else {
                 light.on = false;
                 light.intensity = 0;
+                light.refreshes = -1;
             }
         });
     }
 }
 
-function updateLauncherPosition({ coinRoller, time }) {
-    coinRoller.launcher.position = Math.sin((time - coinRoller.timeActive) * SPEED + START_ANGLE) * DISTANCE + DISTANCE;
-}
-
-function updateTrapPosition({ coinRoller, time }) {
-    coinRoller.trap.position = Math.sin((time - coinRoller.timeOpeningTrap) * SPEED_TRAP) * DISTANCE_TRAP;
+function updateLauncherPosition({ coinRoller }) {
+    coinRoller.launcherPhase = (coinRoller.launcherPhase + SPEED) % (Math.PI * 2);
 }
 
 async function initializeModel({ scene }) {
@@ -552,7 +517,7 @@ function initializeLights({ lightsMaterials, lights }) {
         lights[indexMaterial] = {
             on: false,
             intensity: 0,
-            lastVisited: -1
+            refreshes: -1
         };
     });
 }

@@ -363,7 +363,7 @@ export default class {
         this.#excavator.update(time);
         this.#leftTower.update(time);
         this.#rightTower.update(time);
-        this.#coinRoller.update(time);
+        this.#coinRoller.update();
         this.#stacker.update(time);
         this.#leftStacker.update(time);
         this.#rightStacker.update(time);
