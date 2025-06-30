@@ -45,10 +45,10 @@ const ARM_PROTECTION_PART_NAME = "arm-protection";
 const ARM_PROTECTION_LID_PART_NAME = "arm-protection-lid";
 const ARM_DOOR_PART_NAME = "arm-door";
 const LIGHTS_MIN_INTENSITY = 0;
-const LIGHTS_BLINKING_DURATION = 500;
 const LIGHTS_MAX_INTENSITY = 5;
 const LIGHTS_EMISSIVE_COLOR = 0xff00ff;
-const LIGHTS_DELIVERY_BLINKING_DURATION = 150;
+const LIGHTS_BLINKING_DURATION = 35;
+const LIGHTS_DELIVERY_BLINKING_DURATION = 10;
 
 const STACKER_STATES = {
     IDLE: Symbol.for("stacker-idle"),
@@ -111,7 +111,7 @@ export default class {
         baseAngle: BASE_INITIAL_ANGLE,
         lights: {
             state: LIGHTS_STATES.IDLE,
-            timeRefresh: -1,
+            frameLastRefresh: -1,
             bulbs: [],
             nextState: null
         }
@@ -153,12 +153,12 @@ export default class {
         Object.assign(this.#stacker, { parts });
     }
 
-    update(time) {
+    update() {
         updateStackerState({
             stacker: this.#stacker,
             canActivate: () => this.#canActivate(this)
         });
-        updateLightsState({ stacker: this.#stacker, time });
+        updateLightsState({ stacker: this.#stacker });
         const { parts, state, lights } = this.#stacker;
         if (state !== STACKER_STATES.IDLE) {
             const base = parts.get(BASE_PART_NAME);
@@ -333,7 +333,7 @@ export default class {
             lights: {
                 state: this.#stacker.lights.state.description,
                 nextState: this.#stacker.lights.nextState ? this.#stacker.lights.nextState.description : null,
-                timeRefresh: this.#stacker.lights.timeRefresh,
+                frameLastRefresh: this.#stacker.lights.frameLastRefresh,
                 bulbs: this.#stacker.lights.bulbs.map(bulb => ({
                     intensity: bulb.intensity
                 }))
@@ -369,7 +369,7 @@ export default class {
         });
         this.#stacker.lights.state = Symbol.for(stacker.lights.state);
         this.#stacker.lights.nextState = stacker.lights.nextState ? Symbol.for(stacker.lights.nextState) : null;
-        this.#stacker.lights.timeRefresh = stacker.lights.timeRefresh;
+        this.#stacker.lights.frameLastRefresh = stacker.lights.frameLastRefresh;
         this.#stacker.lights.bulbs = stacker.lights.bulbs.map(bulb => ({
             intensity: bulb.intensity
         }));
@@ -542,18 +542,19 @@ function updateStackerState({ stacker, canActivate }) {
     }
 }
 
-function updateLightsState({ stacker, time }) {
+function updateLightsState({ stacker }) {
     stacker.lights.nextState = null;
     switch (stacker.lights.state) {
         case LIGHTS_STATES.IDLE:
             break;
         case LIGHTS_STATES.ACTIVATING:
-            stacker.lights.timeRefresh = time;
+            stacker.lights.frameLastRefresh = 0;
             stacker.lights.nextState = LIGHTS_STATES.BLINKING;
             break;
         case LIGHTS_STATES.BLINKING:
-            if (time - stacker.lights.timeRefresh > LIGHTS_BLINKING_DURATION) {
-                stacker.lights.timeRefresh = time;
+            stacker.lights.frameLastRefresh++;
+            if (stacker.lights.frameLastRefresh > LIGHTS_BLINKING_DURATION) {
+                stacker.lights.frameLastRefresh = 0;
                 stacker.lights.bulbs.forEach(bulb => {
                     bulb.intensity = bulb.intensity > LIGHTS_MIN_INTENSITY ? 0 : LIGHTS_MAX_INTENSITY;
                 });
@@ -565,8 +566,9 @@ function updateLightsState({ stacker, time }) {
             });
             break;
         case LIGHTS_STATES.DELIVERING:
-            if (time - stacker.lights.timeRefresh > LIGHTS_DELIVERY_BLINKING_DURATION) {
-                stacker.lights.timeRefresh = time;
+            stacker.lights.frameLastRefresh++;
+            if (stacker.lights.frameLastRefresh > LIGHTS_DELIVERY_BLINKING_DURATION) {
+                stacker.lights.frameLastRefresh = 0;
                 stacker.lights.bulbs.forEach((bulb) => {
                     bulb.intensity = bulb.intensity == LIGHTS_MAX_INTENSITY ? 0 : LIGHTS_MAX_INTENSITY;
                 });
@@ -576,7 +578,7 @@ function updateLightsState({ stacker, time }) {
             stacker.lights.bulbs.forEach(bulb => {
                 bulb.intensity = LIGHTS_MIN_INTENSITY;
             });
-            stacker.lights.timeRefresh = -1;
+            stacker.lights.frameLastRefresh = -1;
             stacker.lights.nextState = LIGHTS_STATES.IDLE;
             break;
         default:

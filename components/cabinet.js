@@ -364,9 +364,9 @@ export default class {
         this.#leftTower.update();
         this.#rightTower.update();
         this.#coinRoller.update();
-        this.#stacker.update(time);
-        this.#leftStacker.update(time);
-        this.#rightStacker.update(time);
+        this.#stacker.update();
+        this.#leftStacker.update();
+        this.#rightStacker.update();
         this.#screen.update();
         this.#cardReader.update();
         this.#tokenSlot.update();
