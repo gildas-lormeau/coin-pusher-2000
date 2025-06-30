@@ -367,7 +367,6 @@ export default class {
         this.#stacker.update(time);
         this.#leftStacker.update(time);
         this.#rightStacker.update(time);
-        this.#sweepers.update(time);
         this.#screen.update();
         this.#cardReader.update();
         this.#tokenSlot.update();
