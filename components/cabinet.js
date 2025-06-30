@@ -360,7 +360,7 @@ export default class {
         this.#sensorGate.update();
         this.#reelsBox.update();
         this.#sweepers.update();
-        this.#excavator.update(time);
+        this.#excavator.update();
         this.#leftTower.update(time);
         this.#rightTower.update(time);
         this.#coinRoller.update();

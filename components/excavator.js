@@ -14,7 +14,6 @@ const JOINT_JAW_1 = "joint-jaw-1";
 const JOINT_JAW_2 = "joint-jaw-2";
 const JOINT_JAW_3 = "joint-jaw-3";
 const JOINT_JAW_4 = "joint-jaw-4";
-const DELAY_PICK_WAIT = 1000;
 const MOTOR_STIFFNESS = 50000;
 const MOTOR_DAMPING = 20000;
 const SENSOR_HEIGHT = 0.1;
@@ -62,7 +61,6 @@ export default class {
     #excavator = {
         state: EXCAVATOR_STATES.IDLE,
         pendingPicks: 0,
-        timePick: -1,
         beaconLightAngle: 0
     };
 
@@ -118,7 +116,7 @@ export default class {
         this.#scene.addObject(this.#beaconLight.target);
     }
 
-    update(time) {
+    update() {
         updateExcavatorState({
             excavator: this.#excavator,
             joints: {
@@ -130,7 +128,6 @@ export default class {
                 jaw3Joint: this.#jaw3Joint,
                 jaw4Joint: this.#jaw4Joint
             },
-            time,
             canActivate: () => this.#canActivate(this)
         });
         const { state, parts } = this.#excavator;
@@ -196,7 +193,6 @@ export default class {
             state: this.#excavator.state.description,
             nextState: this.#excavator.nextState ? this.#excavator.nextState.description : null,
             pendingPicks: this.#excavator.pendingPicks,
-            timePick: this.#excavator.timePick,
             beaconLightAngle: this.#excavator.beaconLightAngle,
             joints,
             parts,
@@ -227,7 +223,6 @@ export default class {
         this.#excavator.state = Symbol.for(excavator.state);
         this.#excavator.nextState = excavator.nextState ? Symbol.for(excavator.nextState) : null;
         this.#excavator.pendingPicks = excavator.pendingPicks;
-        this.#excavator.timePick = excavator.timePick;
         this.#excavator.beaconLightAngle = excavator.beaconLightAngle;
         this.#excavator.joints.forEach((jointData, name) => {
             const loadedJoint = excavator.joints[name];
@@ -311,7 +306,7 @@ export default class {
     }
 }
 
-function updateExcavatorState({ excavator, joints, time, canActivate }) {
+function updateExcavatorState({ excavator, joints, canActivate }) {
     excavator.nextState = null;
     const { platformJoint, platformArmJoint, armsJoint, jaw1Joint, jaw2Joint, jaw3Joint, jaw4Joint } = joints;
     switch (excavator.state) {
@@ -329,7 +324,6 @@ function updateExcavatorState({ excavator, joints, time, canActivate }) {
         case EXCAVATOR_STATES.OPENING_JAWS:
             // console.log("=> opening jaws", getAngle(jaw1Joint), getAngle(jaw2Joint), getAngle(jaw3Joint), getAngle(jaw4Joint));
             if (getAngle(jaw1Joint) < -.5 && getAngle(jaw2Joint) > .5 && getAngle(jaw3Joint) < -.5 && getAngle(jaw4Joint) > .5) {
-                excavator.timePick = time;
                 platformArmJoint.joint.configureMotor(-.7, 1, MOTOR_STIFFNESS, MOTOR_DAMPING);
                 armsJoint.joint.configureMotor(.5, 3, MOTOR_STIFFNESS, MOTOR_DAMPING);
                 excavator.nextState = EXCAVATOR_STATES.MOVING_DOWN;
@@ -337,8 +331,7 @@ function updateExcavatorState({ excavator, joints, time, canActivate }) {
             break;
         case EXCAVATOR_STATES.MOVING_DOWN:
             // console.log("=> moving down", getAngle(platformArmJoint), getAngle(armsJoint));
-            if (getAngle(platformArmJoint) < -.7 && getAngle(armsJoint) > .5 && time - excavator.timePick > DELAY_PICK_WAIT) {
-                excavator.timePick = -1;
+            if (getAngle(platformArmJoint) < -.7 && getAngle(armsJoint) > .5) {
                 jaw1Joint.joint.configureMotor(0, 2.5, MOTOR_STIFFNESS, MOTOR_DAMPING);
                 jaw2Joint.joint.configureMotor(0, -2.5, MOTOR_STIFFNESS, MOTOR_DAMPING);
                 jaw3Joint.joint.configureMotor(0, 2.5, MOTOR_STIFFNESS, MOTOR_DAMPING);
