@@ -7,8 +7,7 @@ const HIGHLIGHT_OPACITY = 0.25;
 const EMISSIVE_COLOR = 0xffffff;
 const EMISSIVE_INTENSITY = 0;
 const EMISSIVE_HIGHLIGHT_INTENSITY = 0.25;
-const BONUS_FLASHING_DELAY = 150;
-const LETTER_FLASHING_DELAY = 100;
+const LETTER_FLASHING_DURATION = 5;
 const LETTERS_COUNT = 6;
 const POSITION = [0, 0.335, -0.27];
 const WIDTH = 0.6;
@@ -36,7 +35,7 @@ const SENSOR_STATES = {
     FLASHING_ON: Symbol.for("sensor-letter-flashing-on"),
     FLASHING_OFF: Symbol.for("sensor-letter-flashing-off"),
     AWAITING_BONUS_DELIVERY: Symbol.for("sensor-letter-awaiting-bonus-delivery"),
-    BONUS_DELIVERED: Symbol.for("sensor-letter-bonus-delivered")
+    AWAITING_BONUS_DELIVERED: Symbol.for("sensor-letter-awaiting-bonus-delivered")
 };
 
 export default class {
@@ -54,31 +53,38 @@ export default class {
     #collider;
     #sensor = {
         state: SENSOR_STATES.IDLE,
-        flashStartTime: -1,
+        nextState: null,
+        frameFlashStart: -1,
         flashCount: 0,
         letters: [{
             state: LETTER_STATES.OFF,
-            flashStartTime: -1,
+            nextState: null,
+            frameFlashStart: -1,
             flashCount: 0
         }, {
             state: LETTER_STATES.OFF,
-            flashStartTime: -1,
+            nextState: null,
+            frameFlashStart: -1,
             flashCount: 0
         }, {
             state: LETTER_STATES.OFF,
-            flashStartTime: -1,
+            nextState: null,
+            frameFlashStart: -1,
             flashCount: 0
         }, {
             state: LETTER_STATES.OFF,
-            flashStartTime: -1,
+            nextState: null,
+            frameFlashStart: -1,
             flashCount: 0
         }, {
             state: LETTER_STATES.OFF,
-            flashStartTime: -1,
+            nextState: null,
+            frameFlashStart: -1,
             flashCount: 0
         }, {
             state: LETTER_STATES.OFF,
-            flashStartTime: -1,
+            nextState: null,
+            frameFlashStart: -1,
             flashCount: 0
         }]
     };
@@ -102,14 +108,14 @@ export default class {
         });
     }
 
-    update(time) {
-        this.#sensor.letters.forEach(letter => updateLetterState({ letter, time }));
+    update() {
+        this.#sensor.letters.forEach(letter => updateLetterState({ letter }));
         if (this.#sensor.state === SENSOR_STATES.IDLE &&
             this.#sensor.letters.every(letter => letter.state === LETTER_STATES.LOCKED_ON)) {
             this.#sensor.state = SENSOR_STATES.ACTIVATING;
         }
-        updateSensorState({ sensor: this.#sensor, time });
-        if (this.#sensor.state === SENSOR_STATES.BONUS_DELIVERED) {
+        updateSensorState({ sensor: this.#sensor });
+        if (this.#sensor.state === SENSOR_STATES.AWAITING_BONUS_DELIVERED) {
             this.#sensor.letters.forEach(letter => letter.state = LETTER_STATES.OFF);
             this.#onBonusWon();
         }
@@ -128,6 +134,14 @@ export default class {
                 letterMaterial.emissiveIntensity = EMISSIVE_INTENSITY;
             }
         });
+        if (this.#sensor.nextState) {
+            this.#sensor.state = this.#sensor.nextState;
+        }
+        this.#sensor.letters.forEach(letter => {
+            if (letter.nextState) {
+                letter.state = letter.nextState;
+            }
+        });
     }
 
     save() {
@@ -135,9 +149,13 @@ export default class {
             colliderHandle: this.#collider.handle,
             sensor: {
                 state: this.#sensor.state.description,
+                nextState: this.#sensor.nextState ? this.#sensor.nextState.description : null,
+                frameFlashStart: this.#sensor.frameFlashStart,
+                flashCount: this.#sensor.flashCount,
                 letters: this.#sensor.letters.map(letter => ({
                     state: letter.state.description,
-                    flashStartTime: letter.flashStartTime,
+                    nextState: letter.nextState ? letter.nextState.description : null,
+                    frameFlashStart: letter.frameFlashStart,
                     flashCount: letter.flashCount
                 }))
             }
@@ -155,9 +173,13 @@ export default class {
             })
         };
         this.#sensor.state = Symbol.for(sensorGate.sensor.state);
+        this.#sensor.nextState = sensorGate.sensor.nextState ? Symbol.for(sensorGate.sensor.nextState) : null;
+        this.#sensor.frameFlashStart = sensorGate.sensor.frameFlashStart;
+        this.#sensor.flashCount = sensorGate.sensor.flashCount;
         this.#sensor.letters.forEach((letter, indexLetter) => {
             letter.state = Symbol.for(sensorGate.sensor.letters[indexLetter].state);
-            letter.flashStartTime = sensorGate.sensor.letters[indexLetter].flashStartTime;
+            letter.nextState = sensorGate.sensor.letters[indexLetter].nextState ? Symbol.for(sensorGate.sensor.letters[indexLetter].nextState) : null;
+            letter.frameFlashStart = sensorGate.sensor.letters[indexLetter].frameFlashStart;
             letter.flashCount = sensorGate.sensor.letters[indexLetter].flashCount;
         });
     }
@@ -180,74 +202,78 @@ function onCoinIntersect({ sensor, userData, onCoinFallen }) {
     }
 }
 
-function updateSensorState({ sensor, time }) {
+function updateSensorState({ sensor }) {
+    sensor.nextState = null;
     switch (sensor.state) {
         case SENSOR_STATES.ACTIVATING:
-            sensor.flashStartTime = time;
-            sensor.state = SENSOR_STATES.FLASHING_ON;
+            sensor.frameFlashStart = 0;
+            sensor.nextState = SENSOR_STATES.FLASHING_ON;
             break;
         case SENSOR_STATES.FLASHING_ON:
-            if (time - sensor.flashStartTime >= BONUS_FLASHING_DELAY) {
-                sensor.flashStartTime = time;
+            sensor.frameFlashStart++;
+            if (sensor.frameFlashStart > LETTER_FLASHING_DURATION) {
+                sensor.frameFlashStart = 0;
                 if (sensor.flashCount < COUNT_BONUS_FLASHING) {
-                    sensor.state = SENSOR_STATES.FLASHING_OFF;
+                    sensor.nextState = SENSOR_STATES.FLASHING_OFF;
                 } else {
-                    sensor.state = SENSOR_STATES.AWAITING_BONUS_DELIVERY;
+                    sensor.nextState = SENSOR_STATES.AWAITING_BONUS_DELIVERY;
                 }
             }
             break;
         case SENSOR_STATES.FLASHING_OFF:
-            if (time - sensor.flashStartTime >= BONUS_FLASHING_DELAY) {
-                sensor.flashStartTime = time;
+            sensor.frameFlashStart++;
+            if (sensor.frameFlashStart > LETTER_FLASHING_DURATION) {
+                sensor.frameFlashStart = 0;
                 sensor.flashCount++;
-                sensor.state = SENSOR_STATES.FLASHING_ON;
+                sensor.nextState = SENSOR_STATES.FLASHING_ON;
             }
             break;
         case SENSOR_STATES.AWAITING_BONUS_DELIVERY:
             sensor.flashCount = 0;
-            sensor.flashStartTime = -1;
-            sensor.bonusWonStartTime = time;
-            sensor.state = SENSOR_STATES.BONUS_DELIVERED;
+            sensor.frameFlashStart = -1;
+            sensor.nextState = SENSOR_STATES.AWAITING_BONUS_DELIVERED;
             break;
-        case SENSOR_STATES.BONUS_DELIVERED:
-            sensor.bonusWonStartTime = -1;
-            sensor.state = SENSOR_STATES.IDLE;
+        case SENSOR_STATES.AWAITING_BONUS_DELIVERED:
+            sensor.nextState = SENSOR_STATES.IDLE;
             break;
     }
 }
 
-function updateLetterState({ letter, time }) {
+function updateLetterState({ letter }) {
+    letter.nextState = null;
     switch (letter.state) {
         case LETTER_STATES.OFF:
             break;
         case LETTER_STATES.ACTIVATING:
             if (Math.random() < PROBABILITY_LETTER_WIN) {
-                letter.state = LETTER_STATES.FLASHING_ON;
-                letter.flashStartTime = time;
+                letter.nextState = LETTER_STATES.FLASHING_ON;
+                letter.frameFlashStart = 0;
             } else {
-                letter.state = LETTER_STATES.OFF;
+                letter.nextState = LETTER_STATES.OFF;
             }
             break;
         case LETTER_STATES.FLASHING_ON:
-            if (time - letter.flashStartTime >= LETTER_FLASHING_DELAY) {
-                letter.flashStartTime = time;
+            letter.frameFlashStart++;
+            if (letter.frameFlashStart > LETTER_FLASHING_DURATION) {
+                letter.frameFlashStart = 0;
                 if (letter.flashCount < COUNT_LETTER_FLASHING) {
-                    letter.state = LETTER_STATES.FLASHING_OFF;
+                    letter.nextState = LETTER_STATES.FLASHING_OFF;
                 } else {
-                    letter.state = LETTER_STATES.LOCKED_ON;
+                    letter.nextState = LETTER_STATES.LOCKED_ON;
                 }
             }
             break;
         case LETTER_STATES.FLASHING_OFF:
-            if (time - letter.flashStartTime >= LETTER_FLASHING_DELAY) {
-                letter.flashStartTime = time;
+            letter.frameFlashStart++;
+            if (letter.frameFlashStart > LETTER_FLASHING_DURATION) {
+                letter.frameFlashStart = 0;
                 letter.flashCount++;
-                letter.state = LETTER_STATES.FLASHING_ON;
+                letter.nextState = LETTER_STATES.FLASHING_ON;
             }
             break;
         case LETTER_STATES.LOCKED_ON:
             letter.flashCount = 0;
-            letter.flashStartTime = -1;
+            letter.frameFlashStart = -1;
             break;
 
     }
