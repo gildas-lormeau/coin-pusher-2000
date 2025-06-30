@@ -355,7 +355,7 @@ export default class {
         Ingots.update();
         this.#pusher.update(time);
         this.#collisionsDetector.update();
-        this.#scoreboard.update(time);
+        this.#scoreboard.update();
         this.#controlPanel.update(time);
         this.#sensorGate.update();
         this.#reelsBox.update(time);

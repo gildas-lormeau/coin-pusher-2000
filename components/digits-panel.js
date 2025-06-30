@@ -1,7 +1,7 @@
 import { BoxGeometry, Mesh, Group, MeshStandardMaterial, Vector3 } from "three";
 import Digits from "./instanced-meshes/digits.js";
 
-const FPS = 1 / 10;
+const REFRESH_DURATION = 10;
 const BORDER_WIDTH = 0.015;
 const TYPES = 10;
 
@@ -22,7 +22,7 @@ export default class {
     #rotation;
     #scale;
     #digits = [];
-    #lastTime = 0;
+    #frameLastRefresh = 0;
 
     async initialize() {
         for (let indexDigit = 0; indexDigit < this.#digitsCount; indexDigit++) {
@@ -110,10 +110,11 @@ export default class {
         }
     }
 
-    update(time) {
-        if (time - this.#lastTime > FPS * 1000) {
+    update() {
+        this.#frameLastRefresh++;
+        if (this.#frameLastRefresh > REFRESH_DURATION) {
             Digits.update();
-            this.#lastTime = time;
+            this.#frameLastRefresh = 0;
         }
     }
 }

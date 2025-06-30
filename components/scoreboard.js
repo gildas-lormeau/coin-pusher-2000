@@ -70,15 +70,15 @@ export default class {
         await this.#coinsInPlay.initialize();
     }
 
-    update(time) {
+    update() {
         this.#score.set(this.#state.score);
         this.#points.set(this.#state.points);
         this.#coins.set(this.#state.coins);
         this.#coinsInPlay.set(this.#cabinet.coinsInPlay);
-        this.#score.update(time);
-        this.#coins.update(time);
-        this.#coinsInPlay.update(time);
-        this.#points.update(time);
+        this.#score.update();
+        this.#coins.update();
+        this.#coinsInPlay.update();
+        this.#points.update();
     }
 
 }
