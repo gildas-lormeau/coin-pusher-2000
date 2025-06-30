@@ -21,7 +21,7 @@ const ANGULAR_DAMPING = 0.5;
 const LINEAR_DAMPING = 0.5;
 const RESTITUTION = 0;
 const MODEL_PATH = "./../assets/coin.glb";
-const SPAWN_TIME_DELTA = 60;
+const SPAWN_TIME_DURATION = 8;
 const SLEEP_LINEAR_MAX_SPEED = 0.001;
 const TEMP_EULER = new Euler(0, 0, 0, "XYZ");
 const MAX_ANGLE_FLAT = Math.PI / 4;
@@ -45,7 +45,7 @@ export default class {
     static #meshes = [];
     static #instances = [];
     static #spawnedCoins = [];
-    static #lastSpawnTime = 0;
+    static #frameLastSpawn = 0;
     static #onSpawnedCoin;
 
     static async initialize({ scene, onSpawnedCoin }) {
@@ -61,16 +61,17 @@ export default class {
         return this.#instances[index];
     }
 
-    static update(time) {
-        if (this.#spawnedCoins.length && time !== undefined) {
-            if (time - this.#lastSpawnTime >= SPAWN_TIME_DELTA) {
+    static update() {
+        if (this.#spawnedCoins.length) {
+            this.#frameLastSpawn++;
+            if (this.#frameLastSpawn >= SPAWN_TIME_DURATION) {
                 const { slot } = this.#spawnedCoins.shift();
                 const instance = this.#instances.find(instance => !instance.used);
                 instance.used = true;
                 initializePosition({ instance, slot });
                 instance.body.setEnabled(true);
                 this.#onSpawnedCoin(instance);
-                this.#lastSpawnTime = time;
+                this.#frameLastSpawn = 0;
             }
         }
         for (const instance of this.#instances) {

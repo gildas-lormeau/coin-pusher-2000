@@ -348,9 +348,9 @@ export default class {
 
     update(time) {
         Cards.update();
-        Coins.update(time);
+        Coins.update();
         Tokens.update();
-        Buttons.update(time);
+        Buttons.update();
         Digits.update();
         Ingots.update();
         this.#pusher.update(time);

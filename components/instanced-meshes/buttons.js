@@ -4,8 +4,8 @@ const MAX_INSTANCES = 3;
 const INITIAL_SCALE = new Vector3(0, 0, 0);
 const DEFAULT_SCALE = new Vector3(1, 1, 1);
 const BUTTON_PRESS_DEPTH = -0.005;
-const BUTTON_RELEASE_DELAY = 75;
-const BLINK_DELAY = 250;
+const BUTTON_RELEASE_DURATION = 10;
+const BLINK_DURATION = 50;
 const LIGHT_INTENSITY_ON = 35;
 const LIGHT_INTENSITY_OFF = 1;
 const LIGHT_COLOR = 0xffaa00;
@@ -51,7 +51,7 @@ export default class {
         createInstances({ scene, instances: this.#instances, bulbLights: this.#bulbLights });
     }
 
-    static update(time) {
+    static update() {
         const matrix = new Matrix4();
         const position = new Vector3();
         const rotation = new Quaternion();
@@ -62,16 +62,16 @@ export default class {
             const instances = this.#instances[color][type];
             for (const instance of instances) {
                 if (instance.isPressing) {
-                    if (instance.pressStartTime === undefined) {
-                        instance.pressStartTime = time;
+                    if (instance.framePressStart === -1) {
+                        instance.framePressStart = 0;
                         object.getMatrixAt(instance.index, matrix);
                         matrix.decompose(position, rotation, scale);
                     } else {
                         const bulbLight = this.#bulbLights[color][type][instance.index];
-                        const elapsedTime = time - instance.pressStartTime;
-                        if (elapsedTime < BUTTON_RELEASE_DELAY) {
+                        instance.framePressStart++;
+                        if (instance.framePressStart < BUTTON_RELEASE_DURATION) {
                             const offsetY = new Vector3(0, BUTTON_PRESS_DEPTH, 0);
-                            const interpolationFactor = elapsedTime / BUTTON_RELEASE_DELAY;
+                            const interpolationFactor = instance.framePressStart / BUTTON_RELEASE_DURATION;
                             const offset = offsetY.multiplyScalar(interpolationFactor);
                             offset.applyQuaternion(instance.initialRotation);
                             const newPosition = instance.initialPosition.clone().add(offset);
@@ -82,19 +82,19 @@ export default class {
                         } else {
                             bulbLight.intensity = LIGHT_INTENSITY_OFF;
                             instance.isPressing = false;
-                            instance.pressStartTime = undefined;
+                            instance.framePressStart = -1;
                             instance.buttonPosition.copy(instance.initialPosition);
                         }
                     }
                 }
                 if (instance.isBlinking) {
-                    if (instance.blinkStartTime === undefined) {
-                        instance.blinkStartTime = time;
+                    if (instance.frameBlinkStart === -1) {
+                        instance.frameBlinkStart = 0;
                     } else {
-                        const elapsedTime = time - instance.blinkStartTime;
-                        if (elapsedTime >= BLINK_DELAY) {
+                        instance.frameBlinkStart++;
+                        if (instance.frameBlinkStart >= BLINK_DURATION) {
                             const bulbLight = this.#bulbLights[color][type][instance.index];
-                            instance.blinkStartTime = time;
+                            instance.frameBlinkStart = 0;
                             instance.blinkingOn = !instance.blinkingOn;
                             if (instance.blinkingOn) {
                                 bulbLight.intensity = LIGHT_INTENSITY_ON;
@@ -105,7 +105,7 @@ export default class {
                     }
                     if (!instance.blinkingOn && !instance.enabled) {
                         instance.isBlinking = false;
-                        instance.blinkStartTime = undefined;
+                        instance.frameBlinkStart = undefined;
                     }
                 }
             }
@@ -135,9 +135,9 @@ export default class {
                     instance.enabled = button.enabled;
                     instance.isPressing = button.isPressing;
                     instance.isBlinking = button.isBlinking;
-                    instance.blinkStartTime = button.blinkStartTime;
+                    instance.frameBlinkStart = button.frameBlinkStart;
                     instance.blinkingOn = button.blinkingOn;
-                    instance.pressStartTime = button.pressStartTime;
+                    instance.framePressStart = button.framePressStart;
                     instance.buttonPosition.fromArray(button.position);
                 });
             });
@@ -152,9 +152,9 @@ export default class {
                         enabled: instance.enabled,
                         isPressing: instance.isPressing,
                         isBlinking: instance.isBlinking,
-                        blinkStartTime: instance.blinkStartTime,
+                        frameBlinkStart: instance.frameBlinkStart,
                         blinkingOn: instance.blinkingOn,
-                        pressStartTime: instance.pressStartTime,
+                        framePressStart: instance.framePressStart,
                         position: instance.buttonPosition.toArray()
                     };
                 });
@@ -287,9 +287,9 @@ function createInstance({ type, color, instances }) {
         enabled: false,
         isPressing: false,
         isBlinking: false,
-        blinkStartTime: undefined,
+        frameBlinkStart: -1,
         blinkingOn: false,
-        pressStartTime: undefined
+        framePressStart: -1
     };
     instances[color][type].push(instance);
     return instance;
