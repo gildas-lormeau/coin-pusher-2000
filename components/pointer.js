@@ -41,4 +41,10 @@ export default class {
     update() {
         // do nothing
     }
+
+    resize(width, height) {
+        this.#camera.aspect = width / height;
+        this.#camera.updateProjectionMatrix();
+        this.#raycaster.setFromCamera(this.#position, this.#camera);
+    }
 }
