@@ -70,9 +70,7 @@ const STACKER_STATES = {
     LOWERING_BASE: Symbol.for("stacker-lowering-base"),
     FINISHING_LEVEL: Symbol.for("stacker-finishing-level"),
     MOVING_ARM_TO_INITIAL_POSITION: Symbol.for("stacker-moving-arm-to-initial-position"),
-    LOWERING_STACKER: Symbol.for("stacker-lowering-stacker"),
-    RESETTING_BASE_ROTATION: Symbol.for("stacker-resetting-base-rotation"),
-    PREPARING_IDLE: Symbol.for("stacker-preparing-idle")
+    LOWERING_STACKER: Symbol.for("stacker-lowering-stacker")
 };
 const LIGHTS_STATES = {
     IDLE: Symbol.for("stacker-lights-idle"),
@@ -213,9 +211,8 @@ export default class {
                 base.body.setNextKinematicTranslation(basePosition);
                 support.body.setNextKinematicTranslation(supportPosition);
             }
-            if (state === STACKER_STATES.LOWERING_STACKER
-                || state === STACKER_STATES.RESETTING_BASE_ROTATION
-                || state === STACKER_STATES.PREPARING_IDLE) {
+            if (state === STACKER_STATES.LOWERING_STACKER ||
+                state === STACKER_STATES.PREPARING_IDLE) {
                 this.#stacker.coins.forEach(coin => {
                     coin.body.setAngvel(new Vector3(0, 0, 0), false);
                     coin.body.setLinvel(new Vector3(0, 0, 0), false);
@@ -243,8 +240,7 @@ export default class {
                 armDoor.body.setNextKinematicTranslation(armDoorPosition);
             }
             if (state === STACKER_STATES.CLEANING_UP_BASE_LEFT ||
-                state === STACKER_STATES.CLEANING_UP_BASE_RIGHT ||
-                state === STACKER_STATES.RESETTING_BASE_ROTATION) {
+                state === STACKER_STATES.CLEANING_UP_BASE_RIGHT) {
                 const rotation = new Quaternion().setFromAxisAngle(Y_AXIS, this.#stacker.baseAngle);
                 const basePosition = new Vector3().sub(this.#pivotPosition).applyQuaternion(rotation).add(this.#pivotPosition);
                 basePosition.setY(this.#stacker.position + this.#stacker.supportPosition + this.#stacker.basePosition);
@@ -515,26 +511,16 @@ function updateStackerState({ stacker, canActivate }) {
                 stacker.basePosition = BASE_INITIAL_POSITION;
                 stacker.supportPosition = SUPPORT_INITIAL_POSITION;
                 stacker.baseAngle = BASE_INITIAL_ANGLE;
-                stacker.nextState = STACKER_STATES.PREPARING_IDLE;
-            }
-            break;
-        case STACKER_STATES.RESETTING_BASE_ROTATION:
-            stacker.baseAngle += BASE_ROTATION_SPEED;
-            if (stacker.baseAngle > BASE_INITIAL_ANGLE) {
-                stacker.baseAngle = BASE_INITIAL_ANGLE;
-                stacker.nextState = STACKER_STATES.PREPARING_IDLE;
-            }
-            break;
-        case STACKER_STATES.PREPARING_IDLE:
-            stacker.coin = null;
-            stacker.coins = [];
-            stacker.lights.state = LIGHTS_STATES.PREPARING_IDLE;
-            if (stacker.pendingDeliveries.length > 0) {
-                const { levels } = stacker.pendingDeliveries.shift();
-                stacker.levels = levels;
-                stacker.nextState = STACKER_STATES.ACTIVATING;
-            } else {
-                stacker.nextState = STACKER_STATES.IDLE;
+                stacker.coin = null;
+                stacker.coins = [];
+                stacker.lights.state = LIGHTS_STATES.PREPARING_IDLE;
+                if (stacker.pendingDeliveries.length > 0) {
+                    const { levels } = stacker.pendingDeliveries.shift();
+                    stacker.levels = levels;
+                    stacker.nextState = STACKER_STATES.ACTIVATING;
+                } else {
+                    stacker.nextState = STACKER_STATES.IDLE;
+                }
             }
             break;
         default:
