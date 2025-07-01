@@ -165,12 +165,6 @@ export default class {
             const armProtection = parts.get(ARM_PROTECTION_PART_NAME);
             const armProtectionLid = parts.get(ARM_PROTECTION_LID_PART_NAME);
             const armDoor = parts.get(ARM_DOOR_PART_NAME);
-            parts.forEach(({ meshes, body }) => {
-                meshes.forEach(({ data }) => {
-                    data.position.copy(body.translation());
-                    data.quaternion.copy(body.rotation());
-                });
-            });
             if (state === STACKER_STATES.RAISING_STACKER_TO_CLEANUP_POSITION ||
                 state === STACKER_STATES.RAISING_STACKER ||
                 state === STACKER_STATES.LOWERING_STACKER) {
@@ -278,6 +272,12 @@ export default class {
                 const position = this.#stacker.coin.body.translation();
                 this.#stacker.coin.body.setTranslation(new Vector3(this.#offsetX, position.y, this.#pivotPosition.z), false);
             }
+            parts.forEach(({ meshes, body }) => {
+                meshes.forEach(({ data }) => {
+                    data.position.copy(body.translation());
+                    data.quaternion.copy(body.rotation());
+                });
+            });
         }
         if (lights.state !== LIGHTS_STATES.IDLE) {
             lights.bulbs.forEach((bulb, indexBulb) => {
