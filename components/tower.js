@@ -14,6 +14,9 @@ const IMPULSE_STRENGTH = 0.00005;
 const IMPULSE_DIRECTION = new Vector3(0, 0, -1);
 const Y_AXIS = new Vector3(0, 1, 0);
 const CABINET_COLLISION_GROUP = 0x00010001;
+const EMISSIVE_COLOR = 0x00ff00;
+const EMISSIVE_INTENSITY_MIN = 0;
+const EMISSIVE_INTENSITY_MAX = 2;
 
 const TOWER_STATES = {
     IDLE: Symbol.for("tower-idle"),
@@ -35,6 +38,7 @@ export default class {
     #turretPosition = new Vector3();
     #stand;
     #standPosition = new Vector3();
+    #lightMaterial;
     #tower = {
         state: TOWER_STATES.IDLE,
         pendingShots: 0,
@@ -42,7 +46,8 @@ export default class {
         position: POSITION_DOWN_Y,
         oscillationCount: 0,
         phase: 0,
-        frameLastShot: -1
+        frameLastShot: -1,
+        lightOn: false
     };
 
     constructor({ scene, canActivate, onShootCoin, offsetX = 0, oscillationDirection = -1 }) {
@@ -55,9 +60,10 @@ export default class {
 
     async initialize() {
         const scene = this.#scene;
-        const { parts, initPosition } = await initializeModel({ scene, offsetX: this.#offsetX });
+        const { parts, initPosition, lightMaterial } = await initializeModel({ scene, offsetX: this.#offsetX });
         initializeColliders({ scene, parts });
         this.#initPosition = initPosition;
+        this.#lightMaterial = lightMaterial;
         parts.forEach(({ meshes }) => meshes.forEach(({ data }) => this.#scene.addObject(data)));
         Object.assign(this.#tower, { parts });
         this.#turret = this.#tower.parts.get(TURRET_PART_NAME);
@@ -69,7 +75,7 @@ export default class {
             tower: this.#tower,
             canActivate: () => this.#canActivate(this)
         });
-        const { state, parts, phase, position } = this.#tower;
+        const { state, parts, phase, position, lightOn } = this.#tower;
         if (state !== TOWER_STATES.IDLE) {
             const rotation = new Quaternion().setFromAxisAngle(Y_AXIS, Math.sin(phase) * ANGLE_AMPLITUDE * this.#oscillationDirection);
             if (state === TOWER_STATES.SHOOTING_COIN) {
@@ -80,6 +86,7 @@ export default class {
             this.#turret.body.setNextKinematicTranslation(this.#turretPosition.set(0, 0, 0).sub(this.#initPosition).applyQuaternion(rotation).add(this.#initPosition).setY(position));
             this.#turret.body.setNextKinematicRotation(rotation);
             this.#stand.body.setNextKinematicTranslation(this.#standPosition.setY(position));
+            this.#lightMaterial.emissiveIntensity = lightOn ? EMISSIVE_INTENSITY_MAX : EMISSIVE_INTENSITY_MIN;
             parts.forEach(({ meshes, body }) => meshes.forEach(({ data }) => {
                 data.position.copy(body.translation());
                 data.quaternion.copy(body.rotation());
@@ -113,7 +120,8 @@ export default class {
             oscillationCount: this.#tower.oscillationCount,
             pendingShots: this.#tower.pendingShots,
             phase: this.#tower.phase,
-            frameLastShot: this.#tower.frameLastShot
+            frameLastShot: this.#tower.frameLastShot,
+            lightOn: this.#tower.lightOn
         };
     }
 
@@ -124,6 +132,7 @@ export default class {
         this.#tower.pendingShots = tower.pendingShots;
         this.#tower.phase = tower.phase;
         this.#tower.frameLastShot = tower.frameLastShot;
+        this.#tower.lightOn = tower.lightOn;
         this.#tower.position = tower.position;
         this.#tower.parts.forEach((partData, name) => {
             const loadedPart = tower.parts[name];
@@ -158,6 +167,9 @@ function updateTowerState({ tower, canActivate }) {
                 tower.phase += ROTATION_SPEED;
                 tower.oscillationCount = Math.floor(tower.phase / (2 * Math.PI));
                 tower.frameLastShot++;
+                if (tower.frameLastShot > SHOOT_DURATION / 5) {
+                    tower.lightOn = false;
+                }
                 if (tower.frameLastShot > SHOOT_DURATION) {
                     tower.nextState = TOWER_STATES.SHOOTING_COIN;
                 }
@@ -173,6 +185,7 @@ function updateTowerState({ tower, canActivate }) {
             break;
         case TOWER_STATES.SHOOTING_COIN:
             tower.frameLastShot = 0;
+            tower.lightOn = true;
             tower.nextState = TOWER_STATES.SHOOTING_COINS;
             break;
         case TOWER_STATES.MOVING_DOWN:
@@ -194,6 +207,7 @@ async function initializeModel({ scene, offsetX }) {
     const mesh = model.scene;
     const parts = new Map();
     const initPosition = new Vector3();
+    let lightMaterial;
     mesh.traverse((child) => {
         if (child.isMesh) {
             const { material, geometry } = child;
@@ -230,6 +244,10 @@ async function initializeModel({ scene, offsetX }) {
                     data: child
                 });
             }
+            if (userData.light) {
+                lightMaterial = child.material;
+                lightMaterial.emissive.setHex(EMISSIVE_COLOR);
+            }
         } else if (child.name == INIT_POSITION_PART_NAME) {
             const position = child.position;
             position.x += offsetX;
@@ -238,6 +256,7 @@ async function initializeModel({ scene, offsetX }) {
     });
     return {
         parts,
+        lightMaterial,
         initPosition
     };
 };
