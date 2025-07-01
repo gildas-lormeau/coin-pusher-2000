@@ -28,7 +28,8 @@ const FLAPS_DEPLOYED_POSITION = 0.01;
 const FLAPS_SPEED = 0.001;
 const SWEEPING_MAX_ANGLE = Math.PI;
 const SWEEPING_AXIS_ANGLE = Math.PI / 2;
-const SWEEPING_SPEED = 0.02;
+const SWEEPING_SPEED = 0.01;
+const SWEEPING_BACK_SPEED = 0.03;
 const SWEEPERS_AXIS_ROTATION_SPEED = 0.05;
 const SWEEPERS_INITIAL_POSITION = 0;
 const SWEEPERS_INITIAL_ROTATION = 0;
@@ -37,6 +38,10 @@ const SWEEPERS_INITIAL_SWEEPERS_ROTATION_Z = 0;
 const SWEEPERS_INITIAL_SWEEPERS_ROTATION_Y = 0;
 const SWEEPERS_INITIAL_DOORS_ROTATION = 0;
 const SWEEPERS_INITIAL_FLAPS_POSITION = 0;
+const EMISSIVE_COLOR = 0xFF0000;
+const EMISSIVE_INTENSITY_MIN = 0;
+const EMISSIVE_INTENSITY_MAX = 2;
+const LIGHTS_ON_DURATION = 15;
 
 const SWEEPERS_STATES = {
     IDLE: Symbol.for("sweepers-idle"),
@@ -55,6 +60,12 @@ const SWEEPERS_STATES = {
     ROTATING_BASE_BACK: Symbol.for("sweepers-rotating-base-back"),
     MOVING_BASE_BACK: Symbol.for("sweepers-moving-base-back"),
     CLOSING_DOORS: Symbol.for("sweepers-closing-doors")
+};
+
+const LIGHTS_STATES = {
+    IDLE: Symbol.for("sweepers-lights-idle"),
+    ACTIVATING: Symbol.for("sweepers-lights-activating"),
+    BLINKING: Symbol.for("sweepers-lights-blinking")
 };
 
 export default class {
@@ -97,6 +108,8 @@ export default class {
     #rightDoorRotation = new Quaternion();
     #rightFlapBasePosition = new Vector3();
     #rightFlapPosition = new Vector3();
+    #leftLightMaterial;
+    #rightLightMaterial;
     #sweepers = {
         parts: null,
         state: SWEEPERS_STATES.IDLE,
@@ -109,7 +122,13 @@ export default class {
         flapsPosition: SWEEPERS_INITIAL_FLAPS_POSITION,
         level: 0,
         pendingSweeps: [],
-        nextState: null
+        nextState: null,
+        lights: {
+            state: LIGHTS_STATES.IDLE,
+            leftOn: false,
+            rightOn: false,
+            frameLastRefresh: -1
+        }
     };
 
     constructor({ scene, canActivate }) {
@@ -124,12 +143,16 @@ export default class {
             leftPivotPosition,
             rightPivotPosition,
             leftDoorPivotPosition,
-            rightDoorPivotPosition
+            rightDoorPivotPosition,
+            leftLightMaterial,
+            rightLightMaterial
         } = await initializeModel({ scene });
         this.#leftPivotPosition = leftPivotPosition;
         this.#rightPivotPosition = rightPivotPosition;
         this.#leftDoorPivotPosition = leftDoorPivotPosition;
         this.#rightDoorPivotPosition = rightDoorPivotPosition;
+        this.#leftLightMaterial = leftLightMaterial;
+        this.#rightLightMaterial = rightLightMaterial;
         initializeColliders({
             scene,
             parts
@@ -151,6 +174,7 @@ export default class {
 
     update() {
         updateSweepersState({ sweepers: this.#sweepers, canActivate: () => this.#canActivate(this) });
+        updateLightsState({ sweepers: this.#sweepers, lights: this.#sweepers.lights });
         const { parts, state } = this.#sweepers;
         if (state !== SWEEPERS_STATES.IDLE) {
             this.#leftBasePosition.set(this.#sweepers.position, 0, 0);
@@ -241,9 +265,16 @@ export default class {
                     data.quaternion.copy(body.rotation());
                 });
             });
+            if (this.#sweepers.lights.state === LIGHTS_STATES.BLINKING) {
+                this.#leftLightMaterial.emissiveIntensity = this.#sweepers.lights.leftOn ? EMISSIVE_INTENSITY_MAX : EMISSIVE_INTENSITY_MIN;
+                this.#rightLightMaterial.emissiveIntensity = this.#sweepers.lights.rightOn ? EMISSIVE_INTENSITY_MAX : EMISSIVE_INTENSITY_MIN;
+            }
         }
         if (this.#sweepers.nextState) {
             this.#sweepers.state = this.#sweepers.nextState;
+        }
+        if (this.#sweepers.lights.nextState) {
+            this.#sweepers.lights.state = this.#sweepers.lights.nextState;
         }
     }
 
@@ -275,6 +306,13 @@ export default class {
             sweepersRotationY: this.#sweepers.sweepersRotationY,
             doorsRotation: this.#sweepers.doorsRotation,
             pendingSweeps: this.#sweepers.pendingSweeps.map(sweep => ({ level: sweep.level })),
+            lights: {
+                state: this.#sweepers.lights.state.description,
+                nextState: this.#sweepers.lights.nextState ? this.#sweepers.lights.nextState.description : null,
+                leftOn: this.#sweepers.lights.leftOn,
+                rightOn: this.#sweepers.lights.rightOn,
+                frameLastRefresh: this.#sweepers.lights.frameLastRefresh
+            }
         };
     }
 
@@ -288,6 +326,11 @@ export default class {
         this.#sweepers.sweepersRotationY = sweepers.sweepersRotationY;
         this.#sweepers.doorsRotation = sweepers.doorsRotation;
         this.#sweepers.pendingSweeps = sweepers.pendingSweeps.map(sweep => ({ level: sweep.level }));
+        this.#sweepers.lights.state = Symbol.for(sweepers.lights.state);
+        this.#sweepers.lights.nextState = sweepers.lights.nextState ? Symbol.for(sweepers.lights.nextState) : null;
+        this.#sweepers.lights.leftOn = sweepers.lights.leftOn;
+        this.#sweepers.lights.rightOn = sweepers.lights.rightOn;
+        this.#sweepers.lights.frameLastRefresh = sweepers.lights.frameLastRefresh;
         this.#sweepers.parts.forEach((partData, name) => {
             const loadedPart = sweepers.parts[name];
             if (loadedPart) {
@@ -351,6 +394,7 @@ function updateSweepersState({ sweepers, canActivate }) {
             if (sweepers.flapsPosition > FLAPS_DEPLOYED_POSITION * sweepers.level) {
                 sweepers.flapsPosition = FLAPS_DEPLOYED_POSITION * sweepers.level;
                 sweepers.nextState = SWEEPERS_STATES.SWEEPING;
+                sweepers.lights.state = LIGHTS_STATES.ACTIVATING;
             }
             break;
         case SWEEPERS_STATES.SWEEPING:
@@ -375,7 +419,7 @@ function updateSweepersState({ sweepers, canActivate }) {
             }
             break;
         case SWEEPERS_STATES.SWEEPING_BACK:
-            sweepers.sweepersRotationY -= SWEEPING_SPEED * 1.5;
+            sweepers.sweepersRotationY -= SWEEPING_BACK_SPEED;
             if (sweepers.sweepersRotationY < SWEEPERS_INITIAL_SWEEPERS_ROTATION_Y) {
                 sweepers.sweepersRotationY = SWEEPERS_INITIAL_SWEEPERS_ROTATION_Y;
                 if (sweepers.pendingSweeps.length) {
@@ -420,6 +464,36 @@ function updateSweepersState({ sweepers, canActivate }) {
     }
 }
 
+function updateLightsState({ sweepers, lights }) {
+    lights.nextState = null;
+    switch (lights.state) {
+        case LIGHTS_STATES.IDLE:
+            break;
+        case LIGHTS_STATES.ACTIVATING:
+            lights.frameLastRefresh = 0;
+            lights.leftOn = true;
+            lights.rightOn = false;
+            lights.nextState = LIGHTS_STATES.BLINKING;
+            break;
+        case LIGHTS_STATES.BLINKING:
+            lights.frameLastRefresh++;
+            if (lights.frameLastRefresh > LIGHTS_ON_DURATION) {
+                lights.frameLastRefresh = 0;
+                lights.leftOn = !lights.leftOn;
+                lights.rightOn = !lights.rightOn;
+            }
+            if (sweepers.state == SWEEPERS_STATES.TRANSLATING_BASE_BACK) {
+                lights.leftOn = false;
+                lights.rightOn = false;
+                lights.frameLastRefresh = -1;
+                lights.nextState = LIGHTS_STATES.IDLE;
+            }
+            break;
+        default:
+            break;
+    }
+}
+
 async function initializeModel({ scene }) {
     const model = await scene.loadModel(MODEL_PATH);
     const mesh = model.scene;
@@ -428,6 +502,7 @@ async function initializeModel({ scene }) {
     const rightPivotPosition = new Vector3();
     const leftDoorPivotPosition = new Vector3();
     const rightDoorPivotPosition = new Vector3();
+    let leftLightMaterial, rightLightMaterial;
     mesh.traverse((child) => {
         if (child.isMesh) {
             const { material, geometry } = child;
@@ -459,6 +534,15 @@ async function initializeModel({ scene }) {
                 partData.meshes.push({
                     data: child
                 });
+                if (userData.light) {
+                    if (userData.name == LEFT_SWEEPER_PART_NAME) {
+                        leftLightMaterial = material;
+                    } else {
+                        rightLightMaterial = material;
+                    }
+                    material.emissive.setHex(EMISSIVE_COLOR);
+                    material.emissiveIntensity = EMISSIVE_INTENSITY_MIN;
+                }
             }
         } else if (child.name == LEFT_PIVOT_POSITION) {
             leftPivotPosition.copy(child.position);
@@ -475,7 +559,9 @@ async function initializeModel({ scene }) {
         leftPivotPosition,
         rightPivotPosition,
         leftDoorPivotPosition,
-        rightDoorPivotPosition
+        rightDoorPivotPosition,
+        leftLightMaterial,
+        rightLightMaterial
     };
 };
 
