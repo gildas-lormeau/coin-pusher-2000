@@ -2,8 +2,8 @@ import { Vector3 } from "three";
 
 const SPEED = Math.PI / 60;
 const DISTANCE = 0.10;
-const OPENING_DOOR_POSITION_PRECISION = 0.001;
-const CLOSING_DOOR_POSITION_PRECISION = 0.0001;
+const PUSHER_PHASE_PRECISION = 0.001;
+const DOOR_POSITION_PRECISION = 0.0001;
 const DOOR_SPEED = 0.003;
 const DOOR_MAX_DISTANCE = 0.3;
 const MODEL_PATH = "./../assets/pusher.glb";
@@ -27,9 +27,7 @@ const LIGHTS_STATES = {
     IDLE: Symbol.for("pusher-lights-idle"),
     ACTIVATING: Symbol.for("pusher-lights-activating"),
     ROTATING: Symbol.for("pusher-lights-rotating"),
-    DELIVERING: Symbol.for("pusher-lights-delivering"),
-    SWITCHING_OFF: Symbol.for("pusher-lights-switching-off"),
-    PREPARING_IDLE: Symbol.for("pusher-lights-preparing-idle")
+    DELIVERING: Symbol.for("pusher-lights-delivering")
 };
 
 
@@ -174,7 +172,7 @@ function updatePusherState({ pusher }) {
                 if (pusher.lights.state === LIGHTS_STATES.IDLE) {
                     pusher.lights.state = LIGHTS_STATES.ACTIVATING;
                 }
-                if (pusher.phase > Math.PI * 1.5 && pusher.phase < Math.PI * 1.5 + OPENING_DOOR_POSITION_PRECISION) {
+                if (pusher.phase > Math.PI * 1.5 && pusher.phase < Math.PI * 1.5 + PUSHER_PHASE_PRECISION) {
                     pusher.nextState = PUSHER_STATES.OPENING_DOOR;
                 }
             }
@@ -187,14 +185,13 @@ function updatePusherState({ pusher }) {
             break;
         case PUSHER_STATES.DELIVERING_BONUS:
             pusher.nextState = PUSHER_STATES.CLOSING_DOOR;
-            pusher.lights.state = LIGHTS_STATES.DELIVERING;
             break;
         case PUSHER_STATES.CLOSING_DOOR:
-            if (pusher.door.position > CLOSING_DOOR_POSITION_PRECISION) {
+            if (pusher.door.position > DOOR_POSITION_PRECISION) {
                 pusher.door.position = pusher.door.position - DOOR_SPEED;
             } else {
                 pusher.door.position = 0;
-                pusher.lights.state = LIGHTS_STATES.PREPARING_IDLE;
+
                 if (pusher.rewards.length > 1) {
                     pusher.nextState = PUSHER_STATES.PREPARING_DELIVERY;
                 } else {
@@ -215,40 +212,50 @@ function updateLightsState({ pusher }) {
             pusher.lights.nextState = LIGHTS_STATES.ROTATING;
             break;
         case LIGHTS_STATES.ROTATING:
-            pusher.lights.frameLastRefresh++;
-            if (pusher.lights.frameLastRefresh > LIGHTS_ON_DURATION) {
-                pusher.lights.frameLastRefresh = 0;
-                pusher.lights.bulbs.forEach((bulb, indexBulb) => {
-                    bulb.intensity = indexBulb >= pusher.lights.headIndex * 9 && indexBulb < (pusher.lights.headIndex + 1) * 9
-                        ? LIGHTS_MAX_INTENSITY
-                        : LIGHTS_MIN_INTENSITY;
-                });
-                pusher.lights.headIndex = (pusher.lights.headIndex + 2) % 3;
+            refreshRotatingLights(pusher);
+            if (pusher.state === PUSHER_STATES.DELIVERING_BONUS) {
+                pusher.lights.nextState = LIGHTS_STATES.DELIVERING;
             }
             break;
         case LIGHTS_STATES.DELIVERING:
-        case LIGHTS_STATES.PREPARING_IDLE:
-            pusher.lights.frameLastRefresh++;
-            if (pusher.lights.frameLastRefresh > LIGHTS_ON_DURATION) {
-                const intensity = pusher.lights.bulbs[0].intensity;
-                pusher.lights.frameLastRefresh = 0;
-                pusher.lights.bulbs.forEach((bulb) => {
-                    bulb.intensity = intensity == LIGHTS_MAX_INTENSITY ? LIGHTS_MIN_INTENSITY : LIGHTS_MAX_INTENSITY;
+            refreshBlinkingLights(pusher);
+            if (pusher.state === PUSHER_STATES.MOVING &&
+                pusher.phase < Math.PI &&
+                pusher.phase > .5 * Math.PI - PUSHER_PHASE_PRECISION) {
+                pusher.lights.bulbs.forEach(bulb => {
+                    bulb.intensity = LIGHTS_MIN_INTENSITY;
                 });
-            }
-            if (pusher.lights.state === LIGHTS_STATES.PREPARING_IDLE) {
-                if (pusher.phase > Math.PI / 2 && pusher.phase < Math.PI / 2 + 0.1) {
-                    pusher.lights.bulbs.forEach(bulb => {
-                        bulb.intensity = LIGHTS_MIN_INTENSITY;
-                    });
-                    pusher.lights.headIndex = 0;
-                    pusher.lights.frameLastRefresh = -1;
-                    pusher.lights.nextState = LIGHTS_STATES.IDLE;
-                }
+                pusher.lights.headIndex = 0;
+                pusher.lights.frameLastRefresh = -1;
+                pusher.lights.nextState = LIGHTS_STATES.IDLE;
             }
             break;
         default:
             break;
+    }
+}
+
+function refreshRotatingLights(pusher) {
+    pusher.lights.frameLastRefresh++;
+    if (pusher.lights.frameLastRefresh > LIGHTS_ON_DURATION) {
+        pusher.lights.frameLastRefresh = 0;
+        pusher.lights.bulbs.forEach((bulb, indexBulb) => {
+            bulb.intensity = indexBulb >= pusher.lights.headIndex * 9 && indexBulb < (pusher.lights.headIndex + 1) * 9
+                ? LIGHTS_MAX_INTENSITY
+                : LIGHTS_MIN_INTENSITY;
+        });
+        pusher.lights.headIndex = (pusher.lights.headIndex + 2) % 3;
+    }
+}
+
+function refreshBlinkingLights(pusher) {
+    pusher.lights.frameLastRefresh++;
+    if (pusher.lights.frameLastRefresh > LIGHTS_ON_DURATION) {
+        const intensity = pusher.lights.bulbs[0].intensity;
+        pusher.lights.frameLastRefresh = 0;
+        pusher.lights.bulbs.forEach((bulb) => {
+            bulb.intensity = intensity == LIGHTS_MAX_INTENSITY ? LIGHTS_MIN_INTENSITY : LIGHTS_MAX_INTENSITY;
+        });
     }
 }
 

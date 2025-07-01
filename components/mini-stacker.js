@@ -205,7 +205,7 @@ export default class {
                 base.body.setNextKinematicTranslation(basePosition);
                 support.body.setNextKinematicTranslation(supportPosition);
             }
-            if (state === STACKER_STATES.LOWERING_STACKER || 
+            if (state === STACKER_STATES.LOWERING_STACKER ||
                 state === STACKER_STATES.PREPARING_IDLE) {
                 this.#stacker.coins.forEach(coin => {
                     coin.body.setAngvel(new Vector3(0, 0, 0), false);
@@ -465,7 +465,6 @@ function updateStackerState({ stacker, canActivate }) {
             }
             break;
         case STACKER_STATES.INITIALIZING_COIN:
-            stacker.lights.state = LIGHTS_STATES.ROTATING;
             stacker.nextState = STACKER_STATES.PUSHING_COIN;
             break;
         case STACKER_STATES.PUSHING_COIN:
@@ -505,7 +504,6 @@ function updateStackerState({ stacker, canActivate }) {
             break;
         case STACKER_STATES.LOWERING_STACKER:
             stacker.position -= STACKER_LOWERING_SPEED;
-            stacker.lights.state = LIGHTS_STATES.DELIVERING;
             if (stacker.position < STACKER_INITIAL_POSITION) {
                 stacker.position = STACKER_INITIAL_POSITION;
                 stacker.basePosition = BASE_INITIAL_POSITION;
@@ -517,7 +515,6 @@ function updateStackerState({ stacker, canActivate }) {
         case STACKER_STATES.PREPARING_IDLE:
             stacker.coin = null;
             stacker.coins = [];
-            stacker.lights.state = LIGHTS_STATES.PREPARING_IDLE;
             if (stacker.pendingDeliveries.length > 0) {
                 const { levels } = stacker.pendingDeliveries.shift();
                 stacker.levels = levels;
@@ -548,11 +545,17 @@ function updateLightsState({ stacker }) {
                     bulb.intensity = bulb.intensity > LIGHTS_MIN_INTENSITY ? 0 : LIGHTS_MAX_INTENSITY;
                 });
             }
+            if (stacker.state === STACKER_STATES.INITIALIZING_COIN) {
+                stacker.lights.nextState = LIGHTS_STATES.ROTATING;
+            }
             break;
         case LIGHTS_STATES.ROTATING:
             stacker.lights.bulbs.forEach((bulb, indexBulb) => {
                 bulb.intensity = (indexBulb + stacker.level) % 2 < 1 ? 0 : LIGHTS_MAX_INTENSITY;
             });
+            if (stacker.state === STACKER_STATES.LOWERING_STACKER) {
+                stacker.lights.nextState = LIGHTS_STATES.DELIVERING;
+            }
             break;
         case LIGHTS_STATES.DELIVERING:
             stacker.lights.frameLastRefresh++;
@@ -561,6 +564,9 @@ function updateLightsState({ stacker }) {
                 stacker.lights.bulbs.forEach((bulb) => {
                     bulb.intensity = bulb.intensity == LIGHTS_MAX_INTENSITY ? 0 : LIGHTS_MAX_INTENSITY;
                 });
+            }
+            if (stacker.state === STACKER_STATES.PREPARING_IDLE) {
+                stacker.lights.nextState = LIGHTS_STATES.PREPARING_IDLE;
             }
             break;
         case LIGHTS_STATES.PREPARING_IDLE:

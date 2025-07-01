@@ -22,6 +22,7 @@ const REELS_BOX_STATES = {
     ACTIVATING: Symbol.for("reels-box-activating"),
     SPINNING_REELS: Symbol.for("reels-box-spinning-reels"),
     STOPPING: Symbol.for("reels-box-stopping"),
+    PREPARING_BONUS_DELIVERY: Symbol.for("reels-box-preparing-bonus-delivery"),
     DELIVERING_BONUS: Symbol.for("reels-box-delivering-bonus")
 };
 const REEL_STATES = {
@@ -33,6 +34,7 @@ const REEL_STATES = {
 };
 const LIGHTS_STATES = {
     IDLE: Symbol.for("reels-box-lights-idle"),
+    ACTIVATING: Symbol.for("reels-box-lights-activating"),
     STARTING_ROTATING: Symbol.for("reels-box-lights-starting-rotating"),
     ROTATING: Symbol.for("reels-box-lights-rotating"),
     STARTING_BLINKING: Symbol.for("reels-box-lights-starting-blinking"),
@@ -201,22 +203,23 @@ function updateReelsBoxState({ reelsBox }) {
         case REELS_BOX_STATES.ACTIVATING:
             reelsBox.reels.forEach(reel => reel.state = REEL_STATES.STARTING);
             reelsBox.nextState = REELS_BOX_STATES.SPINNING_REELS;
-            reelsBox.lights.state = LIGHTS_STATES.STARTING_ROTATING;
+            reelsBox.lights.state = LIGHTS_STATES.ACTIVATING;
             break;
         case REELS_BOX_STATES.SPINNING_REELS:
             if (reelsBox.reels.every(reel => reel.state === REEL_STATES.IDLE)) {
                 reelsBox.frameActive = 0;
                 reelsBox.nextState = REELS_BOX_STATES.STOPPING;
-                reelsBox.lights.state = LIGHTS_STATES.STARTING_BLINKING;
             }
             break;
         case REELS_BOX_STATES.STOPPING:
             reelsBox.frameActive++;
             if (reelsBox.frameActive > REEL_ON_WON_DURATION) {
-                reelsBox.frameActive;
-                reelsBox.nextState = REELS_BOX_STATES.DELIVERING_BONUS;
-                reelsBox.lights.state = LIGHTS_STATES.STOPPING_BLINKING;
+                reelsBox.frameActive = 0;
+                reelsBox.nextState = REELS_BOX_STATES.PREPARING_BONUS_DELIVERY;
             }
+            break;
+        case REELS_BOX_STATES.PREPARING_BONUS_DELIVERY:
+            reelsBox.nextState = REELS_BOX_STATES.DELIVERING_BONUS;
             break;
         case REELS_BOX_STATES.DELIVERING_BONUS:
             if (reelsBox.pendingSpins > 0) {
@@ -284,6 +287,9 @@ function updateLightsState({ reelsBox }) {
     switch (reelsBox.lights.state) {
         case LIGHTS_STATES.IDLE:
             break;
+        case LIGHTS_STATES.ACTIVATING:
+            reelsBox.lights.nextState = LIGHTS_STATES.STARTING_ROTATING;
+            break;
         case LIGHTS_STATES.STARTING_ROTATING:
             reelsBox.lights.frameLastRefresh = 0;
             reelsBox.lights.nextState = LIGHTS_STATES.ROTATING;
@@ -297,6 +303,9 @@ function updateLightsState({ reelsBox }) {
                 });
                 reelsBox.lights.frameLastRefresh = 0;
             }
+            if (reelsBox.state === REELS_BOX_STATES.STOPPING) {
+                reelsBox.lights.nextState = LIGHTS_STATES.STARTING_BLINKING;
+            }
             break;
         case LIGHTS_STATES.STARTING_BLINKING:
             reelsBox.lights.bulbs.forEach((bulb, indexBulb) => enableBulb(bulb, indexBulb % 2 === 0));
@@ -309,6 +318,9 @@ function updateLightsState({ reelsBox }) {
             if (reelsBox.lights.frameLastRefresh > LIGHTS_BLINKING_DURATION) {
                 reelsBox.lights.bulbs.forEach(bulb => enableBulb(bulb, bulb.intensity === LIGHTS_MIN_INTENSITY));
                 reelsBox.lights.frameLastRefresh = 0;
+            }
+            if (reelsBox.state === REELS_BOX_STATES.PREPARING_BONUS_DELIVERY) {
+                reelsBox.lights.nextState = LIGHTS_STATES.STOPPING_BLINKING;
             }
             break;
         case LIGHTS_STATES.STOPPING_BLINKING:
