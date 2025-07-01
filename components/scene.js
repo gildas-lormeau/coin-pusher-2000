@@ -67,7 +67,7 @@ export default class {
     #world = new World(GRAVITY_FORCE);
     #camera = null;
 
-    async initialize(width, height) {
+    async initialize(width, height, pixelRatio) {
         const pmremGenerator = new PMREMGenerator(this.#renderer);
         pmremGenerator.compileEquirectangularShader();
         this.#scene.environment = await new Promise((resolve, reject) => new EXRLoader().load(EXR_ASSET_PATH,
@@ -78,6 +78,7 @@ export default class {
         this.#renderer.toneMappingExposure = TONE_MAPPING_EXPOSURE;
         this.#renderer.outputColorSpace = SRGBColorSpace;
         this.#renderer.setSize(width, height);
+        this.#renderer.setPixelRatio(pixelRatio);
         this.#renderer.shadowMap.enabled = true;
         this.#renderer.shadowMap.type = SHADOW_MAP_TYPE;
         this.#containerElement.appendChild(this.#renderer.domElement);
@@ -261,8 +262,9 @@ export default class {
         this.#world.step();
     }
 
-    resize(width, height) {
+    resize(width, height, pixelRatio) {
         this.#renderer.setSize(width, height);
+        this.#renderer.setPixelRatio(pixelRatio);
         if (this.#camera.isPerspectiveCamera) {
             this.#camera.aspect = width / height;
             this.#camera.updateProjectionMatrix();

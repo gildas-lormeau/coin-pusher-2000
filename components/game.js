@@ -27,6 +27,8 @@ export default class {
     static #scene;
     static #pointer;
 
+    static pixelRatio = 2;
+
     static async initialize() {
         const camera = new Camera(this.width / this.height);
         this.#containerElement = document.body;
@@ -34,7 +36,7 @@ export default class {
             containerElement: this.#containerElement,
             camera
         });
-        await this.#scene.initialize(this.width, this.height);
+        await this.#scene.initialize(this.width, this.height, this.pixelRatio);
         this.#cabinet = new Cabinet(({ scene: this.#scene }));
         this.#cabinet.DEBUG_AUTOPLAY = this.DEBUG_AUTOPLAY;
         this.#cabinet.DEBUG_HIDE_CABINET = this.DEBUG_HIDE_CABINET;
@@ -113,7 +115,7 @@ export default class {
     }
 
     static #onWindowResize() {
-        this.#scene.resize(this.width, this.height);
+        this.#scene.resize(this.width, this.height, this.pixelRatio);
         this.#cabinet.resize(this.width, this.height);
         this.#pointer.resize(this.width, this.height);
     }
