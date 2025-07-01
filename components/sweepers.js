@@ -223,12 +223,10 @@ export default class {
             this.#rightBase.body.setNextKinematicTranslation(this.#rightBasePosition);
             this.#leftSweeper.body.setNextKinematicTranslation(this.#leftSweeperPosition);
             this.#rightSweeper.body.setNextKinematicTranslation(this.#rightSweeperPosition);
-
             this.#leftFlap.body.setNextKinematicTranslation(this.#leftFlapPosition);
             this.#rightFlap.body.setNextKinematicTranslation(this.#rightFlapPosition);
             this.#leftFlap.body.setNextKinematicRotation(this.#leftSweeperRotation);
             this.#rightFlap.body.setNextKinematicRotation(this.#rightSweeperRotation);
-
             this.#leftDoor.body.setNextKinematicTranslation(this.#leftDoorPosition);
             this.#rightDoor.body.setNextKinematicTranslation(this.#rightDoorPosition);
             this.#leftBase.body.setNextKinematicRotation(this.#leftBaseRotation);
