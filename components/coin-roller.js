@@ -126,12 +126,6 @@ export default class {
         updateLightsState({ coinRoller: this.#coinRoller });
         const { parts, state, launcher, trap, coin, doors, lights } = this.#coinRoller;
         if (state !== COIN_ROLLER_STATES.IDLE) {
-            parts.forEach(({ meshes, body }) => {
-                meshes.forEach(({ data }) => {
-                    data.position.copy(body.translation());
-                    data.quaternion.copy(body.rotation());
-                });
-            });
             this.#launcherPosition.setX(-Math.cos(this.#coinRoller.launcherPhase) * DISTANCE + DISTANCE);
             this.#trapPosition.z = this.#coinRoller.trapPosition;
             this.#doorsPosition.x = this.#coinRoller.doorsPosition;
@@ -159,6 +153,12 @@ export default class {
                 } else {
                     material.emissiveIntensity = 0;
                 }
+            });
+            parts.forEach(({ meshes, body }) => {
+                meshes.forEach(({ data }) => {
+                    data.position.copy(body.translation());
+                    data.quaternion.copy(body.rotation());
+                });
             });
             if (this.#coinRoller.nextState) {
                 this.#coinRoller.state = this.#coinRoller.nextState;

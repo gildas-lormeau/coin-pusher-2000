@@ -153,12 +153,6 @@ export default class {
         updateSweepersState({ sweepers: this.#sweepers, canActivate: () => this.#canActivate(this) });
         const { parts, state } = this.#sweepers;
         if (state !== SWEEPERS_STATES.IDLE) {
-            parts.forEach(({ meshes, body }) => {
-                meshes.forEach(({ data }) => {
-                    data.position.copy(body.translation());
-                    data.quaternion.copy(body.rotation());
-                });
-            });
             this.#leftBasePosition.set(this.#sweepers.position, 0, 0);
             this.#rightBasePosition.set(-this.#sweepers.position, 0, 0);
             this.#leftBaseRotation.setFromAxisAngle(Y_AXIS, -this.#sweepers.rotation);
@@ -243,6 +237,12 @@ export default class {
             this.#rightSweeper.body.setNextKinematicRotation(this.#rightSweeperRotation);
             this.#leftDoor.body.setNextKinematicRotation(this.#leftDoorRotation);
             this.#rightDoor.body.setNextKinematicRotation(this.#rightDoorRotation);
+            parts.forEach(({ meshes, body }) => {
+                meshes.forEach(({ data }) => {
+                    data.position.copy(body.translation());
+                    data.quaternion.copy(body.rotation());
+                });
+            });
         }
         if (this.#sweepers.nextState) {
             this.#sweepers.state = this.#sweepers.nextState;

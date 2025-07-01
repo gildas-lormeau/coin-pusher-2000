@@ -131,10 +131,6 @@ export default class {
             canActivate: () => this.#canActivate(this)
         });
         const { state, parts } = this.#excavator;
-        parts.forEach(({ meshes, body }) => meshes.forEach(({ data }) => {
-            data.position.copy(body.translation());
-            data.quaternion.copy(body.rotation());
-        }));
         const lightBulbMaterial = this.#beaconLightBulb.meshes[0].data.material;
         if (state !== EXCAVATOR_STATES.IDLE) {
             if (state === EXCAVATOR_STATES.PICKING) {
@@ -170,6 +166,10 @@ export default class {
             lightBulbMaterial.opacity = BEACON_LIGHT_OPACITY_OFF;
             this.#beaconLight.intensity = BEACON_LIGHT_INTENSITY_OFF;
         }
+        parts.forEach(({ meshes, body }) => meshes.forEach(({ data }) => {
+            data.position.copy(body.translation());
+            data.quaternion.copy(body.rotation());
+        }));
         if (this.#excavator.nextState) {
             this.#excavator.state = this.#excavator.nextState;
         }
