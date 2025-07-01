@@ -166,15 +166,15 @@ function updatePusherState({ pusher }) {
     pusher.nextState = null;
     switch (pusher.state) {
         case PUSHER_STATES.MOVING:
+            pusher.phase = (pusher.phase + SPEED) % (Math.PI * 2);
+            break;
         case PUSHER_STATES.PREPARING_DELIVERY:
             pusher.phase = (pusher.phase + SPEED) % (Math.PI * 2);
-            if (pusher.state === PUSHER_STATES.PREPARING_DELIVERY) {
-                if (pusher.lights.state === LIGHTS_STATES.IDLE) {
-                    pusher.lights.state = LIGHTS_STATES.ACTIVATING;
-                }
-                if (pusher.phase > Math.PI * 1.5 && pusher.phase < Math.PI * 1.5 + PUSHER_PHASE_PRECISION) {
-                    pusher.nextState = PUSHER_STATES.OPENING_DOOR;
-                }
+            if (pusher.lights.state === LIGHTS_STATES.IDLE) {
+                pusher.lights.state = LIGHTS_STATES.ACTIVATING;
+            }
+            if (pusher.phase > Math.PI * 1.5 && pusher.phase < Math.PI * 1.5 + PUSHER_PHASE_PRECISION) {
+                pusher.nextState = PUSHER_STATES.OPENING_DOOR;
             }
             break;
         case PUSHER_STATES.OPENING_DOOR:
