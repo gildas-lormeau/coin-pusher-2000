@@ -71,10 +71,6 @@ export default class {
         });
         const { state, parts, phase, position } = this.#tower;
         if (state !== TOWER_STATES.IDLE) {
-            parts.forEach(({ meshes, body }) => meshes.forEach(({ data }) => {
-                data.position.copy(body.translation());
-                data.quaternion.copy(body.rotation());
-            }));
             const rotation = new Quaternion().setFromAxisAngle(Y_AXIS, Math.sin(phase) * ANGLE_AMPLITUDE * this.#oscillationDirection);
             if (state === TOWER_STATES.SHOOTING_COIN) {
                 const position = this.#initPosition.clone().setY(this.#initPosition.y + POSITION_UP_Y);
@@ -84,6 +80,10 @@ export default class {
             this.#turret.body.setNextKinematicTranslation(this.#turretPosition.set(0, 0, 0).sub(this.#initPosition).applyQuaternion(rotation).add(this.#initPosition).setY(position));
             this.#turret.body.setNextKinematicRotation(rotation);
             this.#stand.body.setNextKinematicTranslation(this.#standPosition.setY(position));
+            parts.forEach(({ meshes, body }) => meshes.forEach(({ data }) => {
+                data.position.copy(body.translation());
+                data.quaternion.copy(body.rotation());
+            }));
             if (this.#tower.nextState) {
                 this.#tower.state = this.#tower.nextState;
             }
