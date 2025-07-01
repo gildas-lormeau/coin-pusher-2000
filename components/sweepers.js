@@ -457,7 +457,7 @@ async function initializeModel({ scene }) {
                     indices
                 });
             } else {
-                const partData = getPart(parts, child.name);
+                const partData = getPart(parts, child.userData.name);
                 partData.meshes.push({
                     data: child
                 });
