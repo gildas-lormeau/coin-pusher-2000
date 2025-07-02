@@ -191,7 +191,6 @@ function updatePusherState({ pusher }) {
                 pusher.door.position = pusher.door.position - DOOR_SPEED;
             } else {
                 pusher.door.position = 0;
-
                 if (pusher.rewards.length > 1) {
                     pusher.nextState = PUSHER_STATES.PREPARING_DELIVERY;
                 } else {
