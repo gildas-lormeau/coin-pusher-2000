@@ -70,6 +70,18 @@ export default class {
         }
     }
 
+    static depositCard({ type, position, rotation }) {
+        const instance = this.#instances[type].find(instance => !instance.used);
+        instance.used = true;
+        initializePosition({ instance, position, rotation });
+        instance.body.setEnabled(true);
+        update({
+            instance,
+            meshes: this.#meshes[type]
+        });
+        return instance;
+    }
+
     static dropCard({ type }) {
         const instance = this.#instances[type].find(instance => !instance.used);
         instance.used = true;

@@ -289,8 +289,19 @@ export default class {
         this.#screen = new Screen({ scene });
         this.#cardReader = new CardReader({
             scene,
-            onCardRead: card => {
-                // TODO
+            onRetrieveCard: ({ type, position, rotation }) => Cards.depositCard({
+                type,
+                position,
+                rotation
+            }),
+            onRecycleCard: card => {
+                Cards.recycle(card);
+            },
+            onReadCard: card => {
+                if (this.#runs.started) {
+                    this.#cabinet.state.score += 50;
+                    this.#cabinet.state.points += 50;
+                }
             }
         });
         this.#tokenSlot = new TokenSlot({
