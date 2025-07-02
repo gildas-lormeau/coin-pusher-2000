@@ -1,6 +1,6 @@
 import { Vector3, Quaternion } from "three";
 
-const MODEL_PATH = "./../assets/card-reader.glb";
+const MODEL_PATH = "./assets/card-reader.glb";
 const INSERT_POSITION = "insert-position";
 const CARD_INITIAL_POSITION = 0;
 

@@ -1,6 +1,6 @@
 import { Quaternion, Vector3 } from "three";
 
-const MODEL_PATH = "./../assets/tower.glb";
+const MODEL_PATH = "./assets/tower.glb";
 const STAND_PART_NAME = "stand";
 const TURRET_PART_NAME = "turret";
 const INIT_POSITION_PART_NAME = "init-position";

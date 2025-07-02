@@ -1,6 +1,6 @@
 import { Vector3, Quaternion } from "three";
 
-const MODEL_PATH = "./../assets/token-slot.glb";
+const MODEL_PATH = "./assets/token-slot.glb";
 const INSERT_POSITION = "insert-position";
 const TOKEN_INITIAL_POSITION = 0;
 

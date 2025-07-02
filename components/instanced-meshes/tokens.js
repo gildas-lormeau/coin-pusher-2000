@@ -21,7 +21,7 @@ const LINEAR_DAMPING = 0;
 const FRICTION = 0.3;
 const RESTITUTION = 0.2;
 const DENSITY = 0.5;
-const MODEL_PATH = "./../assets/token.glb";
+const MODEL_PATH = "./assets/token.glb";
 const COLORS = [
     { color: 0x0000ff, background: 0xffffff },
     { color: 0x008000, background: 0xffffff },

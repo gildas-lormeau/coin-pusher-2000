@@ -1,5 +1,5 @@
 import { Quaternion, Vector3, SpotLight } from "three";
-const MODEL_PATH = "./../assets/excavator.glb";
+const MODEL_PATH = "./assets/excavator.glb";
 const Y_AXIS = new Vector3(0, 1, 0);
 const BEACON_LIGHT_BULB_NAME = "beacon-light-bulb";
 const BEACON_LIGHT_MIRROR_NAME = "beacon-light-mirror";

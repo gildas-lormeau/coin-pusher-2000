@@ -1,6 +1,6 @@
 import { Vector3, Quaternion } from "three";
 
-const MODEL_PATH = "./../assets/mini-stacker.glb";
+const MODEL_PATH = "./assets/mini-stacker.glb";
 const DROP_POSITION = "drop-position";
 const PIVOT_POSITION = "pivot-position";
 const ARM_PROTECTION_LID_PIVOT_POSITION = "arm-protection-lid-pivot-position";

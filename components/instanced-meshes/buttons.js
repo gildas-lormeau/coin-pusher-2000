@@ -12,7 +12,7 @@ const LIGHT_COLOR = 0xffaa00;
 const LIGHT_DISTANCE = 0.03;
 const LIGHT_DECAY = .1;
 const LIGHT_POSITION_Y = 0.00725;
-const MODEL_PATH = "./../assets/buttons.glb";
+const MODEL_PATH = "./assets/buttons.glb";
 const TYPES = 3;
 const COLORS = [
     { color: 0xffffff, background: 0xff0000 }

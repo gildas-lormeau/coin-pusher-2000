@@ -20,7 +20,7 @@ const PROBABILITY_LETTER_WIN = 1 / 5;
 const COUNT_BONUS_FLASHING = 5;
 const COUNT_LETTER_FLASHING = 5;
 const TYPE = "sensor-gate";
-const MODEL_PATH = "./../assets/sensor-gate.glb";
+const MODEL_PATH = "./assets/sensor-gate.glb";
 
 const LETTER_STATES = {
     OFF: Symbol.for("sensor-gate-off"),

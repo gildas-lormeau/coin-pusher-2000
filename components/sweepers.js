@@ -1,6 +1,6 @@
 import { Vector3, Quaternion } from "three";
 
-const MODEL_PATH = "./../assets/sweepers.glb";
+const MODEL_PATH = "./assets/sweepers.glb";
 const LEFT_BASE_PART_NAME = "left-base";
 const RIGHT_BASE_PART_NAME = "right-base";
 const LEFT_SWEEPER_PART_NAME = "left-sweeper";

@@ -22,7 +22,7 @@ const LINEAR_DAMPING = 0;
 const FRICTION = 0.1;
 const RESTITUTION = 0.1;
 const DENSITY = 0.8;
-const MODEL_PATH = "./../assets/card.glb";
+const MODEL_PATH = "./assets/card.glb";
 const COLORS = [
     { color: 0xffffff, background: 0x0031e7 },
     { color: 0xffffff, background: 0x00b802 },

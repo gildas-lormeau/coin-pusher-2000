@@ -8,7 +8,7 @@ const INITIAL_HIDDEN_POSITION = [0, 0, 0];
 const INITIAL_HIDDEN_ROTATION = [0, 0, 0, 1];
 const INITIAL_SCALE = new Vector3(0, 0, 0);
 const DEFAULT_SCALE = new Vector3(1, 1, 1);
-const MODEL_PATH = "./../assets/digit.glb";
+const MODEL_PATH = "./assets/digit.glb";
 const TYPES = 11;
 const COLORS = [
     { color: 0xffffff, background: 0x000000 },

@@ -1,7 +1,7 @@
 import { CSS3DRenderer, CSS3DObject } from "three/examples/jsm/renderers/CSS3DRenderer.js";
 import { Vector3 } from "three";
 
-const MODEL_PATH = "./../assets/screen.glb";
+const MODEL_PATH = "./assets/screen.glb";
 
 const DISPLAY_MATERIAL_NAME = "display";
 const SCREEN_WIDTH = 0.442;
