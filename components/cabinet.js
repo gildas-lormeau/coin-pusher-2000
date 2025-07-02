@@ -73,8 +73,7 @@ export default class {
                         this.#cabinet.state.points += 5;
                     }
                     if (object.objectType === Cards.TYPE) {
-                        this.#cabinet.state.score += 10;
-                        this.#cabinet.state.points += 10;
+                        this.#cardReader.readCard(object);
                     }
                 }
             }
