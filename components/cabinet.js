@@ -418,7 +418,6 @@ export default class {
         Object.assign(data, {
             state: this.#cabinet.state,
             sensorCollidersHandles,
-            scene: await this.#scene.save(),
             pusher: this.#pusher.save(),
             sensorGate: this.#sensorGate.save(),
             reelsBox: this.#reelsBox.save(),
@@ -432,7 +431,8 @@ export default class {
             sweepers: this.#sweepers.save(),
             cardReader: this.#cardReader.save(),
             tokenSlot: this.#tokenSlot.save(),
-            runs: this.#runs.save()
+            runs: this.#runs.save(),
+            scene: await this.#scene.save()
         });
         return data;
     }
