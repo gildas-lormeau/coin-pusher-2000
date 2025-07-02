@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="styles.css">
+    <title>Main page</title>
+</head>
+
+<body>
+    <main>
+        <canvas class="background-canvas"></canvas>
+        <section class="demo-mode">
+            <img src="../assets/top-banner.png" alt="Top Banner" class="banner">
+            <div class="demo-message">Press START to play</div>
+        </section>
+        <section class="run-mode">
+            <h2 class="title"></h2>
+            <div class="content">
+            </div>
+        </section>
+    </main>
+
+    <script>
+
+        const backgroundCanvas = document.querySelector(".background-canvas");
+        backgroundCanvas.width = window.innerWidth;
+        backgroundCanvas.height = window.innerHeight;
+        const banner = document.querySelector(".banner");
+        const demoModeSection = document.querySelector(".demo-mode");
+        const runModeSection = document.querySelector(".run-mode");
+        const randomIndicesBag = new Set();
+        updateBannerAnimation();
+        banner.onanimationend = event => {
+            const animationName = event.target.style.getPropertyValue("animation-name").split(",").pop().trim();
+            if (animationName == event.animationName) {
+                updateBannerAnimation();
+            }
+        };
+
+        demoModeSection.style.display = "none";
+        runModeSection.style.display = "none";
+        let backgroundCanvasController;
+        onmessage = ({ data }) => {
+            if (data.type == "showDemoMode") {
+                runModeSection.style.display = "none";
+                demoModeSection.style.display = "flex";
+                if (!backgroundCanvasController) {
+                    backgroundCanvasController = displayStars(backgroundCanvas);
+                }
+            }
+            if (data.type == "showRunStart") {
+                if (backgroundCanvasController) {
+                    backgroundCanvasController.abort();
+                    backgroundCanvasController = null;
+                }
+                backgroundCanvas.getContext("2d").clearRect(0, 0, backgroundCanvas.width, backgroundCanvas.height);
+                demoModeSection.style.display = "none";
+                runModeSection.style.display = "flex";
+                runModeSection.querySelector(".title").textContent = data.description;
+                runModeSection.querySelector(".content").textContent = data.content;
+            }
+            if (data.type == "showRunComplete") {
+                runModeSection.querySelector(".title").textContent = "Run Complete";
+                runModeSection.querySelector(".content").textContent = "";
+            }
+        };
+        parent.postMessage({}, "*");
+
+        function updateBannerAnimation() {
+            const {
+                name: animationName,
+                direction: animationDirection,
+                composition: animationComposition,
+                timingFunction: animationTimingFunction,
+                origin: transformOrigin
+            } = getRandomAnimationProperties();
+            banner.style.animation = "none";
+            void banner.offsetWidth;
+            banner.style.animation = "";
+            banner.style.setProperty("animation-name", animationName);
+            banner.style.setProperty("animation-direction", animationDirection);
+            banner.style.setProperty("animation-composition", animationComposition);
+            banner.style.setProperty("animation-timing-function", animationTimingFunction);
+            banner.style.setProperty("transform-origin", transformOrigin);
+
+        }
+
+        function getRandomAnimationProperties() {
+            const transformAnimationNames = ["rotate-x", "rotate-y", "rotate-z", "scale-x", "scale-y", "scale-xy", "skew-1", "skew-2", "skew-3", "shake-x", "shake-y", "shake-xy-1", "shake-xy-2"];
+            const filterAnimationNames = ["fade-in-out", "grayscale", "contrast", "hue-rotate", "sepia"];
+            const compositionNames = ["replace", "accumulate", "add"];
+            const timingFunctions = ["ease-in-out", "cubic-bezier(0.45, 0, 0.55, 1)"];
+            const directions = ["normal", "reverse"];
+            const origins = ["50% 50%", "35% 35%", "85% 85%", "35% 85%", "85% 35%"];
+            let selectedAnimationNames = [];
+            const animationCount = Math.floor(Math.random() * 4) + 1;
+            const selectedTransforms = [];
+            const selectedFilters = [];
+            const selectedDirections = [];
+            const selectedCompositions = [];
+            const selectedTimingFunctions = [];
+            const selectedOrigins = [];
+            for (let indexRandomAnimation = 0; indexRandomAnimation < Math.floor(Math.random() * 5) + 2; indexRandomAnimation++) {
+                const randomIndex = Math.floor(Math.random() * transformAnimationNames.length);
+                if (!selectedTransforms.includes(transformAnimationNames[randomIndex])) {
+                    selectedTransforms.push(transformAnimationNames[randomIndex]);
+                    selectedDirections.push(directions[Math.floor(Math.random() * directions.length)]);
+                    selectedCompositions.push(compositionNames[Math.floor(Math.random() * compositionNames.length)]);
+                    selectedTimingFunctions.push(timingFunctions[Math.floor(Math.random() * timingFunctions.length)]);
+                    selectedOrigins.push(origins[Math.floor(Math.random() * origins.length)]);
+                }
+            }
+            for (let indexRandomAnimation = 0; indexRandomAnimation < Math.floor(Math.random() * 2) + 1; indexRandomAnimation++) {
+                const randomIndex = Math.floor(Math.random() * filterAnimationNames.length);
+                if (!selectedFilters.includes(filterAnimationNames[randomIndex])) {
+                    selectedFilters.push(filterAnimationNames[randomIndex]);
+                    selectedDirections.push(directions[Math.floor(Math.random() * directions.length)]);
+                    selectedCompositions.push(compositionNames[Math.floor(Math.random() * compositionNames.length)]);
+                    selectedTimingFunctions.push(timingFunctions[Math.floor(Math.random() * timingFunctions.length)]);
+                }
+            }
+            return {
+                name: [...selectedTransforms, ...selectedFilters].join(","),
+                direction: selectedDirections.join(","),
+                composition: selectedCompositions.join(","),
+                timingFunction: selectedTimingFunctions.join(","),
+                origin: selectedOrigins.join(",")
+            };
+        }
+
+        function displayStars(canvas) {
+            const stars = [];
+            const { width, height } = canvas;
+            const canvasContext = canvas.getContext("2d");
+            const abortController = new AbortController();
+            const { signal } = abortController;
+            const initialCenterX = width / 2;
+            const initialCenterY = height / 2;
+            const maxDistanceX = width / 8;
+            const maxDistanceY = height / 8;
+            let centerX = initialCenterX;
+            let centerY = initialCenterY;
+            for (let i = 0; i < Math.random() * 250 + 300; i++) {
+                stars.push(createStar());
+            }
+            requestAnimationFrame(update);
+            return abortController;
+
+            function createStar() {
+                let x, y;
+                do {
+                    x = Math.random() * width;
+                    y = Math.random() * height;
+                } while (Math.hypot(x - centerX, y - centerY) < 3);
+                return {
+                    x,
+                    y,
+                    z: Math.random() * width,
+                    opacity: Math.random(),
+                    speed: Math.random() * 2 + 3,
+                    size: Math.random() * 2 + 1
+                };
+            }
+
+            function update(time) {
+                canvasContext.clearRect(0, 0, width, height);
+                for (let star of stars) {
+                    star.z -= star.speed;
+                    if (star.z <= 0) {
+                        Object.assign(star, createStar());
+                        star.z = width;
+                    }
+                    const perspective = width / star.z;
+                    const size = (1 - 1 / perspective) * star.size;
+                    canvasContext.fillStyle = `rgba(255, 255, 255, ${star.opacity})`;
+                    canvasContext.fillRect((star.x - centerX) * perspective + centerX, (star.y - centerY) * perspective + centerY, size, size);
+                }
+                const timeInSeconds = time / 1000;
+                centerX = initialCenterX + Math.sin(timeInSeconds) * maxDistanceX;
+                centerY = initialCenterY + Math.cos(timeInSeconds) * maxDistanceY;
+                if (!signal.aborted) {
+                    requestAnimationFrame(update);
+                }
+            }
+        }
+    </script>
+</body>
+
+</html>
