@@ -30,8 +30,8 @@ export default class {
     static pixelRatio = 2;
 
     static async initialize() {
-        const camera = new Camera(this.width / this.height);
         this.#containerElement = document.body;
+        const camera = new Camera(this.width / this.height);
         this.#scene = new Scene({
             containerElement: this.#containerElement,
             camera
@@ -60,7 +60,6 @@ export default class {
             containerElement: this.#containerElement,
             joints: this.#cabinet.joints
         });
-        onresize = () => this.#onWindowResize();
         const resizeObserver = new ResizeObserver(() => this.#onContainerResize());
         resizeObserver.observe(this.#containerElement);
         onkeydown = async (event) => {
@@ -114,12 +113,6 @@ export default class {
         this.#restart = true;
     }
 
-    static #onWindowResize() {
-        this.#scene.resize(this.width, this.height, this.pixelRatio);
-        this.#cabinet.resize(this.width, this.height);
-        this.#pointer.resize(this.width, this.height);
-    }
-
     static #onContainerResize() {
         const width = this.#containerElement.clientWidth;
         const height = this.#containerElement.clientHeight;
@@ -128,10 +121,10 @@ export default class {
     }
 
     static get width() {
-        return innerWidth;
+        return this.#containerElement.clientWidth;
     }
 
     static get height() {
-        return innerHeight;
+        return this.#containerElement.clientHeight;
     }
 }
