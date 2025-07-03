@@ -10,6 +10,12 @@ const CARD_INITIAL_POSITION_Y = -0.01;
 const CARD_POSITION_Y_MAX = 0;
 const CARD_Y_SPEED = 0.001;
 const CARD_Z_SPEED = 0.0025;
+const LIGHTS_ON_DURATION = 5;
+const LIGHTS_DEFAULT_COLOR = 0xe7e7e7;
+const LIGHTS_COLOR = 0x00ff22;
+const LIGHTS_EMISSIVE_COLOR = 0xdddddd;
+const LIGHTS_EMISSIVE_INTENSITY_ON = .05;
+const LIGHTS_EMISSIVE_INTENSITY_OFF = 0;
 
 const CARD_READER_STATES = {
     IDLE: Symbol.for("card-reader-idle"),
@@ -34,13 +40,18 @@ export default class {
     #cardType;
     #position = new Vector3();
     #rotation = new Quaternion();
+    #lightsMaterials;
     #cardReader = {
         state: CARD_READER_STATES.IDLE,
         cardPositionY: CARD_INITIAL_POSITION_Y,
         cardPositionZ: CARD_INITIAL_POSITION_Z,
         cardValidated: false,
         pendingCardTypes: [],
-        nextState: null
+        nextState: null,
+        lights: {
+            on: false,
+            frameLastRefresh: -1
+        }
     };
 
     constructor({ scene, onRetrieveCard, onRecycleCard, onReadCard }) {
@@ -52,8 +63,9 @@ export default class {
 
     async initialize() {
         const scene = this.#scene;
-        const { parts, initPosition } = await initializeModel({ scene });
+        const { parts, initPosition, lightsMaterials } = await initializeModel({ scene });
         this.#initPosition = initPosition;
+        this.#lightsMaterials = lightsMaterials;
         parts.forEach(({ meshes }) => meshes.forEach(({ data }) => this.#scene.addObject(data)));
         Object.assign(this.#cardReader, { parts });
     }
@@ -78,6 +90,15 @@ export default class {
             if (state === CARD_READER_STATES.READING_CARD) {
                 this.#onReadCard(this.#card);
             }
+            this.#lightsMaterials.forEach(material => {
+                if (this.#cardReader.lights.on) {
+                    material.color.setHex(LIGHTS_COLOR);
+                    material.emissiveIntensity = LIGHTS_EMISSIVE_INTENSITY_ON;
+                } else {
+                    material.color.setHex(LIGHTS_DEFAULT_COLOR);
+                    material.emissiveIntensity = LIGHTS_EMISSIVE_INTENSITY_OFF;
+                }
+            });
             if (this.#card) {
                 this.#position.copy(this.#initPosition);
                 this.#position.z += this.#cardReader.cardPositionZ;
@@ -137,16 +158,34 @@ function updateCardReaderState({ cardReader }) {
                 cardReader.cardPositionZ = CARD_POSITION_Z_MAX;
                 cardReader.nextState = CARD_READER_STATES.RETRACTING_CARD;
             }
+            if (cardReader.cardValidated) {
+                cardReader.lights.frameLastRefresh++;
+                if (cardReader.lights.frameLastRefresh > LIGHTS_ON_DURATION) {
+                    cardReader.lights.frameLastRefresh = 0;
+                    cardReader.lights.on = !cardReader.lights.on;
+                }
+            }
             break;
         case CARD_READER_STATES.RETRACTING_CARD:
             cardReader.cardPositionZ -= CARD_Z_SPEED;
             if (cardReader.cardValidated && cardReader.cardPositionZ <= CARD_INITIAL_POSITION_Z) {
                 cardReader.cardPositionZ = CARD_INITIAL_POSITION_Z;
+                cardReader.lights.on = false;
+                cardReader.lights.frameLastRefresh = -1;
                 cardReader.nextState = CARD_READER_STATES.READING_CARD;
             } else if (!cardReader.cardValidated && cardReader.cardPositionZ <= CARD_VALIDATION_POSITION_Z) {
                 cardReader.cardPositionZ = CARD_VALIDATION_POSITION_Z;
                 cardReader.cardValidated = true;
                 cardReader.nextState = CARD_READER_STATES.PUSHING_CARD;
+            }
+            if (cardReader.cardValidated) {
+                cardReader.lights.frameLastRefresh++;
+                if (cardReader.lights.frameLastRefresh > LIGHTS_ON_DURATION) {
+                    cardReader.lights.frameLastRefresh = 0;
+                    cardReader.lights.on = !cardReader.lights.on;
+                }
+            } else {
+                cardReader.lights.on = true;
             }
             break;
         case CARD_READER_STATES.READING_CARD:
@@ -172,17 +211,25 @@ async function initializeModel({ scene }) {
     const mesh = model.scene;
     const parts = new Map();
     const initPosition = new Vector3();
+    const lightsMaterials = [];
     mesh.traverse((child) => {
         if (child.isMesh) {
-            const partData = getPart(parts, child.name);
+            const partData = getPart(parts, child.userData.name);
             partData.meshes.push({ data: child });
+            const { material } = child;
+            if (material.userData.light) {
+                material.emissive.setHex(LIGHTS_EMISSIVE_COLOR);
+                material.emissiveIntensity = LIGHTS_EMISSIVE_INTENSITY_OFF;
+                lightsMaterials[material.userData.index] = material;
+            }
         } else if (child.name == INIT_POSITION) {
             initPosition.copy(child.position);
         }
     });
     return {
         parts,
-        initPosition
+        initPosition,
+        lightsMaterials
     };
 };
 
