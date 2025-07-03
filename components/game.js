@@ -114,10 +114,8 @@ export default class {
     }
 
     static #onContainerResize() {
-        const width = this.#containerElement.clientWidth;
-        const height = this.#containerElement.clientHeight;
-        this.#scene.resize(width, height);
-        this.#cabinet.resize(width, height);
+        this.#scene.resize(this.width, this.height, this.pixelRatio);
+        this.#cabinet.resize(this.width, this.height);
     }
 
     static get width() {
