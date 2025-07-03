@@ -10,13 +10,18 @@ export default class {
     #scene;
     #camera;
     #interactiveObjects;
+    #width;
+    #height;
     #position = new Vector2();
     #raycaster = new Raycaster();
 
     initialize(width, height) {
+        this.#width = width;
+        this.#height = height;
+
         addEventListener("mousemove", event => {
-            this.#position.x = (event.clientX / width) * 2 - 1;
-            this.#position.y = -(event.clientY / height) * 2 + 1;
+            this.#position.x = (event.clientX / this.#width) * 2 - 1;
+            this.#position.y = -(event.clientY / this.#height) * 2 + 1;
             this.#raycaster.setFromCamera(this.#position, this.#camera);
             const intersects = this.#raycaster.intersectObjects(this.#scene.children);
             if (intersects.length && this.#interactiveObjects.includes(intersects[0].object)) {
@@ -43,7 +48,9 @@ export default class {
     }
 
     resize(width, height) {
-        this.#camera.aspect = width / height;
+        this.#width = width;
+        this.#height = height;
+        this.#camera.aspect = this.#width / this.#height;
         this.#camera.updateProjectionMatrix();
         this.#raycaster.setFromCamera(this.#position, this.#camera);
     }
