@@ -77,6 +77,7 @@ export default class {
                     meshes: this.#meshes
                 });
             }
+            this.#meshes.forEach(mesh => mesh.instanceMatrix.needsUpdate = true);
         }
     }
 
@@ -127,10 +128,7 @@ export default class {
         instance.used = false;
         instance.body.setEnabled(false);
         initializePosition({ instance, hidden: true });
-        update({
-            instance,
-            meshes: this.#meshes
-        });
+        update({ instance, meshes: this.#meshes });
     }
 
     static get dynamicBodies() {
@@ -171,10 +169,7 @@ export default class {
                     index: indexInstance
                 };
             }
-            update({
-                instance: this.#instances[indexInstance],
-                meshes: this.#meshes
-            });
+            update({ instance: this.#instances[indexInstance], meshes: this.#meshes });
         });
     }
 
@@ -312,8 +307,5 @@ function update({ instance, meshes }) {
     instance.position.copy(instance.body.translation());
     instance.rotation.copy(instance.body.rotation());
     instance.matrix.compose(instance.position, instance.rotation, instance.used ? DEFAULT_SCALE : INITIAL_SCALE);
-    meshes.forEach(mesh => {
-        mesh.setMatrixAt(instance.index, instance.matrix);
-        mesh.instanceMatrix.needsUpdate = true;
-    });
+    meshes.forEach(mesh => mesh.setMatrixAt(instance.index, instance.matrix));
 }
