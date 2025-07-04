@@ -77,8 +77,8 @@ export default class {
                     meshes: this.#meshes
                 });
             }
-            this.#meshes.forEach(mesh => mesh.instanceMatrix.needsUpdate = true);
         }
+        this.#meshes.forEach(mesh => mesh.instanceMatrix.needsUpdate = true);
     }
 
     static dropCoin({ slot }) {
