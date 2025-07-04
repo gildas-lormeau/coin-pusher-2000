@@ -68,14 +68,9 @@ export default class {
         }
         for (const instance of this.#instances) {
             if (instance.used) {
-                const linearVelocity = instance.body.linvel();
-                instance.linearSpeed =
-                    linearVelocity.x * linearVelocity.x +
-                    linearVelocity.y * linearVelocity.y +
-                    linearVelocity.z * linearVelocity.z;
                 if (instance.pendingImpulse && instance.body.mass() > 0) {
                     instance.body.applyImpulse(instance.pendingImpulse, true);
-                    instance.pendingImpulse = null;
+                    instance.pendingImpulse = undefined;
                 }
                 update({
                     instance,
@@ -130,13 +125,11 @@ export default class {
 
     static recycle(instance) {
         instance.used = false;
-        instance.linearSpeed = 0;
         instance.body.setEnabled(false);
         initializePosition({ instance, hidden: true });
         update({
             instance,
-            meshes: this.#meshes,
-            forceRefresh: true
+            meshes: this.#meshes
         });
     }
 
@@ -155,8 +148,7 @@ export default class {
                 rotation: instance.rotation.toArray(),
                 used: instance.used,
                 bodyHandle: this.#instances[instance.index].body.handle,
-                linearSpeed: instance.linearSpeed,
-                pendingImpulse: instance.pendingImpulse ? instance.pendingImpulse.toArray() : null
+                pendingImpulse: instance.pendingImpulse ? instance.pendingImpulse.toArray() : undefined
             };
         });
     }
@@ -170,8 +162,7 @@ export default class {
                 rotation: new Quaternion().fromArray(instance.rotation),
                 used: instance.used,
                 body,
-                linearSpeed: instance.linearSpeed,
-                pendingImpulse: instance.pendingImpulse ? new Vector3().fromArray(instance.pendingImpulse) : null,
+                pendingImpulse: instance.pendingImpulse ? new Vector3().fromArray(instance.pendingImpulse) : undefined,
             };
             for (let indexCollider = 0; indexCollider < body.numColliders(); indexCollider++) {
                 const collider = body.collider(indexCollider);
@@ -182,8 +173,7 @@ export default class {
             }
             update({
                 instance: this.#instances[indexInstance],
-                meshes: this.#meshes,
-                forceRefresh: true
+                meshes: this.#meshes
             });
         });
     }
@@ -283,8 +273,7 @@ function createInstance({ scene, instances }) {
         body,
         matrix: new Matrix4(),
         used: false,
-        pendingImpulse: null,
-        linearSpeed: 0
+        pendingImpulse: undefined
     };
     instances.push(instance);
     return instance;
@@ -319,14 +308,12 @@ function initializePosition({ instance, hidden, position, rotation, slot = 1 }) 
     instance.body.setRotation(instance.rotation);
 }
 
-function update({ instance, meshes, forceRefresh }) {
+function update({ instance, meshes }) {
     instance.position.copy(instance.body.translation());
     instance.rotation.copy(instance.body.rotation());
     instance.matrix.compose(instance.position, instance.rotation, instance.used ? DEFAULT_SCALE : INITIAL_SCALE);
-    if (instance.used || forceRefresh) {
-        meshes.forEach(mesh => {
-            mesh.setMatrixAt(instance.index, instance.matrix);
-            mesh.instanceMatrix.needsUpdate = true;
-        });
-    }
+    meshes.forEach(mesh => {
+        mesh.setMatrixAt(instance.index, instance.matrix);
+        mesh.instanceMatrix.needsUpdate = true;
+    });
 }

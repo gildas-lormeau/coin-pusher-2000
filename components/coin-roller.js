@@ -290,7 +290,12 @@ function updateCoinRollerState({ coinRoller }) {
             break;
         case COIN_ROLLER_STATES.MOVING_COIN:
             updateLauncherPosition({ coinRoller });
-            if (coinRoller.coin && coinRoller.coin.linearSpeed < .0001) {
+            const linearVelocity = coinRoller.coin.body.linvel();
+            const linearSpeed =
+                linearVelocity.x * linearVelocity.x +
+                linearVelocity.y * linearVelocity.y +
+                linearVelocity.z * linearVelocity.z;
+            if (coinRoller.coin && linearSpeed < .0001) {
                 coinRoller.nextState = COIN_ROLLER_STATES.OPENING_TRAP;
             } else if (!coinRoller.coin) {
                 coinRoller.nextState = COIN_ROLLER_STATES.MOVING_LAUNCHER_TO_BASE;
