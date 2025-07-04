@@ -22,14 +22,6 @@ const LINEAR_DAMPING = 0.5;
 const RESTITUTION = 0;
 const MODEL_PATH = "./assets/coin.glb";
 const SPAWN_TIME_DURATION = 8;
-const SLEEP_LINEAR_MAX_SPEED = 0.001;
-const TEMP_EULER = new Euler(0, 0, 0, "XYZ");
-const MAX_ANGLE_FLAT = Math.PI / 4;
-const ANGVEL_HISTORY_LENGTH = 10;
-const ANGVEL_HISTORY_MIN_LENGTH = 6;
-const ANGVEL_MAX_AMPLITUDE = Math.PI / 360;
-const MIN_OSCILLATIONS = 2;
-const MIN_SLEEP_CANDIDATE_FRAMES = 5;
 
 let friction = 0.2;
 let density = 1;
@@ -81,35 +73,9 @@ export default class {
                     linearVelocity.x * linearVelocity.x +
                     linearVelocity.y * linearVelocity.y +
                     linearVelocity.z * linearVelocity.z;
-                const isSleeping = instance.body.isSleeping();
-                if (instance.angularVelocityHistory.length > ANGVEL_HISTORY_LENGTH) {
-                    instance.angularVelocityHistory.shift();
-                }
                 if (instance.pendingImpulse && instance.body.mass() > 0) {
                     instance.body.applyImpulse(instance.pendingImpulse, true);
                     instance.pendingImpulse = null;
-                } else if (isSleeping) {
-                    instance.sleepCandidateFrames = 0;
-                } else if (!isSleeping) {
-                    const angularVelocity = instance.body.angvel();
-                    instance.angularVelocityHistory.push([angularVelocity.x, angularVelocity.z]);
-                    const angularVelocityAbsX = Math.abs(angularVelocity.x);
-                    const angularVelocityAbsZ = Math.abs(angularVelocity.z);
-                    if (
-                        instance.linearSpeed && instance.linearSpeed < SLEEP_LINEAR_MAX_SPEED &&
-                        angularVelocityAbsX < ANGVEL_MAX_AMPLITUDE &&
-                        angularVelocityAbsZ < ANGVEL_MAX_AMPLITUDE &&
-                        isFlat(instance) &&
-                        isOscillating(instance.angularVelocityHistory)
-                    ) {
-                        instance.sleepCandidateFrames++;
-                        if (instance.sleepCandidateFrames > MIN_SLEEP_CANDIDATE_FRAMES) {
-                            instance.body.sleep();
-                            instance.sleepCandidateFrames = 0;
-                        }
-                    } else {
-                        instance.sleepCandidateFrames = 0;
-                    }
                 }
                 update({
                     instance,
@@ -165,8 +131,6 @@ export default class {
     static recycle(instance) {
         instance.used = false;
         instance.linearSpeed = 0;
-        instance.angularVelocityHistory = [];
-        instance.sleepCandidateFrames = 0;
         instance.body.setEnabled(false);
         initializePosition({ instance, hidden: true });
         update({
@@ -192,8 +156,6 @@ export default class {
                 used: instance.used,
                 bodyHandle: this.#instances[instance.index].body.handle,
                 linearSpeed: instance.linearSpeed,
-                angularVelocityHistory: instance.angularVelocityHistory,
-                sleepCandidateFrames: instance.sleepCandidateFrames,
                 pendingImpulse: instance.pendingImpulse ? instance.pendingImpulse.toArray() : null
             };
         });
@@ -209,8 +171,6 @@ export default class {
                 used: instance.used,
                 body,
                 linearSpeed: instance.linearSpeed,
-                angularVelocityHistory: instance.angularVelocityHistory,
-                sleepCandidateFrames: instance.sleepCandidateFrames,
                 pendingImpulse: instance.pendingImpulse ? new Vector3().fromArray(instance.pendingImpulse) : null,
             };
             for (let indexCollider = 0; indexCollider < body.numColliders(); indexCollider++) {
@@ -324,8 +284,7 @@ function createInstance({ scene, instances }) {
         matrix: new Matrix4(),
         used: false,
         pendingImpulse: null,
-        angularVelocityHistory: [],
-        sleepCandidateFrames: 0
+        linearSpeed: 0
     };
     instances.push(instance);
     return instance;
@@ -370,42 +329,4 @@ function update({ instance, meshes, forceRefresh }) {
             mesh.instanceMatrix.needsUpdate = true;
         });
     }
-}
-
-function isFlat(instance) {
-    const eulerRotation = TEMP_EULER.setFromQuaternion(instance.rotation);
-    return (
-        Math.abs(eulerRotation.x) < MAX_ANGLE_FLAT ||
-        Math.abs(eulerRotation.x - Math.PI) < MAX_ANGLE_FLAT ||
-        Math.abs(eulerRotation.x + Math.PI) < MAX_ANGLE_FLAT) && (
-            Math.abs(eulerRotation.z) < MAX_ANGLE_FLAT ||
-            Math.abs(eulerRotation.z - Math.PI) < MAX_ANGLE_FLAT ||
-            Math.abs(eulerRotation.z + Math.PI) < MAX_ANGLE_FLAT
-        );
-}
-
-function isOscillating(history) {
-    return history.length > ANGVEL_HISTORY_MIN_LENGTH &&
-        (findOscillation(0, history) || findOscillation(1, history));
-}
-
-function findOscillation(axis, history) {
-    let lastSign = Math.sign(history[0][axis]);
-    let signChanges = 0;
-    let min = history[0][axis], max = history[0][axis];
-    for (let i = 1; i < history.length; i++) {
-        const value = history[i][axis];
-        const sign = Math.sign(value);
-        if (sign !== 0 && sign !== lastSign) {
-            signChanges++;
-            lastSign = sign;
-        }
-        if (value < min) {
-            min = value;
-        }
-        if (value > max) {
-            max = value;
-        }
-    }
-    return signChanges >= MIN_OSCILLATIONS && (max - min) < ANGVEL_MAX_AMPLITUDE;
 }
