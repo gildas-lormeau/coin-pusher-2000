@@ -19,6 +19,8 @@ const MIN_TRAP_POSITION = 0;
 const MAX_TRAP_POSITION = 0.25 - MIN_TRAP_POSITION;
 const MIN_DOORS_POSITION = 0;
 const MAX_DOORS_POSITION = 0.03;
+const COIN_MIN_LINEAR_VELOCITY = 0.0001;
+const LAUNCHER_MIN_PHASE = 0.05;
 const LIGHTS_COLOR = 0xFFFFFF;
 const LIGHTS_EMISSIVE_COLOR = 0xFF00FF;
 const LIGHTS_MIN_INTENSITY = 0;
@@ -290,19 +292,21 @@ function updateCoinRollerState({ coinRoller }) {
             break;
         case COIN_ROLLER_STATES.MOVING_COIN:
             updateLauncherPosition({ coinRoller });
-            const linearVelocity = coinRoller.coin.body.linvel();
-            const linearSpeed =
-                linearVelocity.x * linearVelocity.x +
-                linearVelocity.y * linearVelocity.y +
-                linearVelocity.z * linearVelocity.z;
-            if (coinRoller.coin && linearSpeed < .0001) {
-                coinRoller.nextState = COIN_ROLLER_STATES.OPENING_TRAP;
-            } else if (!coinRoller.coin) {
+            if (coinRoller.coin) {
+                const linearVelocity = coinRoller.coin.body.linvel();
+                const linearSpeed =
+                    linearVelocity.x * linearVelocity.x +
+                    linearVelocity.y * linearVelocity.y +
+                    linearVelocity.z * linearVelocity.z;
+                if (linearSpeed < COIN_MIN_LINEAR_VELOCITY) {
+                    coinRoller.nextState = COIN_ROLLER_STATES.OPENING_TRAP;
+                }
+            } else {
                 coinRoller.nextState = COIN_ROLLER_STATES.MOVING_LAUNCHER_TO_BASE;
             }
             break;
         case COIN_ROLLER_STATES.OPENING_TRAP:
-            if (coinRoller.launcherPhase > 0.05) {
+            if (coinRoller.launcherPhase > LAUNCHER_MIN_PHASE) {
                 updateLauncherPosition({ coinRoller });
             }
             coinRoller.trapPosition += SPEED_TRAP;
@@ -311,7 +315,7 @@ function updateCoinRollerState({ coinRoller }) {
             }
             break;
         case COIN_ROLLER_STATES.CLOSING_TRAP:
-            if (coinRoller.launcherPhase > 0.05) {
+            if (coinRoller.launcherPhase > LAUNCHER_MIN_PHASE) {
                 updateLauncherPosition({ coinRoller });
             }
             coinRoller.trapPosition -= SPEED_TRAP;
@@ -321,7 +325,7 @@ function updateCoinRollerState({ coinRoller }) {
             }
             break;
         case COIN_ROLLER_STATES.MOVING_LAUNCHER_TO_BASE:
-            if (coinRoller.launcherPhase > 0.05) {
+            if (coinRoller.launcherPhase > LAUNCHER_MIN_PHASE) {
                 updateLauncherPosition({ coinRoller });
             } else {
                 coinRoller.launcherPhase = 0;
