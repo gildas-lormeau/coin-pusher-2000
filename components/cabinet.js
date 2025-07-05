@@ -417,6 +417,7 @@ export default class {
         this.#scoreboard.refresh();
         this.#sensorGate.refresh();
         this.#reelsBox.refresh();
+        this.#sweepers.refresh();
         this.#excavator.refresh();
         this.#leftTower.refresh();
         this.#rightTower.refresh();
@@ -443,6 +444,7 @@ export default class {
         this.#scoreboard.next();
         this.#sensorGate.next();
         this.#reelsBox.next();
+        this.#sweepers.next();
         this.#excavator.next();
         this.#leftTower.next();
         this.#rightTower.next();
