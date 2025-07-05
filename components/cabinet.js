@@ -69,8 +69,7 @@ export default class {
                         this.#cabinet.state.coins++;
                     }
                     if (object.objectType === Tokens.TYPE) {
-                        this.#cabinet.state.score += 5;
-                        this.#cabinet.state.points += 5;
+                        this.#tokenSlot.readToken(object);
                     }
                     if (object.objectType === Cards.TYPE) {
                         this.#cardReader.readCard(object);
@@ -209,6 +208,7 @@ export default class {
                 }
                 if (Math.random() < .25) {
                     objects.push(Tokens.depositToken({
+                        type: Math.floor(Math.random() * (Tokens.TYPES - 1)),
                         position: {
                             x: dropPosition.x + (Math.random() - 0.5) * 0.02,
                             y: dropPosition.y,
@@ -305,8 +305,19 @@ export default class {
         });
         this.#tokenSlot = new TokenSlot({
             scene,
-            onTokenInserted: token => {
-                // TODO
+            onRetrieveToken: ({ type, position, rotation }) => Tokens.depositToken({
+                type,
+                position,
+                rotation
+            }),
+            onRecycleToken: token => {
+                Tokens.recycle(token);
+            },
+            onReadToken: token => {
+                if (this.#runs.started) {
+                    this.#cabinet.state.score += 20;
+                    this.#cabinet.state.points += 20;
+                }
             }
         });
         this.#runs = new Runs({
