@@ -250,7 +250,7 @@ function updateTokenSlotState({ tokenSlot }) {
             }
             break;
         case TOKEN_SLOT_STATES.READING_TOKEN:
-            tokenSlot.nextState = TOKEN_SLOT_STATES.IDLE;
+            tokenSlot.nextState = TOKEN_SLOT_STATES.PREPARING_IDLE;
             break;
         case TOKEN_SLOT_STATES.PREPARING_IDLE:
             tokenSlot.nextState = TOKEN_SLOT_STATES.IDLE;
