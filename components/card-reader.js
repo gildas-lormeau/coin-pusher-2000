@@ -34,15 +34,16 @@ export default class {
     #scene;
     #initPosition;
     #onRetrieveCard;
+    #onGetCard;
     #onRecycleCard;
     #onReadCard;
     #card;
-    #cardType;
     #position = new Vector3();
     #rotation = new Quaternion();
     #lightsMaterials;
     #cardReader = {
         state: CARD_READER_STATES.IDLE,
+        cardType: null,
         cardPositionY: CARD_INITIAL_POSITION_Y,
         cardPositionZ: CARD_INITIAL_POSITION_Z,
         cardValidated: false,
@@ -54,9 +55,10 @@ export default class {
         }
     };
 
-    constructor({ scene, onRetrieveCard, onRecycleCard, onReadCard }) {
+    constructor({ scene, onRetrieveCard, onGetCard, onRecycleCard, onReadCard }) {
         this.#scene = scene;
         this.#onRetrieveCard = onRetrieveCard;
+        this.#onGetCard = onGetCard;
         this.#onRecycleCard = onRecycleCard;
         this.#onReadCard = onReadCard;
     }
@@ -77,7 +79,7 @@ export default class {
             if (state === CARD_READER_STATES.RETRIEVING_CARD) {
                 this.#rotation.setFromAxisAngle(new Vector3(0, 1, 0), Math.PI / 2);
                 this.#card = this.#onRetrieveCard({
-                    type: this.#cardType,
+                    type: this.#cardReader.cardType,
                     position: this.#position,
                     rotation: this.#rotation
                 });
@@ -115,7 +117,7 @@ export default class {
 
     readCard(card) {
         if (this.#cardReader.state === CARD_READER_STATES.IDLE) {
-            this.#cardType = card.type;
+            this.#cardReader.cardType = card.type;
             this.#cardReader.state = CARD_READER_STATES.ACTIVATING;
         } else {
             this.#cardReader.pendingCardTypes.push(card.type);
@@ -123,11 +125,35 @@ export default class {
     }
 
     save() {
-        // TODO
+        return {
+            state: this.#cardReader.state.description,
+            nextState: this.#cardReader.nextState ? this.#cardReader.nextState.description : null,
+            cardType: this.#cardReader.cardType,
+            cardIndex: this.#card ? this.#card.index : null,
+            cardPositionY: this.#cardReader.cardPositionY,
+            cardPositionZ: this.#cardReader.cardPositionZ,
+            cardValidated: this.#cardReader.cardValidated,
+            lights: {
+                on: this.#cardReader.lights.on,
+                frameLastRefresh: this.#cardReader.lights.frameLastRefresh
+            },
+            pendingCardTypes: [...this.#cardReader.pendingCardTypes]
+        };
     }
 
     load(cardReader) {
-        // TODO
+        this.#cardReader.state = Symbol.for(cardReader.state);
+        this.#cardReader.nextState = cardReader.nextState ? Symbol.for(cardReader.nextState) : null;
+        this.#cardReader.cardType = cardReader.cardType;
+        this.#cardReader.cardPositionY = cardReader.cardPositionY;
+        this.#cardReader.cardPositionZ = cardReader.cardPositionZ;
+        this.#cardReader.cardValidated = cardReader.cardValidated;
+        this.#cardReader.lights.on = cardReader.lights.on;
+        this.#cardReader.lights.frameLastRefresh = cardReader.lights.frameLastRefresh;
+        this.#cardReader.pendingCardTypes = [...cardReader.pendingCardTypes];
+        if (cardReader.cardIndex != null) {
+            this.#card = this.#onGetCard({ index: cardReader.cardIndex, type: this.#cardReader.cardType });
+        }
     }
 }
 

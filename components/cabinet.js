@@ -293,6 +293,7 @@ export default class {
                 position,
                 rotation
             }),
+            onGetCard: cardData => Cards.getCard(cardData),
             onRecycleCard: card => {
                 Cards.recycle(card);
             },
@@ -310,6 +311,7 @@ export default class {
                 position,
                 rotation
             }),
+            onGetToken: tokenData => Tokens.getToken(tokenData),
             onRecycleToken: token => {
                 Tokens.recycle(token);
             },

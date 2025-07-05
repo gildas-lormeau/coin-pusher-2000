@@ -39,15 +39,16 @@ export default class {
     #scene;
     #initPosition;
     #onRetrieveToken;
+    #onGetToken;
     #onRecycleToken;
     #onReadToken;
     #token;
-    #tokenType;
     #position = new Vector3();
     #rotation = new Quaternion();
     #lightMaterial;
     #tokenSlot = {
         state: TOKEN_SLOT_STATES.IDLE,
+        tokenType: null,
         tokenPosition: TOKEN_INITIAL_POSITION,
         tokenRotation: 0,
         frameLastRotation: 0,
@@ -59,9 +60,10 @@ export default class {
         }
     };
 
-    constructor({ scene, onRetrieveToken, onRecycleToken, onReadToken }) {
+    constructor({ scene, onRetrieveToken, onGetToken, onRecycleToken, onReadToken }) {
         this.#scene = scene;
         this.#onRetrieveToken = onRetrieveToken;
+        this.#onGetToken = onGetToken;
         this.#onRecycleToken = onRecycleToken;
         this.#onReadToken = onReadToken;
     }
@@ -84,7 +86,7 @@ export default class {
                     .setFromAxisAngle(new Vector3(1, 0, 0), Math.PI / 2)
                     .multiply(new Quaternion().setFromAxisAngle(new Vector3(0, 0, 1), Math.PI / 2));
                 this.#token = this.#onRetrieveToken({
-                    type: this.#tokenType,
+                    type: this.#tokenSlot.tokenType,
                     position: this.#position,
                     rotation: this.#rotation
                 });
@@ -122,7 +124,7 @@ export default class {
 
     readToken(token) {
         if (this.#tokenSlot.state === TOKEN_SLOT_STATES.IDLE) {
-            this.#tokenType = token.type;
+            this.#tokenSlot.tokenType = token.type;
             this.#tokenSlot.state = TOKEN_SLOT_STATES.ACTIVATING;
         } else {
             this.#tokenSlot.pendingTokenTypes.push(token.type);
@@ -130,11 +132,35 @@ export default class {
     }
 
     save() {
-        // TODO
+        return {
+            state: this.#tokenSlot.state.description,
+            nextState: this.#tokenSlot.nextState ? this.#tokenSlot.nextState.description : null,
+            tokenType: this.#tokenSlot.tokenType,
+            tokenIndex: this.#token ? this.#token.index : null,
+            tokenPosition: this.#tokenSlot.tokenPosition,
+            tokenRotation: this.#tokenSlot.tokenRotation,
+            frameLastRotation: this.#tokenSlot.frameLastRotation,
+            light: {
+                on: this.#tokenSlot.light.on,
+                frameLastRefresh: this.#tokenSlot.light.frameLastRefresh
+            },
+            pendingTokenTypes: this.#tokenSlot.pendingTokenTypes.slice(),
+        };
     }
 
     load(tokenSlot) {
-        // TODO
+        this.#tokenSlot.state = Symbol.for(tokenSlot.state);
+        this.#tokenSlot.nextState = tokenSlot.nextState ? Symbol.for(tokenSlot.nextState) : null;
+        this.#tokenSlot.tokenType = tokenSlot.tokenType;
+        this.#tokenSlot.tokenPosition = tokenSlot.tokenPosition || TOKEN_INITIAL_POSITION;
+        this.#tokenSlot.tokenRotation = tokenSlot.tokenRotation || 0;
+        this.#tokenSlot.frameLastRotation = tokenSlot.frameLastRotation || 0;
+        this.#tokenSlot.light.on = tokenSlot.light.on || false;
+        this.#tokenSlot.light.frameLastRefresh = tokenSlot.light.frameLastRefresh || -1;
+        this.#tokenSlot.pendingTokenTypes = tokenSlot.pendingTokenTypes || [];
+        if (tokenSlot.tokenIndex != null) {
+            this.#token = this.#onGetToken({ index: tokenSlot.tokenIndex, type: this.#tokenSlot.tokenType });
+        }
     }
 }
 
