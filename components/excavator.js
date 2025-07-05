@@ -327,7 +327,7 @@ function updateExcavatorState({ excavator, joints, canActivate }) {
                 jaw2Joint.joint.configureMotor(.5, 2.5, MOTOR_STIFFNESS, MOTOR_DAMPING);
                 jaw3Joint.joint.configureMotor(-.5, -2.5, MOTOR_STIFFNESS, MOTOR_DAMPING);
                 jaw4Joint.joint.configureMotor(.5, 2.5, MOTOR_STIFFNESS, MOTOR_DAMPING);
-                excavator.nextState = EXCAVATOR_STATES.OPENING_JAWS;
+                excavator.state = excavator.nextState = EXCAVATOR_STATES.OPENING_JAWS;
             }
             break;
         case EXCAVATOR_STATES.OPENING_JAWS:

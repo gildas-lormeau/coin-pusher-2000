@@ -360,7 +360,7 @@ function updateSweepersState({ sweepers, canActivate }) {
             break;
         case SWEEPERS_STATES.ACTIVATING:
             if (canActivate()) {
-                sweepers.nextState = SWEEPERS_STATES.OPENING_DOORS;
+                sweepers.state = sweepers.nextState = SWEEPERS_STATES.OPENING_DOORS;
             }
             break;
         case SWEEPERS_STATES.OPENING_DOORS:

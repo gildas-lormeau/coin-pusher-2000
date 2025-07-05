@@ -392,7 +392,7 @@ function updateStackerState({ stacker, canActivate }) {
             break;
         case STACKER_STATES.ACTIVATING:
             if (canActivate()) {
-                stacker.nextState = STACKER_STATES.RAISING_STACKER_TO_CLEANUP_POSITION;
+                stacker.state = stacker.nextState = STACKER_STATES.RAISING_STACKER_TO_CLEANUP_POSITION;
                 stacker.lights.state = LIGHTS_STATES.ACTIVATING;
             }
             break;

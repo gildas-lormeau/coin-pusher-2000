@@ -167,7 +167,7 @@ function updateTowerState({ tower, canActivate }) {
                 } else {
                     tower.frameLastShot = 0;
                     tower.position = POSITION_UP_Y;
-                    tower.nextState = TOWER_STATES.SHOOTING_COINS;
+                    tower.state = tower.nextState = TOWER_STATES.SHOOTING_COINS;
                 }
             }
             break;
