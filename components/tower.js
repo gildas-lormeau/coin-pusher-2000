@@ -86,9 +86,9 @@ export default class {
             this.#turret.body.setNextKinematicTranslation(this.#turretPosition.set(0, 0, 0).sub(this.#initPosition).applyQuaternion(rotation).add(this.#initPosition).setY(position));
             this.#turret.body.setNextKinematicRotation(rotation);
             this.#stand.body.setNextKinematicTranslation(this.#standPosition.setY(position));
-        }
-        if (this.#tower.nextState) {
-            this.#tower.state = this.#tower.nextState;
+            if (this.#tower.nextState) {
+                this.#tower.state = this.#tower.nextState;
+            }
         }
     }
 
