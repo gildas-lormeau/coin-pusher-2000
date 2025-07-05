@@ -67,11 +67,17 @@ export default class {
     }
 
     update(time) {
-        const currentRun = RUNS[this.#run.step];
-        updateRunsState({ run: this.#run, state: this.#state, currentRun, time });
+        if (this.#run.state !== RUNS_STATES.IDLE) {
+            const currentRun = RUNS[this.#run.step];
+            updateRunsState({ run: this.#run, state: this.#state, currentRun, time });
+        }
+    }
+
+    refresh() {
         if (this.#run.state === RUNS_STATES.IDLE) {
             this.#screen.showDemoMode();
         } else {
+            const currentRun = RUNS[this.#run.step];
             if (this.#run.data) {
                 if (this.#run.state === RUNS_STATES.STARTING_RUN || this.#run.state === RUNS_STATES.RUNNING) {
                     this.#screen.showRunStart({

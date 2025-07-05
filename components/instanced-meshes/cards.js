@@ -66,6 +66,11 @@ export default class {
                     });
                 }
             }
+        }
+    }
+
+    static refresh() {
+        for (let type = 0; type < TYPES; type++) {
             this.#meshes[type].forEach(mesh => mesh.instanceMatrix.needsUpdate = true);
         }
     }

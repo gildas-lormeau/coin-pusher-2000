@@ -69,12 +69,11 @@ export default class {
         this.#initPosition = initPosition;
         this.#lightsMaterials = lightsMaterials;
         parts.forEach(({ meshes }) => meshes.forEach(({ data }) => this.#scene.addObject(data)));
-        Object.assign(this.#cardReader, { parts });
     }
 
     update() {
         updateCardReaderState({ cardReader: this.#cardReader });
-        const { parts, state } = this.#cardReader;
+        const { state } = this.#cardReader;
         if (state !== CARD_READER_STATES.IDLE) {
             if (state === CARD_READER_STATES.RETRIEVING_CARD) {
                 this.#rotation.setFromAxisAngle(new Vector3(0, 1, 0), Math.PI / 2);
@@ -83,6 +82,14 @@ export default class {
                     position: this.#position,
                     rotation: this.#rotation
                 });
+                this.#card.body.collider(0).setEnabled(false);
+            }
+            if (this.#card) {
+                this.#position.copy(this.#initPosition);
+                this.#position.z += this.#cardReader.cardPositionZ;
+                this.#position.y += this.#cardReader.cardPositionY;
+                this.#card.body.setTranslation(this.#position);
+                this.#card.body.setRotation(this.#rotation);
             }
             if (state === CARD_READER_STATES.PREPARING_IDLE) {
                 this.#card.body.collider(0).setEnabled(true);
@@ -92,6 +99,15 @@ export default class {
             if (state === CARD_READER_STATES.READING_CARD) {
                 this.#onReadCard(this.#card);
             }
+            if (this.#cardReader.nextState) {
+                this.#cardReader.state = this.#cardReader.nextState;
+            }
+        }
+    }
+
+    refresh() {
+        const { state } = this.#cardReader;
+        if (state !== CARD_READER_STATES.IDLE) {
             this.#lightsMaterials.forEach(material => {
                 if (this.#cardReader.lights.on) {
                     material.color.setHex(LIGHTS_COLOR);
@@ -101,17 +117,6 @@ export default class {
                     material.emissiveIntensity = LIGHTS_EMISSIVE_INTENSITY_OFF;
                 }
             });
-            if (this.#card) {
-                this.#position.copy(this.#initPosition);
-                this.#position.z += this.#cardReader.cardPositionZ;
-                this.#position.y += this.#cardReader.cardPositionY;
-                this.#card.body.setTranslation(this.#position);
-                this.#card.body.setRotation(this.#rotation);
-                this.#card.body.collider(0).setEnabled(false);
-            }
-        }
-        if (this.#cardReader.nextState) {
-            this.#cardReader.state = this.#cardReader.nextState;
         }
     }
 

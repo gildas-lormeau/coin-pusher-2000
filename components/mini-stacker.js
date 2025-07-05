@@ -157,7 +157,7 @@ export default class {
             canActivate: () => this.#canActivate(this)
         });
         updateLightsState({ stacker: this.#stacker });
-        const { parts, state, lights } = this.#stacker;
+        const { parts, state } = this.#stacker;
         if (state !== STACKER_STATES.IDLE) {
             const base = parts.get(BASE_PART_NAME);
             const support = parts.get(SUPPORT_PART_NAME);
@@ -272,23 +272,29 @@ export default class {
                 const position = this.#stacker.coin.body.translation();
                 this.#stacker.coin.body.setTranslation(new Vector3(this.#offsetX, position.y, this.#pivotPosition.z), false);
             }
+            if (this.#stacker.nextState) {
+                this.#stacker.state = this.#stacker.nextState;
+            }
+            if (this.#stacker.lights.nextState) {
+                this.#stacker.lights.state = this.#stacker.lights.nextState;
+            }
+        }
+    }
+
+    refresh() {
+        const { parts, state, lights } = this.#stacker;
+        if (state !== STACKER_STATES.IDLE) {
             parts.forEach(({ meshes, body }) => {
                 meshes.forEach(({ data }) => {
                     data.position.copy(body.translation());
                     data.quaternion.copy(body.rotation());
                 });
             });
-        }
-        if (lights.state !== LIGHTS_STATES.IDLE) {
-            lights.bulbs.forEach((bulb, indexBulb) => {
-                this.#lightBulbsMaterials[indexBulb].emissiveIntensity = bulb.intensity;
-            });
-        }
-        if (this.#stacker.nextState) {
-            this.#stacker.state = this.#stacker.nextState;
-        }
-        if (this.#stacker.lights.nextState) {
-            this.#stacker.lights.state = this.#stacker.lights.nextState;
+            if (lights.state !== LIGHTS_STATES.IDLE) {
+                lights.bulbs.forEach((bulb, indexBulb) => {
+                    this.#lightBulbsMaterials[indexBulb].emissiveIntensity = bulb.intensity;
+                });
+            }
         }
     }
 

@@ -87,8 +87,9 @@ export default class {
             this.#cabinet.update(this.#time);
             this.#pointer.update();
             Debug.update();
-            this.#scene.step();
+            this.#cabinet.refresh();
             this.#scene.render();
+            this.#scene.step();
             this.#time += STEP_DELAY;
         }
         if (this.DEBUG_MAX_SPEED) {

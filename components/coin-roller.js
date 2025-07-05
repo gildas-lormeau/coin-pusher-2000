@@ -126,7 +126,7 @@ export default class {
     update() {
         updateCoinRollerState({ coinRoller: this.#coinRoller });
         updateLightsState({ coinRoller: this.#coinRoller });
-        const { parts, state, launcher, trap, coin, doors, lights } = this.#coinRoller;
+        const { state, launcher, trap, coin, doors } = this.#coinRoller;
         if (state !== COIN_ROLLER_STATES.IDLE) {
             this.#launcherPosition.setX(-Math.cos(this.#coinRoller.launcherPhase) * DISTANCE + DISTANCE);
             this.#trapPosition.z = this.#coinRoller.trapPosition;
@@ -148,6 +148,21 @@ export default class {
                 coin.body.setEnabledRotations(true, true, true);
                 coin.body.applyImpulse(COIN_IMPULSE);
             }
+            if (this.#coinRoller.nextState) {
+                this.#coinRoller.state = this.#coinRoller.nextState;
+            }
+        }
+    }
+
+    refresh() {
+        const { parts, state, lights } = this.#coinRoller;
+        if (state !== COIN_ROLLER_STATES.IDLE) {
+            parts.forEach(({ meshes, body }) => {
+                meshes.forEach(({ data }) => {
+                    data.position.copy(body.translation());
+                    data.quaternion.copy(body.rotation());
+                });
+            });
             lights.forEach((light, index) => {
                 const material = this.#lightsMaterials[index];
                 if (light.on) {
@@ -156,15 +171,6 @@ export default class {
                     material.emissiveIntensity = 0;
                 }
             });
-            parts.forEach(({ meshes, body }) => {
-                meshes.forEach(({ data }) => {
-                    data.position.copy(body.translation());
-                    data.quaternion.copy(body.rotation());
-                });
-            });
-            if (this.#coinRoller.nextState) {
-                this.#coinRoller.state = this.#coinRoller.nextState;
-            }
         }
     }
 

@@ -119,6 +119,17 @@ export default class {
             this.#sensor.letters.forEach(letter => letter.state = LETTER_STATES.OFF);
             this.#onBonusWon();
         }
+        if (this.#sensor.nextState) {
+            this.#sensor.state = this.#sensor.nextState;
+        }
+        this.#sensor.letters.forEach(letter => {
+            if (letter.nextState) {
+                letter.state = letter.nextState;
+            }
+        });
+    }
+
+    refresh() {
         this.#sensor.letters.forEach((letter, indexLetter) => {
             const letterMaterial = this.#materials[indexLetter];
             if ((letter.state === LETTER_STATES.FLASHING_ON ||
@@ -132,14 +143,6 @@ export default class {
                 letterMaterial.color.setHex(DEFAULT_COLOR);
                 letterMaterial.opacity = DEFAULT_OPACITY;
                 letterMaterial.emissiveIntensity = EMISSIVE_INTENSITY;
-            }
-        });
-        if (this.#sensor.nextState) {
-            this.#sensor.state = this.#sensor.nextState;
-        }
-        this.#sensor.letters.forEach(letter => {
-            if (letter.nextState) {
-                letter.state = letter.nextState;
             }
         });
     }

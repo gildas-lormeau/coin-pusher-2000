@@ -107,33 +107,38 @@ export default class {
     }
 
     update() {
-        const reelsBox = this.#reelsBox;
-        const { state, reels, lights } = reelsBox;
+        const { state, reels, lights } = this.#reelsBox;
         if (state !== REELS_BOX_STATES.IDLE) {
             updateReelsBoxState({ reelsBox });
             updateLightsState({ reelsBox });
             reels.forEach(reel => updateReelState({ reel }));
-            reels.forEach((reel, indexReel) => this.#reelsMeshes[indexReel].rotation.x = reel.rotation);
             if (state === REELS_BOX_STATES.DELIVERING_BONUS) {
                 this.#onBonusWon(reels.map(reel => reel.index));
             }
+            if (this.#reelsBox.nextState) {
+                this.#reelsBox.state = this.#reelsBox.nextState;
+            }
+            reels.forEach(reel => {
+                if (reel.nextState) {
+                    reel.state = reel.nextState;
+                }
+            });
+            if (lights.nextState) {
+                lights.state = lights.nextState;
+            }
+        }
+    }
+
+    refresh() {
+        const { state, reels, lights } = this.#reelsBox;
+        if (state !== REELS_BOX_STATES.IDLE) {
+            reels.forEach((reel, indexReel) => this.#reelsMeshes[indexReel].rotation.x = reel.rotation);
         }
         if (lights.state !== LIGHTS_STATES.IDLE) {
             lights.bulbs.forEach((bulb, indexBulb) => {
                 this.#lightBulbsMaterials[indexBulb].emissiveIntensity = bulb.intensity;
                 this.#lightBulbsMaterials[indexBulb].opacity = bulb.opacity;
             });
-        }
-        if (reelsBox.nextState) {
-            reelsBox.state = reelsBox.nextState;
-        }
-        reels.forEach(reel => {
-            if (reel.nextState) {
-                reel.state = reel.nextState;
-            }
-        });
-        if (lights.nextState) {
-            lights.state = lights.nextState;
         }
     }
 

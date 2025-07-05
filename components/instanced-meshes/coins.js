@@ -78,6 +78,9 @@ export default class {
                 });
             }
         }
+    }
+
+    static refresh() {
         this.#meshes.forEach(mesh => mesh.instanceMatrix.needsUpdate = true);
     }
 

@@ -168,7 +168,7 @@ export default class {
             canActivate: () => this.#canActivate(this)
         });
         updateLightsState({ stacker: this.#stacker });
-        const { parts, state, lights } = this.#stacker;
+        const { parts, state } = this.#stacker;
         if (state !== STACKER_STATES.IDLE) {
             const base = parts.get(BASE_PART_NAME);
             const support = parts.get(SUPPORT_PART_NAME);
@@ -284,6 +284,18 @@ export default class {
             if (state === STACKER_STATES.PUSHING_COIN) {
                 this.#stacker.coin.body.applyImpulse(COIN_IMPULSE_FORCE, true);
             }
+            if (this.#stacker.nextState) {
+                this.#stacker.state = this.#stacker.nextState;
+            }
+            if (this.#stacker.lights.nextState) {
+                this.#stacker.lights.state = this.#stacker.lights.nextState;
+            }
+        }
+    }
+
+    refresh() {
+        const { parts, state, lights } = this.#stacker;
+        if (state !== STACKER_STATES.IDLE) {
             parts.forEach(({ meshes, body }) => {
                 meshes.forEach(({ data }) => {
                     data.position.copy(body.translation());
@@ -295,12 +307,6 @@ export default class {
             lights.bulbs.forEach((bulb, indexBulb) => {
                 this.#lightBulbsMaterials[indexBulb].emissiveIntensity = bulb.intensity;
             });
-        }
-        if (this.#stacker.nextState) {
-            this.#stacker.state = this.#stacker.nextState;
-        }
-        if (this.#stacker.lights.nextState) {
-            this.#stacker.lights.state = this.#stacker.lights.nextState;
         }
     }
 

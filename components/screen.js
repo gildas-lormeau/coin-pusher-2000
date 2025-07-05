@@ -2,10 +2,12 @@ import { CSS3DRenderer, CSS3DObject } from "three/examples/jsm/renderers/CSS3DRe
 import { Vector3 } from "three";
 
 const MODEL_PATH = "./assets/screen.glb";
+const INDEX_VIEW_PATH = "./views/index.html";
 
 const DISPLAY_MATERIAL_NAME = "display";
 const SCREEN_WIDTH = 0.442;
 const SCREEN_HEIGHT = 0.319;
+const Z_AXIS = new Vector3(0, 0, 1);
 
 export default class {
 
@@ -13,6 +15,10 @@ export default class {
     #window;
     #css3DRenderer;
     #css3DObject;
+    #screenReady;
+    #cameraPosition = new Vector3();
+    #screenNormal = new Vector3();
+    #screenVisible;
 
     constructor({ scene }) {
         this.#scene = scene;
@@ -34,21 +40,22 @@ export default class {
         this.#css3DObject.rotation.copy(screenRotation);
         this.#css3DObject.scale.set(0.001, 0.001, 0.001);
         this.#scene.css3DScene.add(this.#css3DObject);
-        return new Promise(resolve => {
-            addEventListener("message", () => resolve(), { once: true });
-            this.#window.src = "views/index.html";
-            this.update();
-        });
+        addEventListener("message", () => this.#screenReady = true, { once: true });
+        this.#window.src = INDEX_VIEW_PATH;
     }
 
     update() {
-        const cameraPosition = this.#scene.camera.position.clone();
-        const screenPosition = this.#css3DObject.position.clone();
-        const screenNormal = new Vector3(0, 0, 1);
-        screenNormal.applyQuaternion(this.#css3DObject.quaternion);
-        const viewVector = cameraPosition.sub(screenPosition).normalize();
-        const dot = viewVector.dot(screenNormal);
-        this.#css3DObject.visible = dot > 0;
+        this.#cameraPosition.copy(this.#scene.camera.position);
+        this.#screenNormal.copy(Z_AXIS)
+            .applyQuaternion(this.#css3DObject.quaternion);
+        this.#screenVisible = this.#cameraPosition
+            .sub(this.#css3DObject.position)
+            .normalize()
+            .dot(this.#screenNormal) > 0;
+    }
+
+    refresh() {
+        this.#css3DObject.visible = this.#screenVisible;
         this.#css3DRenderer.render(this.#scene.css3DScene, this.#scene.camera);
     }
 
@@ -59,25 +66,30 @@ export default class {
     }
 
     showDemoMode() {
-        this.#window.contentWindow.postMessage({
+        this.#postMessage({
             type: "showDemoMode"
-        }, "*");
+        });
     }
 
     showRunStart(data) {
-        this.#window.contentWindow.postMessage({
+        this.#postMessage({
             type: "showRunStart",
             ...data
-        }, "*");
+        });
     }
 
     showRunComplete(data) {
-        this.#window.contentWindow.postMessage({
+        this.#postMessage({
             type: "showRunComplete",
             ...data
-        }, "*");
+        });
     }
 
+    #postMessage(data) {
+        if (this.#screenReady) {
+            this.#window.contentWindow.postMessage(data, "*");
+        }
+    }
 }
 
 async function initializeModel({ scene }) {

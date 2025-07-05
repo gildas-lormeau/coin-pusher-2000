@@ -61,6 +61,10 @@ export default class {
         // do nothing
     }
 
+    refresh() {
+        // do nothing
+    }
+
     setDropButtonsOn() {
         for (const button of this.#dropButtons) {
             Buttons.on(button);

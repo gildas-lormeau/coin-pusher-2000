@@ -93,6 +93,15 @@ export default class {
         this.#doorPosition.setZ(this.#pusher.door.position);
         this.#platform.body.setNextKinematicTranslation(this.#platformPosition);
         this.#door.body.setNextKinematicTranslation(this.#platformPosition.sub(this.#doorPosition));
+        if (this.#pusher.nextState) {
+            this.#pusher.state = this.#pusher.nextState;
+        }
+        if (this.#pusher.lights.nextState) {
+            this.#pusher.lights.state = this.#pusher.lights.nextState;
+        }
+    }
+
+    refresh() {
         this.#parts.forEach(({ meshes, body }) => {
             meshes.forEach(({ data }) => {
                 data.position.copy(body.translation());
@@ -103,12 +112,6 @@ export default class {
             this.#pusher.lights.bulbs.forEach((bulb, indexBulb) => {
                 this.#lightBulbsMaterials[indexBulb].emissiveIntensity = bulb.intensity;
             });
-        }
-        if (this.#pusher.nextState) {
-            this.#pusher.state = this.#pusher.nextState;
-        }
-        if (this.#pusher.lights.nextState) {
-            this.#pusher.lights.state = this.#pusher.lights.nextState;
         }
     }
 

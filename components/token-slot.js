@@ -74,12 +74,11 @@ export default class {
         this.#initPosition = initPosition;
         this.#lightMaterial = lightMaterial;
         parts.forEach(({ meshes }) => meshes.forEach(({ data }) => this.#scene.addObject(data)));
-        Object.assign(this.#tokenSlot, { parts });
     }
 
     update() {
         updateTokenSlotState({ tokenSlot: this.#tokenSlot });
-        const { parts, state } = this.#tokenSlot;
+        const { state } = this.#tokenSlot;
         if (state !== TOKEN_SLOT_STATES.IDLE) {
             if (state === TOKEN_SLOT_STATES.RETRIEVING_TOKEN) {
                 this.#rotation
@@ -90,21 +89,7 @@ export default class {
                     position: this.#position,
                     rotation: this.#rotation
                 });
-            }
-            if (state === TOKEN_SLOT_STATES.PREPARING_IDLE) {
-                this.#token.body.collider(0).setEnabled(true);
-                this.#onRecycleToken(this.#token);
-                this.#token = null;
-            }
-            if (state === TOKEN_SLOT_STATES.READING_TOKEN) {
-                this.#onReadToken(this.#token);
-            }
-            if (this.#tokenSlot.light.on) {
-                this.#lightMaterial.color.setHex(LIGHTS_COLOR);
-                this.#lightMaterial.emissiveIntensity = LIGHTS_EMISSIVE_INTENSITY_ON;
-            } else {
-                this.#lightMaterial.color.setHex(LIGHTS_DEFAULT_COLOR);
-                this.#lightMaterial.emissiveIntensity = LIGHTS_EMISSIVE_INTENSITY_OFF;
+                this.#token.body.collider(0).setEnabled(false);
             }
             if (this.#token) {
                 this.#position.copy(this.#initPosition);
@@ -114,11 +99,31 @@ export default class {
                     .multiply(new Quaternion().setFromAxisAngle(new Vector3(0, 0, 1), Math.PI / 2))
                     .multiply(new Quaternion().setFromAxisAngle(new Vector3(0, 1, 0), this.#tokenSlot.tokenRotation / ROTATION_SPEED));
                 this.#token.body.setRotation(this.#rotation);
-                this.#token.body.collider(0).setEnabled(false);
+            }
+            if (state === TOKEN_SLOT_STATES.PREPARING_IDLE) {
+                this.#token.body.collider(0).setEnabled(true);
+                this.#onRecycleToken(this.#token);
+                this.#token = null;
+            }
+            if (state === TOKEN_SLOT_STATES.READING_TOKEN) {
+                this.#onReadToken(this.#token);
+            }
+            if (this.#tokenSlot.nextState) {
+                this.#tokenSlot.state = this.#tokenSlot.nextState;
             }
         }
-        if (this.#tokenSlot.nextState) {
-            this.#tokenSlot.state = this.#tokenSlot.nextState;
+    }
+
+    refresh() {
+        const { state } = this.#tokenSlot;
+        if (state !== TOKEN_SLOT_STATES.IDLE) {
+            if (this.#tokenSlot.light.on) {
+                this.#lightMaterial.color.setHex(LIGHTS_COLOR);
+                this.#lightMaterial.emissiveIntensity = LIGHTS_EMISSIVE_INTENSITY_ON;
+            } else {
+                this.#lightMaterial.color.setHex(LIGHTS_DEFAULT_COLOR);
+                this.#lightMaterial.emissiveIntensity = LIGHTS_EMISSIVE_INTENSITY_OFF;
+            }
         }
     }
 

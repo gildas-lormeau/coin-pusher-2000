@@ -175,7 +175,7 @@ export default class {
     update() {
         updateSweepersState({ sweepers: this.#sweepers, canActivate: () => this.#canActivate(this) });
         updateLightsState({ sweepers: this.#sweepers, lights: this.#sweepers.lights });
-        const { parts, state } = this.#sweepers;
+        const { state } = this.#sweepers;
         if (state !== SWEEPERS_STATES.IDLE) {
             this.#leftBasePosition.set(this.#sweepers.position, 0, 0);
             this.#rightBasePosition.set(-this.#sweepers.position, 0, 0);
@@ -259,22 +259,28 @@ export default class {
             this.#rightSweeper.body.setNextKinematicRotation(this.#rightSweeperRotation);
             this.#leftDoor.body.setNextKinematicRotation(this.#leftDoorRotation);
             this.#rightDoor.body.setNextKinematicRotation(this.#rightDoorRotation);
+            if (this.#sweepers.nextState) {
+                this.#sweepers.state = this.#sweepers.nextState;
+            }
+            if (this.#sweepers.lights.nextState) {
+                this.#sweepers.lights.state = this.#sweepers.lights.nextState;
+            }
+        }
+    }
+
+    refresh() {
+        const { parts, state } = this.#sweepers;
+        if (state !== SWEEPERS_STATES.IDLE) {
             parts.forEach(({ meshes, body }) => {
                 meshes.forEach(({ data }) => {
                     data.position.copy(body.translation());
                     data.quaternion.copy(body.rotation());
                 });
             });
-            if (this.#sweepers.lights.state === LIGHTS_STATES.BLINKING) {
-                this.#leftLightMaterial.emissiveIntensity = this.#sweepers.lights.leftOn ? EMISSIVE_INTENSITY_MAX : EMISSIVE_INTENSITY_MIN;
-                this.#rightLightMaterial.emissiveIntensity = this.#sweepers.lights.rightOn ? EMISSIVE_INTENSITY_MAX : EMISSIVE_INTENSITY_MIN;
-            }
         }
-        if (this.#sweepers.nextState) {
-            this.#sweepers.state = this.#sweepers.nextState;
-        }
-        if (this.#sweepers.lights.nextState) {
-            this.#sweepers.lights.state = this.#sweepers.lights.nextState;
+        if (this.#sweepers.lights.state === LIGHTS_STATES.BLINKING) {
+            this.#leftLightMaterial.emissiveIntensity = this.#sweepers.lights.leftOn ? EMISSIVE_INTENSITY_MAX : EMISSIVE_INTENSITY_MIN;
+            this.#rightLightMaterial.emissiveIntensity = this.#sweepers.lights.rightOn ? EMISSIVE_INTENSITY_MAX : EMISSIVE_INTENSITY_MIN;
         }
     }
 

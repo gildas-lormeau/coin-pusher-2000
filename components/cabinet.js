@@ -405,6 +405,32 @@ export default class {
         }
     }
 
+    refresh() {
+        Cards.refresh();
+        Coins.refresh();
+        Tokens.refresh();
+        Buttons.refresh();
+        Digits.refresh();
+        Ingots.refresh();
+        this.#pusher.refresh();
+        this.#controlPanel.refresh();
+        this.#scoreboard.refresh();
+        this.#sensorGate.refresh();
+        this.#reelsBox.refresh();
+        this.#excavator.refresh();
+        this.#leftTower.refresh();
+        this.#rightTower.refresh();
+        this.#coinRoller.refresh();
+        this.#stacker.refresh();
+        this.#leftStacker.refresh();
+        this.#rightStacker.refresh();
+        this.#screen.refresh();
+        this.#sweepers.refresh();
+        this.#cardReader.refresh();
+        this.#tokenSlot.refresh();
+        this.#runs.refresh();
+    }
+
     resize(width, height) {
         this.#screen.resize(width, height);
     }

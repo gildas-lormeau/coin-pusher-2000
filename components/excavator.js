@@ -130,8 +130,7 @@ export default class {
             },
             canActivate: () => this.#canActivate(this)
         });
-        const { state, parts } = this.#excavator;
-        const lightBulbMaterial = this.#beaconLightBulb.meshes[0].data.material;
+        const { state } = this.#excavator;
         if (state !== EXCAVATOR_STATES.IDLE) {
             if (state === EXCAVATOR_STATES.PICKING) {
                 this.#onPick(this.#dropPosition);
@@ -147,6 +146,20 @@ export default class {
             if (state === EXCAVATOR_STATES.CLOSING_JAWS_AFTER_DROPPING) {
                 this.#platform.body.setEnabledRotations(false, false, false);
             }
+            if (this.#excavator.nextState) {
+                this.#excavator.state = this.#excavator.nextState;
+            }
+        }
+    }
+
+    refresh() {
+        const { state, parts } = this.#excavator;
+        const lightBulbMaterial = this.#beaconLightBulb.meshes[0].data.material;
+        parts.forEach(({ meshes, body }) => meshes.forEach(({ data }) => {
+            data.position.copy(body.translation());
+            data.quaternion.copy(body.rotation());
+        }));
+        if (state !== EXCAVATOR_STATES.IDLE) {
             lightBulbMaterial.emissiveIntensity = BEACON_LIGHT_BULB_INTENSITY_ON;
             lightBulbMaterial.opacity = BEACON_LIGHT_OPACITY_ON;
             this.#beaconLight.intensity = BEACON_LIGHT_INTENSITY_ON;
@@ -165,13 +178,6 @@ export default class {
             lightBulbMaterial.emissiveIntensity = BEACON_LIGHT_INTENSITY_OFF;
             lightBulbMaterial.opacity = BEACON_LIGHT_OPACITY_OFF;
             this.#beaconLight.intensity = BEACON_LIGHT_INTENSITY_OFF;
-        }
-        parts.forEach(({ meshes, body }) => meshes.forEach(({ data }) => {
-            data.position.copy(body.translation());
-            data.quaternion.copy(body.rotation());
-        }));
-        if (this.#excavator.nextState) {
-            this.#excavator.state = this.#excavator.nextState;
         }
     }
 

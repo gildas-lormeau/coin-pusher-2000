@@ -75,10 +75,13 @@ export default class {
         this.#points.set(this.#state.points);
         this.#coins.set(this.#state.coins);
         this.#coinsInPlay.set(this.#cabinet.coinsInPlay);
-        this.#score.update();
-        this.#coins.update();
-        this.#coinsInPlay.update();
-        this.#points.update();
+    }
+
+    refresh() {
+        this.#score.refresh();
+        this.#coins.refresh();
+        this.#coinsInPlay.refresh();
+        this.#points.refresh();
     }
 
 }

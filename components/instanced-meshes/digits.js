@@ -47,6 +47,13 @@ export default class {
                         });
                     }
                 }
+            }
+        }
+    }
+
+    static refresh() {
+        for (let color = 0; color < MAX_COLORS; color++) {
+            for (let type = 0; type < TYPES; type++) {
                 this.#meshes[color][type].forEach(mesh => mesh.instanceMatrix.needsUpdate = true);
             }
         }
