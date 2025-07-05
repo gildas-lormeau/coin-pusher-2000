@@ -38,6 +38,7 @@ export default class {
                 if (!event.defaultPrevented) {
                     intersects[0].object.userData.onClick(intersects[0].instanceId);
                     event.preventDefault();
+                    event.stopPropagation();
                 }
             };
         });
@@ -50,8 +51,5 @@ export default class {
     resize(width, height) {
         this.#width = width;
         this.#height = height;
-        this.#camera.aspect = this.#width / this.#height;
-        this.#camera.updateProjectionMatrix();
-        this.#raycaster.setFromCamera(this.#position, this.#camera);
     }
 }

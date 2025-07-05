@@ -116,6 +116,7 @@ export default class {
     static #onContainerResize() {
         this.#scene.resize(this.width, this.height, this.pixelRatio);
         this.#cabinet.resize(this.width, this.height);
+        this.#pointer.resize(this.width, this.height);
     }
 
     static get width() {
