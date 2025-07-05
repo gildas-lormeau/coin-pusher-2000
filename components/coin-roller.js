@@ -28,7 +28,6 @@ const LIGHTS_MAX_INTENSITY = 1;
 const LIGHTS_ON_DURATION = 2;
 const LIGHTS_REMANENCE_DURATION = 30;
 const LIGHTS_HEAD_SIZE = 8;
-const CABINET_COLLISION_GROUP = 0x00010001;
 
 const COIN_ROLLER_STATES = {
     IDLE: Symbol.for("coin-roller-idle"),
@@ -510,12 +509,8 @@ function initializeColliders({ scene, parts, sensorColliders, onBonusWon, onCoin
                     }
                 }
             }, body);
-            if (kinematic) {
-                collider.setCollisionGroups((1 << (indexPart % 16)) << 16 | (1 << (indexPart % 16)));
-                indexPart++;
-            } else {
-                collider.setCollisionGroups(CABINET_COLLISION_GROUP);
-            }
+            collider.setCollisionGroups((1 << (indexPart % 16)) << 16 | (1 << (indexPart % 16)));
+            indexPart++;
             body.setSoftCcdPrediction(.01);
             if (sensor) {
                 sensorColliders.set(name, collider);

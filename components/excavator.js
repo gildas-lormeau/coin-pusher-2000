@@ -28,7 +28,6 @@ const BEACON_LIGHT_BULB_INTENSITY_ON = 10;
 const BEACON_LIGHT_OPACITY_OFF = 0.3;
 const BEACON_LIGHT_OPACITY_ON = 1;
 const BEACON_LIGHT_BULB_SPEED = 0.06;
-const CABINET_COLLISION_GROUP = 0x00010001;
 
 const EXCAVATOR_STATES = {
     IDLE: Symbol.for("excavator-idle"),
@@ -567,12 +566,8 @@ function initializeColliders({ scene, parts, joints, onRecycleObject }) {
                 restitution
             }, body);
             collider.setContactSkin(contactSkin);
-            if (fixed) {
-                collider.setCollisionGroups(CABINET_COLLISION_GROUP);
-            } else {
-                collider.setCollisionGroups((1 << (indexPart % 16)) << 16 | (1 << (indexPart % 16)));
-                indexPart++;
-            }
+            collider.setCollisionGroups((1 << (indexPart % 16)) << 16 | (1 << (indexPart % 16)));
+            indexPart++;
         }
     });
     const platform = parts.get(PLATFORM);

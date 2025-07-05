@@ -13,7 +13,6 @@ const SHOOT_DURATION = 10;
 const IMPULSE_STRENGTH = 0.00005;
 const IMPULSE_DIRECTION = new Vector3(0, 0, -1);
 const Y_AXIS = new Vector3(0, 1, 0);
-const CABINET_COLLISION_GROUP = 0x00010001;
 const EMISSIVE_COLOR = 0x00ff00;
 const EMISSIVE_INTENSITY_MIN = 0;
 const EMISSIVE_INTENSITY_MAX = 2;
@@ -304,11 +303,7 @@ function initializeColliders({ scene, parts }) {
             friction,
             restitution
         }, body);
-        if (fixed) {
-            collider.setCollisionGroups(CABINET_COLLISION_GROUP);
-        } else {
-            collider.setCollisionGroups((1 << (indexPart % 16)) << 16 | (1 << (indexPart % 16)));
-            indexPart++;
-        }
+        collider.setCollisionGroups((1 << (indexPart % 16)) << 16 | (1 << (indexPart % 16)));
+        indexPart++;
     });
 }
