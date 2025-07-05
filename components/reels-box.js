@@ -107,10 +107,10 @@ export default class {
     }
 
     update() {
-        const { state, reels, lights } = this.#reelsBox;
+        const { state, reels } = this.#reelsBox;
         if (state !== REELS_BOX_STATES.IDLE) {
-            updateReelsBoxState({ reelsBox });
-            updateLightsState({ reelsBox });
+            updateReelsBoxState({ reelsBox: this.#reelsBox; });
+            updateLightsState({ reelsBox: this.#reelsBox; });
             reels.forEach(reel => updateReelState({ reel }));
             if (state === REELS_BOX_STATES.DELIVERING_BONUS) {
                 this.#onBonusWon(reels.map(reel => reel.index));
