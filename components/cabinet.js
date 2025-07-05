@@ -426,7 +426,6 @@ export default class {
         this.#leftStacker.refresh();
         this.#rightStacker.refresh();
         this.#screen.refresh();
-        this.#sweepers.refresh();
         this.#cardReader.refresh();
         this.#tokenSlot.refresh();
         this.#runs.refresh();
@@ -453,7 +452,6 @@ export default class {
         this.#leftStacker.next();
         this.#rightStacker.next();
         this.#screen.next();
-        this.#sweepers.next();
         this.#cardReader.next();
         this.#tokenSlot.next();
         this.#runs.next();
