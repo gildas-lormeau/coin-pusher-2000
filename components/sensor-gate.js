@@ -119,14 +119,6 @@ export default class {
             this.#sensor.letters.forEach(letter => letter.state = LETTER_STATES.OFF);
             this.#onBonusWon();
         }
-        if (this.#sensor.nextState) {
-            this.#sensor.state = this.#sensor.nextState;
-        }
-        this.#sensor.letters.forEach(letter => {
-            if (letter.nextState) {
-                letter.state = letter.nextState;
-            }
-        });
     }
 
     refresh() {
@@ -143,6 +135,17 @@ export default class {
                 letterMaterial.color.setHex(DEFAULT_COLOR);
                 letterMaterial.opacity = DEFAULT_OPACITY;
                 letterMaterial.emissiveIntensity = EMISSIVE_INTENSITY;
+            }
+        });
+    }
+
+    next() {
+        if (this.#sensor.nextState) {
+            this.#sensor.state = this.#sensor.nextState;
+        }
+        this.#sensor.letters.forEach(letter => {
+            if (letter.nextState) {
+                letter.state = letter.nextState;
             }
         });
     }

@@ -148,9 +148,6 @@ export default class {
                 coin.body.setEnabledRotations(true, true, true);
                 coin.body.applyImpulse(COIN_IMPULSE);
             }
-            if (this.#coinRoller.nextState) {
-                this.#coinRoller.state = this.#coinRoller.nextState;
-            }
         }
     }
 
@@ -171,6 +168,12 @@ export default class {
                     material.emissiveIntensity = 0;
                 }
             });
+        }
+    }
+
+    next() {
+        if (this.#coinRoller.nextState) {
+            this.#coinRoller.state = this.#coinRoller.nextState;
         }
     }
 

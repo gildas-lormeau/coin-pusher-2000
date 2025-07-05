@@ -90,6 +90,7 @@ export default class {
             this.#cabinet.refresh();
             this.#scene.render();
             this.#scene.step();
+            this.#cabinet.next();
             this.#time += STEP_DELAY;
         }
         if (this.DEBUG_MAX_SPEED) {

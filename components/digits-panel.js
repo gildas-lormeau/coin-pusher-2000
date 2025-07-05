@@ -115,4 +115,8 @@ export default class {
     refresh() {
         // do nothing
     }
+
+    next() {
+        // do nothing
+    }
 }

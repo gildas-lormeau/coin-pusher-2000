@@ -99,9 +99,6 @@ export default class {
             if (state === CARD_READER_STATES.READING_CARD) {
                 this.#onReadCard(this.#card);
             }
-            if (this.#cardReader.nextState) {
-                this.#cardReader.state = this.#cardReader.nextState;
-            }
         }
     }
 
@@ -117,6 +114,12 @@ export default class {
                     material.emissiveIntensity = LIGHTS_EMISSIVE_INTENSITY_OFF;
                 }
             });
+        }
+    }
+
+    next() {
+        if (this.#cardReader.nextState) {
+            this.#cardReader.state = this.#cardReader.nextState;
         }
     }
 

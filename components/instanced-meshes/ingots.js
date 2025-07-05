@@ -62,6 +62,10 @@ export default class {
         this.#meshes.forEach(mesh => mesh.instanceMatrix.needsUpdate = true);
     }
 
+    static next() {
+        // do nothing
+    }
+
     static dropIngot() {
         const instance = this.#instances.find(instance => !instance.used);
         instance.used = true;

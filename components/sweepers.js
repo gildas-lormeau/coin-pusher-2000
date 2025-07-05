@@ -259,12 +259,6 @@ export default class {
             this.#rightSweeper.body.setNextKinematicRotation(this.#rightSweeperRotation);
             this.#leftDoor.body.setNextKinematicRotation(this.#leftDoorRotation);
             this.#rightDoor.body.setNextKinematicRotation(this.#rightDoorRotation);
-            if (this.#sweepers.nextState) {
-                this.#sweepers.state = this.#sweepers.nextState;
-            }
-            if (this.#sweepers.lights.nextState) {
-                this.#sweepers.lights.state = this.#sweepers.lights.nextState;
-            }
         }
     }
 
@@ -281,6 +275,15 @@ export default class {
         if (this.#sweepers.lights.state === LIGHTS_STATES.BLINKING) {
             this.#leftLightMaterial.emissiveIntensity = this.#sweepers.lights.leftOn ? EMISSIVE_INTENSITY_MAX : EMISSIVE_INTENSITY_MIN;
             this.#rightLightMaterial.emissiveIntensity = this.#sweepers.lights.rightOn ? EMISSIVE_INTENSITY_MAX : EMISSIVE_INTENSITY_MIN;
+        }
+    }
+
+    next() {
+        if (this.#sweepers.nextState) {
+            this.#sweepers.state = this.#sweepers.nextState;
+        }
+        if (this.#sweepers.lights.nextState) {
+            this.#sweepers.lights.state = this.#sweepers.lights.nextState;
         }
     }
 

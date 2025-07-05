@@ -108,9 +108,6 @@ export default class {
             if (state === TOKEN_SLOT_STATES.READING_TOKEN) {
                 this.#onReadToken(this.#token);
             }
-            if (this.#tokenSlot.nextState) {
-                this.#tokenSlot.state = this.#tokenSlot.nextState;
-            }
         }
     }
 
@@ -124,6 +121,12 @@ export default class {
                 this.#lightMaterial.color.setHex(LIGHTS_DEFAULT_COLOR);
                 this.#lightMaterial.emissiveIntensity = LIGHTS_EMISSIVE_INTENSITY_OFF;
             }
+        }
+    }
+
+    next() {
+        if (this.#tokenSlot.nextState) {
+            this.#tokenSlot.state = this.#tokenSlot.nextState;
         }
     }
 

@@ -73,6 +73,10 @@ export default class {
         }
     }
 
+    static next() {
+        // do nothing
+    }
+
     static dropToken({ type }) {
         const instance = this.#instances[type].find(instance => !instance.used);
         instance.used = true;

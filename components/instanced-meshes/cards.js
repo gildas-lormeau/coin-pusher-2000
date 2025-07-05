@@ -75,6 +75,10 @@ export default class {
         }
     }
 
+    static next() {
+        // do nothing
+    }
+
     static depositCard({ type, position, rotation }) {
         const instance = this.#instances[type].find(instance => !instance.used);
         instance.used = true;

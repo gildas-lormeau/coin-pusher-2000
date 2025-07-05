@@ -146,9 +146,6 @@ export default class {
             if (state === EXCAVATOR_STATES.CLOSING_JAWS_AFTER_DROPPING) {
                 this.#platform.body.setEnabledRotations(false, false, false);
             }
-            if (this.#excavator.nextState) {
-                this.#excavator.state = this.#excavator.nextState;
-            }
         }
     }
 
@@ -178,6 +175,12 @@ export default class {
             lightBulbMaterial.emissiveIntensity = BEACON_LIGHT_INTENSITY_OFF;
             lightBulbMaterial.opacity = BEACON_LIGHT_OPACITY_OFF;
             this.#beaconLight.intensity = BEACON_LIGHT_INTENSITY_OFF;
+        }
+    }
+
+    next() {
+        if (this.#excavator.nextState) {
+            this.#excavator.state = this.#excavator.nextState;
         }
     }
 

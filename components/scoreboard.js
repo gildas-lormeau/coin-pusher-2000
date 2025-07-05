@@ -84,4 +84,8 @@ export default class {
         this.#points.refresh();
     }
 
+    next() {
+        // do nothing
+    }
+
 }

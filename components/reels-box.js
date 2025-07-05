@@ -115,17 +115,6 @@ export default class {
             if (state === REELS_BOX_STATES.DELIVERING_BONUS) {
                 this.#onBonusWon(reels.map(reel => reel.index));
             }
-            if (this.#reelsBox.nextState) {
-                this.#reelsBox.state = this.#reelsBox.nextState;
-            }
-            reels.forEach(reel => {
-                if (reel.nextState) {
-                    reel.state = reel.nextState;
-                }
-            });
-            if (lights.nextState) {
-                lights.state = lights.nextState;
-            }
         }
     }
 
@@ -139,6 +128,21 @@ export default class {
                 this.#lightBulbsMaterials[indexBulb].emissiveIntensity = bulb.intensity;
                 this.#lightBulbsMaterials[indexBulb].opacity = bulb.opacity;
             });
+        }
+    }
+
+    next() {
+        const { reels, lights } = this.#reelsBox;
+        if (this.#reelsBox.nextState) {
+            this.#reelsBox.state = this.#reelsBox.nextState;
+        }
+        reels.forEach(reel => {
+            if (reel.nextState) {
+                reel.state = reel.nextState;
+            }
+        });
+        if (lights.nextState) {
+            lights.state = lights.nextState;
         }
     }
 

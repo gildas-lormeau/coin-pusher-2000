@@ -84,6 +84,10 @@ export default class {
         this.#meshes.forEach(mesh => mesh.instanceMatrix.needsUpdate = true);
     }
 
+    static next() {
+        // do nothing
+    }
+
     static dropCoin({ slot }) {
         this.#spawnedCoins.push({ slot });
     }

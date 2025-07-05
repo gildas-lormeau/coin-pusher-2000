@@ -284,12 +284,6 @@ export default class {
             if (state === STACKER_STATES.PUSHING_COIN) {
                 this.#stacker.coin.body.applyImpulse(COIN_IMPULSE_FORCE, true);
             }
-            if (this.#stacker.nextState) {
-                this.#stacker.state = this.#stacker.nextState;
-            }
-            if (this.#stacker.lights.nextState) {
-                this.#stacker.lights.state = this.#stacker.lights.nextState;
-            }
         }
     }
 
@@ -307,6 +301,15 @@ export default class {
             lights.bulbs.forEach((bulb, indexBulb) => {
                 this.#lightBulbsMaterials[indexBulb].emissiveIntensity = bulb.intensity;
             });
+        }
+    }
+
+    next() {
+        if (this.#stacker.nextState) {
+            this.#stacker.state = this.#stacker.nextState;
+        }
+        if (this.#stacker.lights.nextState) {
+            this.#stacker.lights.state = this.#stacker.lights.nextState;
         }
     }
 

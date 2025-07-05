@@ -59,6 +59,10 @@ export default class {
         }
     }
 
+    static next() {
+        // do nothing
+    }
+
     static addDigit({ type, color, position, rotation, scale }) {
         const instance = this.#instances[color][type].find(instance => !instance.used);
         instance.used = true;

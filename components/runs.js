@@ -92,6 +92,10 @@ export default class {
         }
     }
 
+    next() {
+        // do nothing
+    }
+
     get started() {
         return this.#run.state !== RUNS_STATES.IDLE && this.#run.state !== RUNS_STATES.STARTING_RUNS;
     }

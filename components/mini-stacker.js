@@ -272,12 +272,6 @@ export default class {
                 const position = this.#stacker.coin.body.translation();
                 this.#stacker.coin.body.setTranslation(new Vector3(this.#offsetX, position.y, this.#pivotPosition.z), false);
             }
-            if (this.#stacker.nextState) {
-                this.#stacker.state = this.#stacker.nextState;
-            }
-            if (this.#stacker.lights.nextState) {
-                this.#stacker.lights.state = this.#stacker.lights.nextState;
-            }
         }
     }
 
@@ -295,6 +289,15 @@ export default class {
                     this.#lightBulbsMaterials[indexBulb].emissiveIntensity = bulb.intensity;
                 });
             }
+        }
+    }
+
+    next() {
+        if (this.#stacker.nextState) {
+            this.#stacker.state = this.#stacker.nextState;
+        }
+        if (this.#stacker.lights.nextState) {
+            this.#stacker.lights.state = this.#stacker.lights.nextState;
         }
     }
 

@@ -86,9 +86,6 @@ export default class {
             this.#turret.body.setNextKinematicTranslation(this.#turretPosition.set(0, 0, 0).sub(this.#initPosition).applyQuaternion(rotation).add(this.#initPosition).setY(position));
             this.#turret.body.setNextKinematicRotation(rotation);
             this.#stand.body.setNextKinematicTranslation(this.#standPosition.setY(position));
-            if (this.#tower.nextState) {
-                this.#tower.state = this.#tower.nextState;
-            }
         }
     }
 
@@ -100,6 +97,12 @@ export default class {
                 data.quaternion.copy(body.rotation());
             }));
             this.#lightMaterial.emissiveIntensity = lightOn ? EMISSIVE_INTENSITY_MAX : EMISSIVE_INTENSITY_MIN;
+        }
+    }
+
+    next() {
+        if (this.#tower.nextState) {
+            this.#tower.state = this.#tower.nextState;
         }
     }
 
