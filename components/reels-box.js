@@ -107,7 +107,21 @@ export default class {
     }
 
     update() {
-        const { state, reels } = this.#reelsBox;
+        const { state, reels, lights } = this.#reelsBox;
+        if (this.#reelsBox.nextState) {
+            this.#reelsBox.state = this.#reelsBox.nextState;
+            this.#reelsBox.nextState = null;
+        }
+        reels.forEach(reel => {
+            if (reel.nextState) {
+                reel.state = reel.nextState;
+                reel.nextState = null;
+            }
+        });
+        if (lights.nextState) {
+            lights.state = lights.nextState;
+            lights.nextState = null;
+        }
         if (state !== REELS_BOX_STATES.IDLE) {
             updateReelsBoxState({ reelsBox: this.#reelsBox });
             updateLightsState({ reelsBox: this.#reelsBox });
@@ -128,21 +142,6 @@ export default class {
                 this.#lightBulbsMaterials[indexBulb].emissiveIntensity = bulb.intensity;
                 this.#lightBulbsMaterials[indexBulb].opacity = bulb.opacity;
             });
-        }
-    }
-
-    next() {
-        const { reels, lights } = this.#reelsBox;
-        if (this.#reelsBox.nextState) {
-            this.#reelsBox.state = this.#reelsBox.nextState;
-        }
-        reels.forEach(reel => {
-            if (reel.nextState) {
-                reel.state = reel.nextState;
-            }
-        });
-        if (lights.nextState) {
-            lights.state = lights.nextState;
         }
     }
 
@@ -207,7 +206,7 @@ export default class {
 }
 
 function updateReelsBoxState({ reelsBox }) {
-    reelsBox.nextState = null;
+    
     switch (reelsBox.state) {
         case REELS_BOX_STATES.ACTIVATING:
             reelsBox.reels.forEach(reel => reel.state = REEL_STATES.STARTING);
@@ -242,7 +241,6 @@ function updateReelsBoxState({ reelsBox }) {
 }
 
 function updateReelState({ reel }) {
-    reel.nextState = null;
     switch (reel.state) {
         case REEL_STATES.IDLE:
             break;
@@ -292,7 +290,6 @@ function updateReelState({ reel }) {
 }
 
 function updateLightsState({ reelsBox }) {
-    reelsBox.lights.nextState = null;
     switch (reelsBox.lights.state) {
         case LIGHTS_STATES.IDLE:
             break;

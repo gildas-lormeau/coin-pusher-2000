@@ -59,10 +59,6 @@ export default class {
         this.#css3DRenderer.render(this.#scene.css3DScene, this.#scene.camera);
     }
 
-    next() {
-        // do nothing
-    }
-
     resize(width, height) {
         if (this.#css3DRenderer) {
             this.#css3DRenderer.setSize(width, height);

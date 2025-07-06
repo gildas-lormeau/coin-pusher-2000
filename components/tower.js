@@ -70,6 +70,10 @@ export default class {
     }
 
     update() {
+        if (this.#tower.nextState) {
+            this.#tower.state = this.#tower.nextState;
+            this.#tower.nextState = null;
+        }
         updateTowerState({
             tower: this.#tower,
             canActivate: () => this.#canActivate(this)
@@ -96,12 +100,6 @@ export default class {
                 data.quaternion.copy(body.rotation());
             }));
             this.#lightMaterial.emissiveIntensity = lightOn ? EMISSIVE_INTENSITY_MAX : EMISSIVE_INTENSITY_MIN;
-        }
-    }
-
-    next() {
-        if (this.#tower.nextState) {
-            this.#tower.state = this.#tower.nextState;
         }
     }
 
@@ -156,7 +154,6 @@ export default class {
 }
 
 function updateTowerState({ tower, canActivate }) {
-    tower.nextState = null;
     switch (tower.state) {
         case TOWER_STATES.ACTIVATING:
             if (canActivate()) {

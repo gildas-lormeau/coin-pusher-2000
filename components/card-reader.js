@@ -72,6 +72,10 @@ export default class {
     }
 
     update() {
+        if (this.#cardReader.nextState) {
+            this.#cardReader.state = this.#cardReader.nextState;
+            this.#cardReader.nextState = null;
+        }
         updateCardReaderState({ cardReader: this.#cardReader });
         const { state } = this.#cardReader;
         if (state !== CARD_READER_STATES.IDLE) {
@@ -114,12 +118,6 @@ export default class {
                     material.emissiveIntensity = LIGHTS_EMISSIVE_INTENSITY_OFF;
                 }
             });
-        }
-    }
-
-    next() {
-        if (this.#cardReader.nextState) {
-            this.#cardReader.state = this.#cardReader.nextState;
         }
     }
 
@@ -166,7 +164,6 @@ export default class {
 }
 
 function updateCardReaderState({ cardReader }) {
-    cardReader.nextState = null;
     switch (cardReader.state) {
         case CARD_READER_STATES.IDLE:
             break;

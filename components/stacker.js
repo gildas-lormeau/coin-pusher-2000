@@ -163,6 +163,14 @@ export default class {
     }
 
     update() {
+        if (this.#stacker.nextState) {
+            this.#stacker.state = this.#stacker.nextState;
+            this.#stacker.nextState = null;
+        }
+        if (this.#stacker.lights.nextState) {
+            this.#stacker.lights.state = this.#stacker.lights.nextState;
+            this.#stacker.lights.nextState = null;
+        }
         updateStackerState({
             stacker: this.#stacker,
             canActivate: () => this.#canActivate(this)
@@ -304,15 +312,6 @@ export default class {
         }
     }
 
-    next() {
-        if (this.#stacker.nextState) {
-            this.#stacker.state = this.#stacker.nextState;
-        }
-        if (this.#stacker.lights.nextState) {
-            this.#stacker.lights.state = this.#stacker.lights.nextState;
-        }
-    }
-
     deliver({ stacks = STACKS_MIN, levels = LEVELS_MIN } = { stacks: STACKS_MIN, levels: LEVELS_MIN }) {
         levels = Math.max(LEVELS_MIN, Math.min(LEVELS_MAX, levels));
         stacks = Math.max(STACKS_MIN, Math.min(STACKS_MAX, stacks));
@@ -407,7 +406,6 @@ export default class {
 
 function updateStackerState({ stacker, canActivate }) {
     let targetAngle;
-    stacker.nextState = null;
     switch (stacker.state) {
         case STACKER_STATES.IDLE:
             break;
@@ -648,7 +646,6 @@ function updateStackerState({ stacker, canActivate }) {
 }
 
 function updateLightsState({ stacker }) {
-    stacker.lights.nextState = null;
     switch (stacker.lights.state) {
         case LIGHTS_STATES.IDLE:
             break;

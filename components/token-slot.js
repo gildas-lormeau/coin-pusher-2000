@@ -77,6 +77,10 @@ export default class {
     }
 
     update() {
+        if (this.#tokenSlot.nextState) {
+            this.#tokenSlot.state = this.#tokenSlot.nextState;
+            this.#tokenSlot.nextState = null;
+        }
         updateTokenSlotState({ tokenSlot: this.#tokenSlot });
         const { state } = this.#tokenSlot;
         if (state !== TOKEN_SLOT_STATES.IDLE) {
@@ -124,12 +128,6 @@ export default class {
         }
     }
 
-    next() {
-        if (this.#tokenSlot.nextState) {
-            this.#tokenSlot.state = this.#tokenSlot.nextState;
-        }
-    }
-
     readToken(token) {
         if (this.#tokenSlot.state === TOKEN_SLOT_STATES.IDLE) {
             this.#tokenSlot.tokenType = token.type;
@@ -173,7 +171,6 @@ export default class {
 }
 
 function updateTokenSlotState({ tokenSlot }) {
-    tokenSlot.nextState = null;
     switch (tokenSlot.state) {
         case TOKEN_SLOT_STATES.IDLE:
             break;

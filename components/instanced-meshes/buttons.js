@@ -134,10 +134,6 @@ export default class {
         // TODO: handle lights
     }
 
-    static next() {
-        // do nothing
-    }
-
     static load(buttons) {
         buttons.forEach((colorButtons, color) => {
             colorButtons.forEach((typeButtons, type) => {

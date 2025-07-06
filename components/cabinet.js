@@ -431,32 +431,6 @@ export default class {
         this.#runs.refresh();
     }
 
-    next() {
-        Cards.next();
-        Coins.next();
-        Tokens.next();
-        Buttons.next();
-        Digits.next();
-        Ingots.next();
-        this.#pusher.next();
-        this.#controlPanel.next();
-        this.#scoreboard.next();
-        this.#sensorGate.next();
-        this.#reelsBox.next();
-        this.#sweepers.next();
-        this.#excavator.next();
-        this.#leftTower.next();
-        this.#rightTower.next();
-        this.#coinRoller.next();
-        this.#stacker.next();
-        this.#leftStacker.next();
-        this.#rightStacker.next();
-        this.#screen.next();
-        this.#cardReader.next();
-        this.#tokenSlot.next();
-        this.#runs.next();
-    }
-
     resize(width, height) {
         this.#screen.resize(width, height);
     }

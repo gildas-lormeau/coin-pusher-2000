@@ -116,6 +116,10 @@ export default class {
     }
 
     update() {
+        if (this.#excavator.nextState) {
+            this.#excavator.state = this.#excavator.nextState;
+            this.#excavator.nextState = null;
+        }
         updateExcavatorState({
             excavator: this.#excavator,
             joints: {
@@ -174,12 +178,6 @@ export default class {
             lightBulbMaterial.emissiveIntensity = BEACON_LIGHT_INTENSITY_OFF;
             lightBulbMaterial.opacity = BEACON_LIGHT_OPACITY_OFF;
             this.#beaconLight.intensity = BEACON_LIGHT_INTENSITY_OFF;
-        }
-    }
-
-    next() {
-        if (this.#excavator.nextState) {
-            this.#excavator.state = this.#excavator.nextState;
         }
     }
 
@@ -315,7 +313,6 @@ export default class {
 }
 
 function updateExcavatorState({ excavator, joints, canActivate }) {
-    excavator.nextState = null;
     const { platformJoint, platformArmJoint, armsJoint, jaw1Joint, jaw2Joint, jaw3Joint, jaw4Joint } = joints;
     switch (excavator.state) {
         case EXCAVATOR_STATES.IDLE:

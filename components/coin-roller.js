@@ -123,6 +123,10 @@ export default class {
     }
 
     update() {
+        if (this.#coinRoller.nextState) {
+            this.#coinRoller.state = this.#coinRoller.nextState;
+            this.#coinRoller.nextState = null;
+        }
         updateCoinRollerState({ coinRoller: this.#coinRoller });
         updateLightsState({ coinRoller: this.#coinRoller });
         const { state, launcher, trap, coin, doors } = this.#coinRoller;
@@ -167,12 +171,6 @@ export default class {
                     material.emissiveIntensity = 0;
                 }
             });
-        }
-    }
-
-    next() {
-        if (this.#coinRoller.nextState) {
-            this.#coinRoller.state = this.#coinRoller.nextState;
         }
     }
 
@@ -264,7 +262,6 @@ export default class {
 }
 
 function updateCoinRollerState({ coinRoller }) {
-    coinRoller.nextState = null;
     switch (coinRoller.state) {
         case COIN_ROLLER_STATES.IDLE:
             break;
@@ -511,7 +508,6 @@ function initializeColliders({ scene, parts, sensorColliders, onBonusWon, onCoin
             }, body);
             collider.setCollisionGroups((1 << (indexPart % 16)) << 16 | (1 << (indexPart % 16)));
             indexPart++;
-            body.setSoftCcdPrediction(.01);
             if (sensor) {
                 sensorColliders.set(name, collider);
             }

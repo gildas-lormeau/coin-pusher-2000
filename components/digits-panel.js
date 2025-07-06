@@ -116,7 +116,4 @@ export default class {
         // do nothing
     }
 
-    next() {
-        // do nothing
-    }
 }

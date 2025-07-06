@@ -80,6 +80,14 @@ export default class {
     }
 
     update() {
+        if (this.#pusher.nextState) {
+            this.#pusher.state = this.#pusher.nextState;
+            this.#pusher.nextState = null;
+        }
+        if (this.#pusher.lights.nextState) {
+            this.#pusher.lights.state = this.#pusher.lights.nextState;
+            this.#pusher.lights.nextState = null;
+        }
         updatePusherState({ pusher: this.#pusher });
         updateLightsState({ pusher: this.#pusher });
         if (this.#pusher.state === PUSHER_STATES.DELIVERING_BONUS) {
@@ -106,15 +114,6 @@ export default class {
             this.#pusher.lights.bulbs.forEach((bulb, indexBulb) => {
                 this.#lightBulbsMaterials[indexBulb].emissiveIntensity = bulb.intensity;
             });
-        }
-    }
-
-    next() {
-        if (this.#pusher.nextState) {
-            this.#pusher.state = this.#pusher.nextState;
-        }
-        if (this.#pusher.lights.nextState) {
-            this.#pusher.lights.state = this.#pusher.lights.nextState;
         }
     }
 
@@ -169,7 +168,6 @@ export default class {
 }
 
 function updatePusherState({ pusher }) {
-    pusher.nextState = null;
     switch (pusher.state) {
         case PUSHER_STATES.MOVING:
             pusher.phase = (pusher.phase + SPEED) % (Math.PI * 2);
@@ -208,7 +206,6 @@ function updatePusherState({ pusher }) {
 }
 
 function updateLightsState({ pusher }) {
-    pusher.lights.nextState = null;
     switch (pusher.lights.state) {
         case LIGHTS_STATES.IDLE:
             break;

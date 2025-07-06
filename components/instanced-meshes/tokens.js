@@ -14,7 +14,7 @@ const INITIAL_HIDDEN_ANGULAR_VELOCITY = new Vector3(0, 0, 0);
 const INITIAL_SCALE = new Vector3(0, 0, 0);
 const DEFAULT_SCALE = new Vector3(1, 1, 1);
 const EULER_ROTATION = new Euler(0, 0, 0);
-const SOFT_CCD_PREDICTION = 0.1;
+const SOFT_CCD_PREDICTION = Math.max(RADIUS, DEPTH);
 const ADDITIONAL_SOLVER_ITERATIONS = 0;
 const ANGULAR_DAMPING = 0;
 const LINEAR_DAMPING = 0;
@@ -71,10 +71,6 @@ export default class {
         for (let type = 0; type < TYPES; type++) {
             this.#meshes[type].forEach(mesh => mesh.instanceMatrix.needsUpdate = true);
         }
-    }
-
-    static next() {
-        // do nothing
     }
 
     static dropToken({ type }) {

@@ -173,6 +173,14 @@ export default class {
     }
 
     update() {
+        if (this.#sweepers.nextState) {
+            this.#sweepers.state = this.#sweepers.nextState;
+            this.#sweepers.nextState = null;
+        }
+        if (this.#sweepers.lights.nextState) {
+            this.#sweepers.lights.state = this.#sweepers.lights.nextState;
+            this.#sweepers.lights.nextState = null;
+        }
         updateSweepersState({ sweepers: this.#sweepers, canActivate: () => this.#canActivate(this) });
         updateLightsState({ sweepers: this.#sweepers, lights: this.#sweepers.lights });
         const { state } = this.#sweepers;
@@ -278,15 +286,6 @@ export default class {
         }
     }
 
-    next() {
-        if (this.#sweepers.nextState) {
-            this.#sweepers.state = this.#sweepers.nextState;
-        }
-        if (this.#sweepers.lights.nextState) {
-            this.#sweepers.lights.state = this.#sweepers.lights.nextState;
-        }
-    }
-
     sweepFloor({ level } = { level: 0 }) {
         level = Math.max(0, Math.min(10, level)) / 10;
         if (this.#sweepers.state === SWEEPERS_STATES.IDLE) {
@@ -354,7 +353,6 @@ export default class {
 }
 
 function updateSweepersState({ sweepers, canActivate }) {
-    sweepers.nextState = null;
     switch (sweepers.state) {
         case SWEEPERS_STATES.IDLE:
             break;
@@ -474,7 +472,6 @@ function updateSweepersState({ sweepers, canActivate }) {
 }
 
 function updateLightsState({ sweepers, lights }) {
-    lights.nextState = null;
     switch (lights.state) {
         case LIGHTS_STATES.IDLE:
             break;

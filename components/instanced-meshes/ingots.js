@@ -2,6 +2,9 @@ import { Vector3, Quaternion, Matrix4, Euler, InstancedMesh } from "three";
 
 const TYPE = "ingot";
 const MAX_INSTANCES = 8;
+const WIDTH = 0.075;
+const HEIGHT = 0.15;
+const DEPTH = 0.02;
 const INITIAL_POSITION = [0, .6, .5];
 const INITIAL_POSITION_DELTA_X = 0.2;
 const INITIAL_POSITION_DELTA_Z = 0.2;
@@ -12,7 +15,7 @@ const INITIAL_HIDDEN_ANGULAR_VELOCITY = new Vector3(0, 0, 0);
 const INITIAL_SCALE = new Vector3(0, 0, 0);
 const DEFAULT_SCALE = new Vector3(1, 1, 1);
 const EULER_ROTATION = new Euler(0, 0, 0);
-const SOFT_CCD_PREDICTION = 0.1;
+const SOFT_CCD_PREDICTION = Math.max(WIDTH, HEIGHT, DEPTH);
 const ADDITIONAL_SOLVER_ITERATIONS = 0;
 const ANGULAR_DAMPING = 0;
 const LINEAR_DAMPING = 0;
@@ -60,10 +63,6 @@ export default class {
 
     static refresh() {
         this.#meshes.forEach(mesh => mesh.instanceMatrix.needsUpdate = true);
-    }
-
-    static next() {
-        // do nothing
     }
 
     static dropIngot() {

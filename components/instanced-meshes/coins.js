@@ -15,7 +15,7 @@ const INITIAL_HIDDEN_ANGULAR_VELOCITY = new Vector3(0, 0, 0);
 const INITIAL_SCALE = new Vector3(0, 0, 0);
 const DEFAULT_SCALE = new Vector3(1, 1, 1);
 const EULER_ROTATION = new Euler(Math.PI / 2, 0, 0);
-const SOFT_CCD_PREDICTION = 0.1;
+const SOFT_CCD_PREDICTION = Math.max(RADIUS, DEPTH);
 const ADDITIONAL_SOLVER_ITERATIONS = 1;
 const ANGULAR_DAMPING = 0.5;
 const LINEAR_DAMPING = 0.5;
@@ -82,10 +82,6 @@ export default class {
 
     static refresh() {
         this.#meshes.forEach(mesh => mesh.instanceMatrix.needsUpdate = true);
-    }
-
-    static next() {
-        // do nothing
     }
 
     static dropCoin({ slot }) {

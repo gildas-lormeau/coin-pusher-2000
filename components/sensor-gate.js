@@ -109,6 +109,16 @@ export default class {
     }
 
     update() {
+        if (this.#sensor.nextState) {
+            this.#sensor.state = this.#sensor.nextState;
+            this.#sensor.nextState = null;
+        }
+        this.#sensor.letters.forEach(letter => {
+            if (letter.nextState) {
+                letter.state = letter.nextState;
+                letter.nextState = null;
+            }
+        });
         this.#sensor.letters.forEach(letter => updateLetterState({ letter }));
         if (this.#sensor.state === SENSOR_STATES.IDLE &&
             this.#sensor.letters.every(letter => letter.state === LETTER_STATES.LOCKED_ON)) {
@@ -135,17 +145,6 @@ export default class {
                 letterMaterial.color.setHex(DEFAULT_COLOR);
                 letterMaterial.opacity = DEFAULT_OPACITY;
                 letterMaterial.emissiveIntensity = EMISSIVE_INTENSITY;
-            }
-        });
-    }
-
-    next() {
-        if (this.#sensor.nextState) {
-            this.#sensor.state = this.#sensor.nextState;
-        }
-        this.#sensor.letters.forEach(letter => {
-            if (letter.nextState) {
-                letter.state = letter.nextState;
             }
         });
     }
@@ -209,7 +208,6 @@ function onCoinIntersect({ sensor, userData, onCoinFallen }) {
 }
 
 function updateSensorState({ sensor }) {
-    sensor.nextState = null;
     switch (sensor.state) {
         case SENSOR_STATES.ACTIVATING:
             sensor.frameFlashStart = 0;
@@ -246,7 +244,6 @@ function updateSensorState({ sensor }) {
 }
 
 function updateLetterState({ letter }) {
-    letter.nextState = null;
     switch (letter.state) {
         case LETTER_STATES.OFF:
             break;
