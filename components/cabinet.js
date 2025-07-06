@@ -46,34 +46,21 @@ export default class {
     };
     #sensorColliders;
     #sensorListeners = {
-        "left-trap": (userData) => {
-            const object = this.#getObject(userData);
-            if (object) {
-                recycleObject(object);
-            }
-        },
-        "right-trap": (userData) => {
-            const object = this.#getObject(userData);
-            if (object) {
-                recycleObject(object);
-            }
-        },
+        "left-trap": userData => this.recycleObject(userData),
+        "right-trap": userData => this.recycleObject(userData),
         "gutter": (userData) => {
-            const object = this.#getObject(userData);
-            if (object) {
-                recycleObject(object);
-                if (this.#runs.started) {
-                    if (object.objectType === Coins.TYPE) {
-                        this.#cabinet.state.score++;
-                        this.#cabinet.state.points++;
-                        this.#cabinet.state.coins++;
-                    }
-                    if (object.objectType === Tokens.TYPE) {
-                        this.#tokenSlot.readToken(object);
-                    }
-                    if (object.objectType === Cards.TYPE) {
-                        this.#cardReader.readCard(object);
-                    }
+            this.recycleObject(userData);
+            if (this.#runs.started) {
+                if (object.objectType === Coins.TYPE) {
+                    this.#cabinet.state.score++;
+                    this.#cabinet.state.points++;
+                    this.#cabinet.state.coins++;
+                }
+                if (object.objectType === Tokens.TYPE) {
+                    this.#tokenSlot.readToken(object);
+                }
+                if (object.objectType === Cards.TYPE) {
+                    this.#cardReader.readCard(object);
                 }
             }
         }
@@ -130,7 +117,7 @@ export default class {
         });
         this.#pusher = new Pusher({
             scene,
-            depositBonus: ({ reward, position }) => {
+            onDeliverBonus: ({ reward, position }) => {
                 Coins.depositCoins({ position, count: reward.coinCount });
                 Tokens.depositTokens({ position, count: reward.tokenCount });
                 Cards.depositCards({ position, count: reward.cardCount });
@@ -145,9 +132,7 @@ export default class {
         this.#collisionsDetector = new CollisionsDetector({ scene });
         this.#sensorGate = new SensorGate({
             scene,
-            onCoinFallen: (instance) => {
-                Coins.enableCcd(instance, false);
-            },
+            onFallenCoin: instance => Coins.enableCcd(instance, false),
             onBonusWon: () => {
                 const random = Math.random();
                 if (this.DEBUG_AUTOPLAY) {
@@ -187,7 +172,7 @@ export default class {
         });
         this.#excavator = new Excavator({
             scene,
-            canActivate: caller => this.#canActivate(caller),
+            cabinet: this,
             onPick: dropPosition => {
                 const objects = [];
                 for (let i = 0; i < 30 + Math.floor(Math.random() * 10); i++) {
@@ -222,43 +207,27 @@ export default class {
                     }));
                 }
                 return objects;
-            },
-            onGetObject: userData => {
-                return this.#getObject(userData);
-            },
-            onRecycleObject: userData => {
-                const object = this.#getObject(userData);
-                if (object) {
-                    recycleObject(object);
-                }
             }
         });
         this.#leftTower = new Tower({
             scene,
+            cabinet: this,
             offsetX: -.25,
             oscillationDirection: 1,
-            canActivate: caller => this.#canActivate(caller),
-            onShootCoin: ({ position, impulse }) => {
-                Coins.depositCoin({ position, impulse });
-            }
+            onShootCoin: ({ position, impulse }) => Coins.depositCoin({ position, impulse })
         });
         this.#rightTower = new Tower({
             scene,
+            cabinet: this,
             offsetX: .25,
             oscillationDirection: -1,
-            canActivate: caller => this.#canActivate(caller),
-            onShootCoin: ({ position, impulse }) => {
-                Coins.depositCoin({ position, impulse });
-            }
+            onShootCoin: ({ position, impulse }) => Coins.depositCoin({ position, impulse })
         });
         this.#coinRoller = new CoinRoller({
             scene,
+            cabinet: this,
             onInitializeCoin: ({ position, rotation }) => Coins.depositCoin({ position, rotation }),
-            onGetCoin: coinData => Coins.getCoin(coinData),
-            onRecycleCoin: coin => {
-                Coins.recycle(coin);
-                this.#controlPanel.disableActionButton();
-            },
+            onGameLost: () => this.#controlPanel.disableActionButton(),
             onBonusWon: bonus => {
                 Coins.dropCoins({ count: Math.pow(bonus + 1, 2) * 5 });
                 this.#controlPanel.disableActionButton();
@@ -266,37 +235,30 @@ export default class {
         });
         this.#stacker = new Stacker({
             scene,
-            canActivate: caller => this.#canActivate(caller),
+            cabinet: this,
             onInitializeCoin: ({ position, rotation, impulse }) => Coins.depositCoin({ position, rotation, impulse }),
         });
         this.#leftStacker = new MiniStacker({
             scene,
-            canActivate: caller => this.#canActivate(caller),
+            cabinet: this,
             onInitializeCoin: ({ position, rotation, impulse }) => Coins.depositCoin({ position, rotation, impulse }),
             offsetX: -0.4
         });
         this.#rightStacker = new MiniStacker({
             scene,
-            canActivate: caller => this.#canActivate(caller),
+            cabinet: this,
             onInitializeCoin: ({ position, rotation, impulse }) => Coins.depositCoin({ position, rotation, impulse }),
             offsetX: 0.4
         });
         this.#sweepers = new Sweepers({
             scene,
-            canActivate: caller => this.#canActivate(caller)
+            cabinet: this
         });
         this.#screen = new Screen({ scene });
         this.#cardReader = new CardReader({
             scene,
-            onRetrieveCard: ({ type, position, rotation }) => Cards.depositCard({
-                type,
-                position,
-                rotation
-            }),
-            onGetCard: cardData => Cards.getCard(cardData),
-            onRecycleCard: card => {
-                Cards.recycle(card);
-            },
+            cabinet: this,
+            onRetrieveCard: ({ type, position, rotation }) => Cards.depositCard({ type, position, rotation }),
             onReadCard: card => {
                 if (this.#runs.started) {
                     this.#cabinet.state.score += 50;
@@ -306,15 +268,8 @@ export default class {
         });
         this.#tokenSlot = new TokenSlot({
             scene,
-            onRetrieveToken: ({ type, position, rotation }) => Tokens.depositToken({
-                type,
-                position,
-                rotation
-            }),
-            onGetToken: tokenData => Tokens.getToken(tokenData),
-            onRecycleToken: token => {
-                Tokens.recycle(token);
-            },
+            cabinet: this,
+            onRetrieveToken: ({ type, position, rotation }) => Tokens.depositToken({ type, position, rotation }),
             onReadToken: token => {
                 if (this.#runs.started) {
                     this.#cabinet.state.score += 20;
@@ -337,9 +292,7 @@ export default class {
             Cards.initialize({ scene }),
             Coins.initialize({
                 scene,
-                onSpawnedCoin: instance => {
-                    Coins.enableCcd(instance, true);
-                }
+                onSpawnedCoin: instance => Coins.enableCcd(instance, true)
             }),
             Tokens.initialize({ scene }),
             Buttons.initialize({ scene }),
@@ -532,19 +485,53 @@ export default class {
         this.#runs.load(cabinet.runs);
     }
 
-    #getObject(userData) {
+    getObject(userData) {
         if (userData.objectType === Coins.TYPE) {
-            return Coins.getCoin(userData);
+            return this.getCoin(userData);
         } else if (userData.objectType === Tokens.TYPE) {
-            return Tokens.getToken(userData);
+            return this.getToken(userData);
         } else if (userData.objectType === Cards.TYPE) {
-            return Cards.getCard(userData);
+            return this.getCard(userData);
         } else if (userData.objectType === Ingots.TYPE) {
-            return Ingots.getIngot(userData);
+            return this.getIngot(userData);
         }
     }
 
-    #canActivate(caller) {
+    getCoin({ index }) {
+        return Coins.getCoin({ index });
+    }
+
+    getToken({ index, type }) {
+        return Tokens.getToken({ index, type });
+    }
+
+    getCard({ index, type }) {
+        return Cards.getCard({ index, type });
+    }
+
+    getIngot({ index }) {
+        return Ingots.getIngot({ index });
+    }
+
+    recycleObject(userData) {
+        const object = this.getObject(userData);
+        if (object) {
+            if (object.objectType === Coins.TYPE) {
+                Coins.recycle(object);
+            }
+            if (object.objectType === Tokens.TYPE) {
+                Tokens.recycle(object);
+            }
+            if (object.objectType === Cards.TYPE) {
+                Cards.recycle(object);
+            }
+            if (object.objectType === Ingots.TYPE) {
+                Ingots.recycle(object);
+            }
+        }
+    }
+
+    canActivate(caller) {
         const info = this.#floorAccessRules.get(caller);
         if (info) {
             const excludedParts = Array.from(info).filter(part => part !== caller);
@@ -560,21 +547,6 @@ export default class {
             Coins.dropCoins({ count: 10 });
         }
         this.lastPhase = this.#pusher.phase;
-    }
-}
-
-function recycleObject(object) {
-    if (object.objectType === Coins.TYPE) {
-        Coins.recycle(object);
-    }
-    if (object.objectType === Tokens.TYPE) {
-        Tokens.recycle(object);
-    }
-    if (object.objectType === Cards.TYPE) {
-        Cards.recycle(object);
-    }
-    if (object.objectType === Ingots.TYPE) {
-        Ingots.recycle(object);
     }
 }
 

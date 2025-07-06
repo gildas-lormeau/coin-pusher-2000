@@ -40,15 +40,15 @@ const SENSOR_STATES = {
 
 export default class {
 
-    constructor({ scene, onBonusWon, onCoinFallen }) {
+    constructor({ scene, onBonusWon, onFallenCoin }) {
         this.#scene = scene;
         this.#onBonusWon = onBonusWon;
-        this.#onCoinFallen = onCoinFallen;
+        this.#onFallenCoin = onFallenCoin;
     }
 
     #scene;
     #onBonusWon;
-    #onCoinFallen;
+    #onFallenCoin;
     #materials;
     #collider;
     #sensor = {
@@ -102,7 +102,7 @@ export default class {
                 onIntersect: userData => onCoinIntersect({
                     userData,
                     sensor: this.#sensor,
-                    onCoinFallen: this.#onCoinFallen
+                    onFallenCoin: this.#onFallenCoin
                 })
             }
         });
@@ -174,7 +174,7 @@ export default class {
             onIntersect: userData => onCoinIntersect({
                 sensor: this.#sensor,
                 userData,
-                onCoinFallen: this.#onCoinFallen
+                onFallenCoin: this.#onFallenCoin
             })
         };
         this.#sensor.state = Symbol.for(sensorGate.sensor.state);
@@ -190,11 +190,11 @@ export default class {
     }
 }
 
-function onCoinIntersect({ sensor, userData, onCoinFallen }) {
+function onCoinIntersect({ sensor, userData, onFallenCoin }) {
     if (userData.objectType === Coins.TYPE) {
         const coin = Coins.getCoin(userData);
         if (coin) {
-            onCoinFallen(coin);
+            onFallenCoin(coin);
             const positionX = coin.position.x;
             if (positionX > MIN_POSITION_X && positionX < MAX_POSITION_X) {
                 const indexLetter = Math.floor((positionX + MAX_POSITION_X) / SLOT_WIDTH);

@@ -48,10 +48,10 @@ const COIN_ROLLER_STATES = {
 export default class {
 
     #scene;
+    #cabinet;
     #onInitializeCoin;
     #onBonusWon;
-    #onCoinLost;
-    #onGetCoin;
+    #onGameLost;
     #initPosition;
     #sensorColliders = new Map();
     #lightsMaterials = [];
@@ -71,23 +71,24 @@ export default class {
         lightsRefreshes: -1
     };
 
-    constructor({ scene, onInitializeCoin, onRecycleCoin, onBonusWon, onGetCoin }) {
+    constructor({ scene, cabinet, onInitializeCoin, onBonusWon, onGameLost }) {
         this.#scene = scene;
+        this.#cabinet = cabinet;
         this.#onInitializeCoin = onInitializeCoin;
         this.#onBonusWon = (userData, slotName) => {
             const { state, coin } = this.#coinRoller;
             if (coin && userData.objectType === coin.objectType && userData.index === coin.index && state === COIN_ROLLER_STATES.MOVING_COIN) {
                 const value = BONUS_VALUES.indexOf(slotName);
-                onRecycleCoin(coin);
+                cabinet.recycleCoin(coin);
                 this.#coinRoller.coin = null;
                 onBonusWon(value);
             }
         };
-        this.#onCoinLost = () => {
-            onRecycleCoin(this.#coinRoller.coin);
+        this.#onGameLost = () => {
+            cabinet.recycleCoin(this.#coinRoller.coin);
             this.#coinRoller.coin = null;
+            onGameLost();
         };
-        this.#onGetCoin = onGetCoin;
     }
 
     async initialize() {
@@ -103,7 +104,7 @@ export default class {
             parts,
             sensorColliders: this.#sensorColliders,
             onBonusWon: this.#onBonusWon,
-            onCoinLost: this.#onCoinLost
+            onGameLost: this.#onGameLost
         });
         initializeLights({
             scene,
@@ -227,7 +228,7 @@ export default class {
                                 objectType,
                                 onIntersect: userData => {
                                     if (name === TRAP_SENSOR_NAME) {
-                                        this.#onCoinLost();
+                                        this.#onGameLost();
                                     } else {
                                         this.#onBonusWon(userData, objectType);
                                     }
@@ -249,7 +250,7 @@ export default class {
         this.#coinRoller.trapPosition = coinRoller.trapPosition;
         this.#coinRoller.doorsPosition = coinRoller.doorsPosition;
         if (coinRoller.coinIndex) {
-            this.#coinRoller.coin = this.#onGetCoin({ index: coinRoller.coinIndex });
+            this.#coinRoller.coin = this.#cabinet.getCoin({ index: coinRoller.coinIndex });
         }
         this.#coinRoller.lights = coinRoller.lights.map(light => ({
             on: light.on,
@@ -466,7 +467,7 @@ function getPart(parts, name) {
     return partData;
 }
 
-function initializeColliders({ scene, parts, sensorColliders, onBonusWon, onCoinLost }) {
+function initializeColliders({ scene, parts, sensorColliders, onBonusWon, onGameLost }) {
     let indexPart = 0;
     parts.forEach((partData, name) => {
         const { meshes, friction, restitution, sensor, kinematic } = partData;
@@ -499,7 +500,7 @@ function initializeColliders({ scene, parts, sensorColliders, onBonusWon, onCoin
                     objectType: name,
                     onIntersect: userData => {
                         if (name === TRAP_SENSOR_NAME) {
-                            onCoinLost();
+                            onGameLost();
                         } else {
                             onBonusWon(userData, name);
                         }

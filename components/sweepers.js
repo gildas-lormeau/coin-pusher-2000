@@ -71,7 +71,7 @@ const LIGHTS_STATES = {
 export default class {
 
     #scene;
-    #canActivate;
+    #cabinet;
     #leftPivotPosition;
     #rightPivotPosition;
     #leftDoorPivotPosition;
@@ -131,9 +131,9 @@ export default class {
         }
     };
 
-    constructor({ scene, canActivate }) {
+    constructor({ scene, cabinet }) {
         this.#scene = scene;
-        this.#canActivate = canActivate;
+        this.#cabinet = cabinet;
     }
 
     async initialize() {
@@ -181,7 +181,7 @@ export default class {
             this.#sweepers.lights.state = this.#sweepers.lights.nextState;
             this.#sweepers.lights.nextState = null;
         }
-        updateSweepersState({ sweepers: this.#sweepers, canActivate: () => this.#canActivate(this) });
+        updateSweepersState({ sweepers: this.#sweepers, canActivate: () => this.#cabinet.canActivate(this) });
         updateLightsState({ sweepers: this.#sweepers, lights: this.#sweepers.lights });
         const { state } = this.#sweepers;
         if (state !== SWEEPERS_STATES.IDLE) {

@@ -95,8 +95,8 @@ const LIGHTS_STATES = {
 export default class {
 
     #scene;
+    #cabinet;
     #lightBulbsMaterials;
-    #canActivate;
     #onInitializeCoin;
     #dropPosition;
     #pivotPosition;
@@ -128,9 +128,9 @@ export default class {
         }
     };
 
-    constructor({ scene, canActivate, onInitializeCoin }) {
+    constructor({ scene, cabinet, onInitializeCoin }) {
         this.#scene = scene;
-        this.#canActivate = canActivate;
+        this.#cabinet = cabinet;
         this.#onInitializeCoin = onInitializeCoin;
     }
 
@@ -173,7 +173,7 @@ export default class {
         }
         updateStackerState({
             stacker: this.#stacker,
-            canActivate: () => this.#canActivate(this)
+            canActivate: () => this.#cabinet.canActivate(this)
         });
         updateLightsState({ stacker: this.#stacker });
         const { parts, state } = this.#stacker;

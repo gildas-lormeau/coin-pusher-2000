@@ -37,10 +37,9 @@ const TOKEN_SLOT_STATES = {
 export default class {
 
     #scene;
+    #cabinet;
     #initPosition;
     #onRetrieveToken;
-    #onGetToken;
-    #onRecycleToken;
     #onReadToken;
     #token;
     #position = new Vector3();
@@ -60,11 +59,10 @@ export default class {
         }
     };
 
-    constructor({ scene, onRetrieveToken, onGetToken, onRecycleToken, onReadToken }) {
+    constructor({ scene, cabinet, onRetrieveToken, onReadToken }) {
         this.#scene = scene;
+        this.#cabinet = cabinet;
         this.#onRetrieveToken = onRetrieveToken;
-        this.#onGetToken = onGetToken;
-        this.#onRecycleToken = onRecycleToken;
         this.#onReadToken = onReadToken;
     }
 
@@ -106,7 +104,7 @@ export default class {
             }
             if (state === TOKEN_SLOT_STATES.PREPARING_IDLE) {
                 this.#token.body.collider(0).setEnabled(true);
-                this.#onRecycleToken(this.#token);
+                this.#cabinet.recycleToken(this.#token);
                 this.#token = null;
             }
             if (state === TOKEN_SLOT_STATES.READING_TOKEN) {
@@ -165,7 +163,7 @@ export default class {
         this.#tokenSlot.light.frameLastRefresh = tokenSlot.light.frameLastRefresh || -1;
         this.#tokenSlot.pendingTokenTypes = tokenSlot.pendingTokenTypes || [];
         if (tokenSlot.tokenIndex != null) {
-            this.#token = this.#onGetToken({ index: tokenSlot.tokenIndex, type: this.#tokenSlot.tokenType });
+            this.#token = this.#cabinet.getToken({ index: tokenSlot.tokenIndex, type: this.#tokenSlot.tokenType });
         }
     }
 }

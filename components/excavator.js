@@ -49,10 +49,8 @@ const EXCAVATOR_STATES = {
 export default class {
 
     #scene;
-    #canActivate;
+    #cabinet;
     #onPick;
-    #onRecycleObject;
-    #onGetObject;
     #dropPosition;
     #beaconLight;
     #beaconLightPosition;
@@ -63,12 +61,10 @@ export default class {
         beaconLightAngle: 0
     };
 
-    constructor({ scene, onPick, canActivate, onGetObject, onRecycleObject }) {
+    constructor({ scene, cabinet, onPick }) {
         this.#scene = scene;
-        this.#canActivate = canActivate;
+        this.#cabinet = cabinet;
         this.#onPick = onPick;
-        this.#onGetObject = onGetObject;
-        this.#onRecycleObject = onRecycleObject;
     }
 
     async initialize() {
@@ -83,15 +79,10 @@ export default class {
         this.#beaconLightPosition = beaconLightPosition;
         const { trapSensor } = initializeColliders({
             scene,
+            cabinet: this.#cabinet,
             parts,
             joints,
-            trapSensor: this.#trapSensor,
-            onRecycleObject: userData => {
-                const object = this.#onGetObject(userData);
-                if (object) {
-                    this.#onRecycleObject(userData);
-                }
-            }
+            trapSensor: this.#trapSensor
         });
         this.#trapSensor = trapSensor;
         parts.forEach(({ body, meshes }) => {
@@ -131,7 +122,7 @@ export default class {
                 jaw3Joint: this.#jaw3Joint,
                 jaw4Joint: this.#jaw4Joint
             },
-            canActivate: () => this.#canActivate(this)
+            canActivate: () => this.#cabinet.canActivate(this)
         });
         const { state } = this.#excavator;
         if (state !== EXCAVATOR_STATES.IDLE) {
@@ -218,7 +209,7 @@ export default class {
                             const collider = this.#scene.worldColliders.get(colliderHandle);
                             collider.userData = {
                                 objectType,
-                                onIntersect: this.#onRecycleObject
+                                onIntersect: userData => this.#cabinet.recycleObject(userData)
                             };
                             this.#trapSensor = collider;
                         }
@@ -526,7 +517,7 @@ function getPart(parts, name) {
     return partData;
 }
 
-function initializeColliders({ scene, parts, joints, onRecycleObject }) {
+function initializeColliders({ scene, cabinet, parts, joints, onRecycleObject }) {
     let trapSensor;
     let indexPart = 0;
     parts.forEach((partData, name) => {
@@ -544,7 +535,7 @@ function initializeColliders({ scene, parts, joints, onRecycleObject }) {
                         height: SENSOR_HEIGHT,
                         userData: {
                             objectType: name,
-                            onIntersect: onRecycleObject
+                            onIntersect: userData => cabinet.recycleObject(userData)
                         },
                         sensor
                     }, body);

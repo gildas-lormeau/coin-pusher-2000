@@ -32,9 +32,9 @@ const LIGHTS_STATES = {
 
 
 export default class {
-    constructor({ scene, depositBonus }) {
+    constructor({ scene, onDeliverBonus }) {
         this.#scene = scene;
-        this.#depositBonus = depositBonus;
+        this.#onDeliverBonus = onDeliverBonus;
     }
 
     #scene;
@@ -42,7 +42,7 @@ export default class {
     #door;
     #platform;
     #deliveryPosition;
-    #depositBonus;
+    #onDeliverBonus;
     #lightBulbsMaterials;
     #platformPosition = new Vector3();
     #doorPosition = new Vector3();
@@ -92,7 +92,7 @@ export default class {
         updateLightsState({ pusher: this.#pusher });
         if (this.#pusher.state === PUSHER_STATES.DELIVERING_BONUS) {
             const reward = this.#pusher.rewards.shift();
-            this.#depositBonus({
+            this.#onDeliverBonus({
                 reward,
                 position: this.#deliveryPosition
             });

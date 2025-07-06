@@ -28,10 +28,10 @@ const TOWER_STATES = {
 export default class {
 
     #scene;
+    #cabinet;
     #initPosition;
     #offsetX;
     #oscillationDirection;
-    #canActivate;
     #onShootCoin;
     #turret;
     #turretPosition = new Vector3();
@@ -49,9 +49,9 @@ export default class {
         lightOn: false
     };
 
-    constructor({ scene, canActivate, onShootCoin, offsetX = 0, oscillationDirection = -1 }) {
+    constructor({ scene, cabinet, onShootCoin, offsetX = 0, oscillationDirection = -1 }) {
         this.#scene = scene;
-        this.#canActivate = canActivate;
+        this.#cabinet = cabinet;
         this.#onShootCoin = onShootCoin;
         this.#offsetX = offsetX;
         this.#oscillationDirection = oscillationDirection;
@@ -76,7 +76,7 @@ export default class {
         }
         updateTowerState({
             tower: this.#tower,
-            canActivate: () => this.#canActivate(this)
+            canActivate: () => this.#cabinet.canActivate(this)
         });
         const { state, phase, position } = this.#tower;
         if (state !== TOWER_STATES.IDLE) {

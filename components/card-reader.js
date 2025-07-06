@@ -32,10 +32,9 @@ const CARD_READER_STATES = {
 export default class {
 
     #scene;
+    #cabinet;
     #initPosition;
     #onRetrieveCard;
-    #onGetCard;
-    #onRecycleCard;
     #onReadCard;
     #card;
     #position = new Vector3();
@@ -55,11 +54,10 @@ export default class {
         }
     };
 
-    constructor({ scene, onRetrieveCard, onGetCard, onRecycleCard, onReadCard }) {
+    constructor({ scene, cabinet, onRetrieveCard, onReadCard }) {
         this.#scene = scene;
+        this.#cabinet = cabinet;
         this.#onRetrieveCard = onRetrieveCard;
-        this.#onGetCard = onGetCard;
-        this.#onRecycleCard = onRecycleCard;
         this.#onReadCard = onReadCard;
     }
 
@@ -97,7 +95,7 @@ export default class {
             }
             if (state === CARD_READER_STATES.PREPARING_IDLE) {
                 this.#card.body.collider(0).setEnabled(true);
-                this.#onRecycleCard(this.#card);
+                this.#cabinet.recycleObject(this.#card);
                 this.#card = null;
             }
             if (state === CARD_READER_STATES.READING_CARD) {
@@ -158,7 +156,7 @@ export default class {
         this.#cardReader.lights.frameLastRefresh = cardReader.lights.frameLastRefresh;
         this.#cardReader.pendingCardTypes = [...cardReader.pendingCardTypes];
         if (cardReader.cardIndex != null) {
-            this.#card = this.#onGetCard({ index: cardReader.cardIndex, type: this.#cardReader.cardType });
+            this.#card = this.#cabinet.getCard({ index: cardReader.cardIndex, type: this.#cardReader.cardType });
         }
     }
 }
