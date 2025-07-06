@@ -27,7 +27,7 @@ const BEACON_LIGHT_INTENSITY_OFF = 0;
 const BEACON_LIGHT_BULB_INTENSITY_ON = 10;
 const BEACON_LIGHT_OPACITY_OFF = 0.3;
 const BEACON_LIGHT_OPACITY_ON = 1;
-const BEACON_LIGHT_BULB_SPEED = 0.06;
+const BEACON_LIGHT_ROTATION_SPEED = 0.1;
 
 const EXCAVATOR_STATES = {
     IDLE: Symbol.for("excavator-idle"),
@@ -410,7 +410,7 @@ function updateExcavatorState({ excavator, joints, canActivate }) {
                 if (excavator.pendingPicks > 0) {
                     excavator.pendingPicks--;
                     excavator.nextState = EXCAVATOR_STATES.ACTIVATING;
-                } else if (excavator.beaconLightAngle > 0 && excavator.beaconLightAngle < BEACON_LIGHT_BULB_SPEED) {
+                } else if (excavator.beaconLightAngle > 0 && excavator.beaconLightAngle < BEACON_LIGHT_ROTATION_SPEED) {
                     excavator.beaconLightAngle = 0;
                     jaw1Joint.joint.configureMotor(0, 2.5, MOTOR_STIFFNESS, MOTOR_DAMPING);
                     jaw2Joint.joint.configureMotor(0, -2.5, MOTOR_STIFFNESS, MOTOR_DAMPING);
@@ -434,7 +434,7 @@ function updateExcavatorState({ excavator, joints, canActivate }) {
         default:
     }
     if (excavator.state !== EXCAVATOR_STATES.IDLE && excavator.state !== EXCAVATOR_STATES.PREPARING_IDLE) {
-        excavator.beaconLightAngle = (excavator.beaconLightAngle + BEACON_LIGHT_BULB_SPEED) % (2 * Math.PI);
+        excavator.beaconLightAngle = (excavator.beaconLightAngle + BEACON_LIGHT_ROTATION_SPEED) % (2 * Math.PI);
     }
 }
 
