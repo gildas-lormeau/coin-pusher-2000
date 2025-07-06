@@ -51,15 +51,15 @@ export default class {
         "gutter": (userData) => {
             this.recycleObject(userData);
             if (this.#runs.started) {
-                if (object.objectType === Coins.TYPE) {
+                if (userData.objectType === Coins.TYPE) {
                     this.#cabinet.state.score++;
                     this.#cabinet.state.points++;
                     this.#cabinet.state.coins++;
                 }
-                if (object.objectType === Tokens.TYPE) {
+                if (userData.objectType === Tokens.TYPE) {
                     this.#tokenSlot.readToken(object);
                 }
-                if (object.objectType === Cards.TYPE) {
+                if (userData.objectType === Cards.TYPE) {
                     this.#cardReader.readCard(object);
                 }
             }
