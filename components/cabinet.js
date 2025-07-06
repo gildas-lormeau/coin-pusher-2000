@@ -57,10 +57,10 @@ export default class {
                     this.#cabinet.state.coins++;
                 }
                 if (userData.objectType === Tokens.TYPE) {
-                    this.#tokenSlot.readToken(object);
+                    this.#tokenSlot.readToken(this.getToken(userData));
                 }
                 if (userData.objectType === Cards.TYPE) {
-                    this.#cardReader.readCard(object);
+                    this.#cardReader.readCard(this.getCard(userData));
                 }
             }
         }
