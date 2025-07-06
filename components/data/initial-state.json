@@ -1,5 +1,5 @@
 {
-    "time": 242116.6666666173,
+    "time": 0,
     "cabinet": {
         "cards": [
             [
@@ -21887,7 +21887,13 @@
                         "flashCount": 0
                     },
                     {
-                        "state": "sensor-gate-locked-on",
+                        "state": "sensor-gate-off",
+                        "nextState": null,
+                        "frameFlashStart": -1,
+                        "flashCount": 0
+                    },
+                    {
+                        "state": "sensor-gate-off",
                         "nextState": null,
                         "frameFlashStart": -1,
                         "flashCount": 0
@@ -21905,13 +21911,7 @@
                         "flashCount": 0
                     },
                     {
-                        "state": "sensor-gate-locked-on",
-                        "nextState": null,
-                        "frameFlashStart": -1,
-                        "flashCount": 0
-                    },
-                    {
-                        "state": "sensor-gate-locked-on",
+                        "state": "sensor-gate-off",
                         "nextState": null,
                         "frameFlashStart": -1,
                         "flashCount": 0
