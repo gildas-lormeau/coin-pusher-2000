@@ -1,6 +1,6 @@
 import { Vector3, LineSegments, Mesh, LineBasicMaterial, BoxGeometry, CylinderGeometry, EdgesGeometry, BufferGeometry, SphereGeometry, Float32BufferAttribute, Uint32BufferAttribute, MeshBasicMaterial, Line } from "three";
 import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeometry.js';
-import { VertexNormalsHelper } from "three/examples/jsm/helpers/VertexNormalsHelper";
+import { VertexNormalsHelper } from "three/examples/jsm/helpers/VertexNormalsHelper.js";
 
 export default class {
     constructor({ scene, joints = [] }) {

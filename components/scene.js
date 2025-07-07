@@ -1,6 +1,6 @@
 import { Quaternion, Vector3, Euler, Scene, Color, WebGLRenderer, PMREMGenerator, DirectionalLight, AmbientLight, SRGBColorSpace, ACESFilmicToneMapping, VSMShadowMap } from "three";
-import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
-import { EXRLoader } from "three/examples/jsm/loaders/EXRLoader";
+import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
+import { EXRLoader } from "three/examples/jsm/loaders/EXRLoader.js";
 import { World, RigidBodyDesc, ColliderDesc, TriMeshFlags, JointData } from "@dimforge/rapier3d-simd";
 
 const BACKGROUND_COLOR = 0x222222;

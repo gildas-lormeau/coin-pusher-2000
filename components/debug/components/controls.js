@@ -1,5 +1,5 @@
 import { Vector3 } from "three";
-import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
+import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 
 const TARGET_POSITION = new Vector3(0, 0.45, 0);
 
