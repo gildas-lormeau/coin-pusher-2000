@@ -85,7 +85,7 @@ export default class {
             }
         };
         this.#onGameLost = () => {
-            cabinet.recycleObject(coin);
+            cabinet.recycleObject(this.#coinRoller.coin);
             this.#coinRoller.coin = null;
             onGameLost();
         };
