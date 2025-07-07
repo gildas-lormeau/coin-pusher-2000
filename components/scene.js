@@ -229,11 +229,6 @@ export default class {
         return collider;
     }
 
-    connectBodiesWithSphericalJoint({ body1, body2, anchor1, anchor2 }) {
-        const jointData = JointData.spherical(anchor1, anchor2);
-        return this.#world.createImpulseJoint(jointData, body1, body2);
-    }
-
     connectBodiesWithRevoluteJoint({ body1, body2, anchor1, anchor2, axis }) {
         const jointData = JointData.revolute(anchor1, anchor2, axis);
         return this.#world.createImpulseJoint(jointData, body1, body2);
@@ -340,14 +335,6 @@ export default class {
 
     get css3DScene() {
         return this.#css3DScene;
-    }
-
-    removeWorldBody(body) {
-        this.#world.removeRigidBody(body);
-    }
-
-    removeWorldCollider(collider) {
-        this.#world.removeCollider(collider);
     }
 }
 
