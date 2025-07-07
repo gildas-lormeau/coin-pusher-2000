@@ -79,13 +79,13 @@ export default class {
             const { state, coin } = this.#coinRoller;
             if (coin && userData.objectType === coin.objectType && userData.index === coin.index && state === COIN_ROLLER_STATES.MOVING_COIN) {
                 const value = BONUS_VALUES.indexOf(slotName);
-                cabinet.recycleCoin(coin);
+                cabinet.recycleObject(coin);
                 this.#coinRoller.coin = null;
                 onBonusWon(value);
             }
         };
         this.#onGameLost = () => {
-            cabinet.recycleCoin(this.#coinRoller.coin);
+            cabinet.recycleObject(coin);
             this.#coinRoller.coin = null;
             onGameLost();
         };
