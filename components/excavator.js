@@ -172,6 +172,10 @@ export default class {
         }
     }
 
+    sensorColliders() {
+        return [this.#trapSensor];
+    }
+
     save() {
         const joints = {};
         const parts = {};

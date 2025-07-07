@@ -149,6 +149,10 @@ export default class {
         });
     }
 
+    sensorColliders() {
+        return [this.#collider];
+    }
+
     save() {
         return {
             colliderHandle: this.#collider.handle,

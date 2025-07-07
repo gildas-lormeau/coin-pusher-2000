@@ -1,19 +1,22 @@
 export default class {
-    constructor({ scene }) {
+    constructor({ scene, cabinet }) {
         this.#scene = scene;
+        this.#cabinet = cabinet;
         this.#previousCollisions = new WeakMap();
     }
 
     #scene;
+    #cabinet;
+    #sensorColliders;
     #previousCollisions;
 
     initialize() {
-        // do nothing
+        this.#sensorColliders = this.#cabinet.sensorColliders();
     }
 
     update() {
         const currentCollisions = new WeakMap();
-        this.#scene.forEachCollision((userData, otherUserData) => {
+        this.#scene.forEachSensorCollision(this.#sensorColliders, (userData, otherUserData) => {
             if (userData.onIntersect !== undefined || otherUserData.onIntersect !== undefined) {
                 addCollision(currentCollisions, userData, otherUserData);
                 addCollision(currentCollisions, otherUserData, userData);

@@ -175,6 +175,10 @@ export default class {
         }
     }
 
+    sensorColliders() {
+        return Array.from(this.#sensorColliders.values());
+    }
+
     shootCoin() {
         if (this.#coinRoller.state === COIN_ROLLER_STATES.IDLE) {
             this.#coinRoller.state = COIN_ROLLER_STATES.ACTIVATING;

@@ -282,12 +282,16 @@ export default class {
         return this.#scene.children;
     }
 
-    forEachCollision(callback) {
-        this.#world.forEachCollider(collider => this.#world.intersectionPairsWith(collider, otherCollider => {
-            if (collider.userData.objectType !== undefined && otherCollider.userData.objectType !== undefined) {
-                callback(collider.userData, otherCollider.userData);
+    forEachSensorCollision(sensors, callback) {
+        this.#world.forEachCollider(collider => {
+            if (sensors.includes(collider)) {
+                this.#world.intersectionPairsWith(collider, otherCollider => {
+                    if (collider.userData.objectType !== undefined && otherCollider.userData.objectType !== undefined) {
+                        callback(collider.userData, otherCollider.userData);
+                    }
+                });
             }
-        }));
+        });
     }
 
     forEachCollider(callback) {

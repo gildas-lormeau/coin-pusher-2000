@@ -129,7 +129,7 @@ export default class {
             cabinet: this,
             state: this.#cabinet.state
         });
-        this.#collisionsDetector = new CollisionsDetector({ scene });
+        this.#collisionsDetector = new CollisionsDetector({ scene, cabinet: this });
         this.#sensorGate = new SensorGate({
             scene,
             onFallenCoin: instance => Coins.enableCcd(instance, false),
@@ -301,7 +301,6 @@ export default class {
         ]);
         await Promise.all([
             wall.initialize(),
-            this.#collisionsDetector.initialize(),
             this.#controlPanel.initialize(),
             this.#pusher.initialize(),
             this.#scoreboard.initialize(),
@@ -320,6 +319,7 @@ export default class {
             this.#tokenSlot.initialize(),
             this.#runs.initialize()
         ]);
+        await this.#collisionsDetector.initialize();
     }
 
     update(time) {
@@ -382,6 +382,15 @@ export default class {
         this.#cardReader.refresh();
         this.#tokenSlot.refresh();
         this.#runs.refresh();
+    }
+
+    sensorColliders() {
+        return [
+            ...this.#sensorColliders.values(),
+            ...this.#excavator.sensorColliders(),
+            ...this.#sensorGate.sensorColliders(),
+            ...this.#coinRoller.sensorColliders(),
+        ];
     }
 
     resize(width, height) {
