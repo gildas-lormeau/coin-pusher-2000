@@ -146,8 +146,6 @@ export default class {
             if (state === COIN_ROLLER_STATES.MOVING_LAUNCHER) {
                 coin.body.setEnabledTranslations(true, true, true);
                 coin.body.setEnabledRotations(false, false, false);
-                coin.body.sleep();
-                coin.body.setNextKinematicTranslation(this.#launcherPosition);
             }
             if (state === COIN_ROLLER_STATES.DELIVERING_COIN) {
                 coin.body.setEnabledRotations(true, true, true);
