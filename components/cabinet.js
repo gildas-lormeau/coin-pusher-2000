@@ -492,6 +492,7 @@ export default class {
         this.#cardReader.load(cabinet.cardReader);
         this.#tokenSlot.load(cabinet.tokenSlot);
         this.#runs.load(cabinet.runs);
+        this.#collisionsDetector.initialize();
     }
 
     getObject(userData) {
