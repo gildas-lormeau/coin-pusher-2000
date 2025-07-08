@@ -102,6 +102,7 @@ export default class {
         initializeColliders({
             scene,
             parts,
+            coinRoller: this.#coinRoller,
             sensorColliders: this.#sensorColliders,
             onBonusWon: this.#onBonusWon,
             onGameLost: this.#onGameLost
@@ -471,7 +472,7 @@ function getPart(parts, name) {
     return partData;
 }
 
-function initializeColliders({ scene, parts, sensorColliders, onBonusWon, onGameLost }) {
+function initializeColliders({ scene, parts, coinRoller, sensorColliders, onBonusWon, onGameLost }) {
     let indexPart = 0;
     parts.forEach((partData, name) => {
         const { meshes, friction, restitution, sensor, kinematic } = partData;
@@ -503,11 +504,14 @@ function initializeColliders({ scene, parts, sensorColliders, onBonusWon, onGame
                 userData: {
                     objectType: name,
                     onIntersect: userData => {
-                        if (name === TRAP_SENSOR_NAME) {
-                            onGameLost();
-                        } else {
-                            onBonusWon(userData, name);
+                        if (coinRoller.coin && userData.objectType === coinRoller.coin.objectType && userData.index === coinRoller.coin.index) {
+                            if (name === TRAP_SENSOR_NAME) {
+                                onGameLost();
+                            } else {
+                                onBonusWon(userData, name);
+                            }
                         }
+
                     }
                 }
             }, body);
