@@ -104,7 +104,7 @@ export default class {
             }
             if (state === TOKEN_SLOT_STATES.PREPARING_IDLE) {
                 this.#token.body.collider(0).setEnabled(true);
-                this.#cabinet.recycleToken(this.#token);
+                this.#cabinet.recycleObject(this.#token);
                 this.#token = null;
             }
             if (state === TOKEN_SLOT_STATES.READING_TOKEN) {
