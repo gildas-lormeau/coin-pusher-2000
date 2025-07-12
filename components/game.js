@@ -9,7 +9,6 @@ import initialState from "./data/initial-state.json" with { type: "json" };
 const STEP_DELAY = Scene.TIMESTEP * 1000;
 
 export default class {
-
     static DEBUG_MAX_SPEED = false;
     static DEBUG_EMPTY_POOL = false;
     static DEBUG_COLLIDERS = false;
@@ -29,15 +28,16 @@ export default class {
 
     static pixelRatio = 2;
 
-    static async initialize() {
+    static async initialize({ rapier }) {
         this.#containerElement = document.body;
         const camera = new Camera(this.width / this.height);
         this.#scene = new Scene({
             containerElement: this.#containerElement,
-            camera
+            camera,
+            rapier,
         });
         await this.#scene.initialize(this.width, this.height, this.pixelRatio);
-        this.#cabinet = new Cabinet(({ scene: this.#scene }));
+        this.#cabinet = new Cabinet({ scene: this.#scene });
         this.#cabinet.DEBUG_AUTOPLAY = this.DEBUG_AUTOPLAY;
         this.#cabinet.DEBUG_HIDE_CABINET = this.DEBUG_HIDE_CABINET;
         await this.#cabinet.initialize();
@@ -47,7 +47,7 @@ export default class {
         this.#pointer = new Pointer({
             scene: this.#scene,
             camera,
-            interactiveObjects: this.#cabinet.interactiveObjects
+            interactiveObjects: this.#cabinet.interactiveObjects,
         });
         this.#pointer.initialize(this.width, this.height);
         Debug.DEBUG_COLLIDERS = this.DEBUG_COLLIDERS;
@@ -58,9 +58,11 @@ export default class {
             scene: this.#scene,
             camera,
             containerElement: this.#containerElement,
-            joints: this.#cabinet.joints
+            joints: this.#cabinet.joints,
         });
-        const resizeObserver = new ResizeObserver(() => this.#onContainerResize());
+        const resizeObserver = new ResizeObserver(() =>
+            this.#onContainerResize()
+        );
         resizeObserver.observe(this.#containerElement);
         onkeydown = async (event) => {
             if ((event.key === "s" || event.key === "S") && event.ctrlKey) {
@@ -102,7 +104,7 @@ export default class {
     static async save() {
         return {
             time: this.#time,
-            cabinet: await this.#cabinet.save()
+            cabinet: await this.#cabinet.save(),
         };
     }
 

@@ -1,7 +1,6 @@
 import { Quaternion, Vector3, Euler, Scene, Color, WebGLRenderer, PMREMGenerator, DirectionalLight, AmbientLight, SRGBColorSpace, ACESFilmicToneMapping, VSMShadowMap } from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { EXRLoader } from "three/examples/jsm/loaders/EXRLoader.js";
-import { World, RigidBodyDesc, ColliderDesc, TriMeshFlags, JointData } from "@dimforge/rapier3d-simd";
 
 const BACKGROUND_COLOR = 0x222222;
 const NUM_SOLVER_ITERATIONS = 2;
@@ -30,13 +29,17 @@ const DIRECTIONAL_LIGHT_SHADOW_TOP = 5;
 const DIRECTIONAL_LIGHT_SHADOW_BOTTOM = -5;
 const SHADOW_MAP_SIZE = 1024;
 
+let World, RigidBodyDesc, ColliderDesc, TriMeshFlags, JointData;
+
 export default class {
 
     static TIMESTEP = TIMESTEP;
 
-    constructor({ containerElement, camera }) {
+    constructor({ containerElement, camera, rapier }) {
         this.#containerElement = containerElement;
         this.#camera = camera;
+        ({ World, RigidBodyDesc, ColliderDesc, TriMeshFlags, JointData } = rapier);
+        this.#world = new World(GRAVITY_FORCE);
         this.#world.integrationParameters.numSolverIterations = NUM_SOLVER_ITERATIONS;
         this.#world.integrationParameters.numAdditionalFrictionIterations = NUM_ADDITIONAL_FRICTION_ITERATIONS;
         this.#world.integrationParameters.numInternalPgsIterations = NUM_INTERNAL_PGS_ITERATIONS;
@@ -64,7 +67,7 @@ export default class {
         antialias: ANTIALIAS,
         powerPreference: POWER_PREFERENCE
     });
-    #world = new World(GRAVITY_FORCE);
+    #world;
     #camera = null;
 
     async initialize(width, height, pixelRatio) {
