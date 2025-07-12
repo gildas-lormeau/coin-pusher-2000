@@ -745,8 +745,8 @@ function initializeColliders({ scene, parts, offsetX }) {
                 restitution
             }, body);
             collider.setCollisionGroups((1 << (indexPart % 16)) << 16 | (1 << (indexPart % 16)));
-            indexPart++;
         });
+        indexPart++;
     });
 }
 
