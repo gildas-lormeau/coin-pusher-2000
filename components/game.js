@@ -60,10 +60,8 @@ export default class {
             containerElement: this.#containerElement,
             joints: this.#cabinet.joints,
         });
-        const resizeObserver = new ResizeObserver(() =>
-            this.#onContainerResize()
-        );
-        resizeObserver.observe(this.#containerElement);
+        onresize = () => this.#onContainerResize();
+        this.#onContainerResize();
         onkeydown = async (event) => {
             if ((event.key === "s" || event.key === "S") && event.ctrlKey) {
                 event.preventDefault();
@@ -117,16 +115,17 @@ export default class {
     }
 
     static #onContainerResize() {
+        debugger;
         this.#scene.resize(this.width, this.height, this.pixelRatio);
         this.#cabinet.resize(this.width, this.height);
         this.#pointer.resize(this.width, this.height);
     }
 
     static get width() {
-        return this.#containerElement.clientWidth;
+        return innerWidth;
     }
 
     static get height() {
-        return this.#containerElement.clientHeight;
+        return innerHeight;
     }
 }
