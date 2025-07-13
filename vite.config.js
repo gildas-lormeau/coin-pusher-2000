@@ -1,10 +1,13 @@
 import { defineConfig } from "vite";
-import wasm from "vite-plugin-wasm";
-
+import importMap from "@titovdima/vite-plugin-import-map";
 
 export default defineConfig(() => {
     return {
-        plugins: [wasm()],
+        plugins: [importMap({
+            imports: {
+                "@dimforge/rapier3d-simd": "./rapier3d-f64/rapier3d-bundle.js"
+            }
+        })],
         base: "./",
         build: {
             outDir: "build",

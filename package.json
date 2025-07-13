@@ -12,12 +12,10 @@
     "deploy": "gh-pages -d build"
   },
   "dependencies": {
-    "@dimforge/rapier3d-simd": "^0.17.3",
     "three": "^0.178.0"
   },
   "devDependencies": {
-    "gh-pages": "^6.3.0",
-    "vite": "^6.3.5",
-    "vite-plugin-wasm": "^3.4.1"
+    "@titovdima/vite-plugin-import-map": "^1.3.4",
+    "vite": "^6.3.5"
   }
 }

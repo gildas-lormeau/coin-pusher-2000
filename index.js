@@ -1,4 +1,4 @@
-import * as rapier from "./rapier3d-f64/rapier3d-bundle.js";
+import * as rapier from "@dimforge/rapier3d-simd";
 import Game from "./components/game.js";
 
 Game.DEBUG_EMPTY_POOL = 0
