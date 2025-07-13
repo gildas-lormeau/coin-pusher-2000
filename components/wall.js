@@ -1,7 +1,7 @@
 import { BoxGeometry, MeshStandardMaterial, Mesh, CylinderGeometry } from "three";
 
 const POSITION_WALL = [0, 0.535, -0.3725];
-const POSITION_GLASS = [0, 0.6425, -0.30];
+const POSITION_GLASS = [0, 0.6425, -0.305];
 const WIDTH_GLASS = 0.6;
 const WIDTH_WALL = 0.7;
 const HEIGHT_WALL = 0.9;
@@ -12,14 +12,14 @@ const FRICTION = 0;
 const RESTITUTION = 0;
 const OPACITY = 0.1;
 const OBSTACLE_POSITION_Z = -0.31;
-const OBSTACLE_START_Y = 0.4525;
+const OBSTACLE_START_Y = 0.45;
 const OBSTACLE_RADIUS = 0.005;
 const OBSTACLE_HEIGHT = 0.05;
 const OBSTACLE_SPACING = 0.075;
-const OBSTACLE_ROWS = 6;
+const OBSTACLE_ROWS = 5;
 const OBSTACLE_COLS = 7;
 const OBSTACLE_FRICTION = 0;
-const OBSTACLE_RESTITUTION = 0;
+const OBSTACLE_RESTITUTION = .75;
 const BOTTOM_OBSTACLE_FRICTION = 0.75;
 const BOTTOM_OBSTACLE_RESTITUTION = 0;
 const OBSTACLE_COLOR = "#555";
@@ -108,15 +108,17 @@ function initiliazeWallObstacles({ scene, wallBody }) {
         const obstacleMesh = new Mesh(obstacleGeometry, obstacleMaterial);
         obstacleMesh.position.set(x, y, OBSTACLE_POSITION_Z);
         obstacleMesh.rotation.set(Math.PI / 2, Math.PI / 4, 0);
-        scene.addObject(obstacleMesh);
-        scene.createCuboidCollider({
-            width: obstacleRadius / 8,
-            height: OBSTACLE_HEIGHT,
-            depth: obstacleRadius / 8,
-            friction,
-            restitution,
-            position: [x, y, OBSTACLE_POSITION_Z],
-            rotation: [Math.PI / 2, Math.PI / 4, 0],
-        }, wallBody);
+        if (row !== 4 || (col != 0 && col != 6)) {
+            scene.addObject(obstacleMesh);
+            scene.createCuboidCollider({
+                width: obstacleRadius / 8,
+                height: OBSTACLE_HEIGHT,
+                depth: obstacleRadius / 8,
+                friction,
+                restitution,
+                position: [x, y, OBSTACLE_POSITION_Z],
+                rotation: [Math.PI / 2, Math.PI / 4, 0],
+            }, wallBody);
+        }
     }
 }

@@ -3,7 +3,7 @@ import { Vector3, Quaternion, Matrix4, Euler, InstancedMesh } from "three";
 const TYPE = "coin";
 const MAX_INSTANCES = 1280;
 const RADIUS = 0.03;
-const DEPTH = 0.007;
+const DEPTH = 0.005;
 const INIIAL_POSITION_DELTA_X = .025;
 const INITIAL_POSITION_MIN_DELTA_X = 0.001;
 const INITIAL_POSITIONS_X = [-0.1125, 0, 0.1125];
