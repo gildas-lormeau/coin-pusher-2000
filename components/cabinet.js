@@ -320,9 +320,6 @@ export default class {
             this.#runs.initialize()
         ]);
         await this.#collisionsDetector.initialize();
-        setInterval(() => {
-            this.#excavator.pick();
-        }, 1000);
         
     }
 
