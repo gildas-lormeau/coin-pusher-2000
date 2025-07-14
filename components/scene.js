@@ -1,6 +1,7 @@
 import { Quaternion, Vector3, Euler, Scene, Color, WebGLRenderer, PMREMGenerator, DirectionalLight, AmbientLight, SRGBColorSpace, ACESFilmicToneMapping, VSMShadowMap } from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { EXRLoader } from "three/examples/jsm/loaders/EXRLoader.js";
+import * as BufferGeometryUtils from "three/addons/utils/BufferGeometryUtils.js";
 
 const BACKGROUND_COLOR = 0x222222;
 const NUM_SOLVER_ITERATIONS = 2;
@@ -342,6 +343,21 @@ export default class {
 
     get css3DScene() {
         return this.#css3DScene;
+    }
+
+    mergeGeometries(geometries) {
+        const geometry = BufferGeometryUtils.mergeGeometries(geometries, false);
+        const vertices = [];
+        const indices = [];
+        const position = geometry.attributes.position;
+        for (let i = 0; i < position.count; i++) {
+            vertices.push(position.getX(i), position.getY(i), position.getZ(i));
+        }
+        const index = geometry.index;
+        for (let i = 0; i < index.count; i++) {
+            indices.push(index.getX(i));
+        }
+        return { vertices, indices, geometry };
     }
 }
 

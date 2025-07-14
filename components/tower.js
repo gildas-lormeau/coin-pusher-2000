@@ -223,24 +223,13 @@ async function initializeModel({ scene, offsetX }) {
             const userData = material.userData;
             if (userData.collider) {
                 const name = userData.name;
-                const index = geometry.index;
-                const position = geometry.attributes.position;
-                const vertices = [];
-                const indices = [];
-                for (let indexVertex = 0; indexVertex < position.count; indexVertex++) {
-                    vertices.push(position.getX(indexVertex), position.getY(indexVertex), position.getZ(indexVertex));
-                }
-                for (let indexVertex = 0; indexVertex < index.count; indexVertex++) {
-                    indices.push(index.getX(indexVertex));
-                }
                 const partData = getPart(parts, name);
                 partData.friction = userData.friction;
                 partData.restitution = userData.restitution;
                 partData.fixed = userData.fixed;
                 partData.meshes.push({
                     data: child,
-                    vertices,
-                    indices
+                    geometry
                 });
             } else {
                 const name = child.userData.name;
@@ -284,23 +273,22 @@ function initializeColliders({ scene, parts }) {
     parts.forEach((partData, name) => {
         const { meshes, friction, restitution, fixed } = partData;
         const body = partData.body = fixed ? scene.createFixedBody() : scene.createKinematicBody();
-        const vertices = [];
-        const indices = [];
-        let offsetIndex = 0;
+        const geometries = [];
         meshes.forEach(meshData => {
-            if (meshData.vertices) {
-                vertices.push(...meshData.vertices);
-                indices.push(...meshData.indices.map(index => index + offsetIndex));
-                offsetIndex += Math.max(...meshData.indices) + 1;
+            if (meshData.geometry) {
+                geometries.push(meshData.geometry);
             }
         });
-        const collider = scene.createTrimeshCollider({
-            vertices,
-            indices,
-            friction,
-            restitution
-        }, body);
-        collider.setCollisionGroups((1 << (indexPart % 16)) << 16 | (1 << (indexPart % 16)));
-        indexPart++;
+        if (geometries.length > 0) {
+            const { vertices, indices } = scene.mergeGeometries(geometries);
+            const collider = scene.createTrimeshCollider({
+                vertices,
+                indices,
+                friction,
+                restitution
+            }, body);
+            collider.setCollisionGroups((1 << (indexPart % 16)) << 16 | (1 << (indexPart % 16)));
+            indexPart++;
+        }
     });
 }

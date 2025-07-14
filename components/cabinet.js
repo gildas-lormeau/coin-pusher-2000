@@ -320,6 +320,10 @@ export default class {
             this.#runs.initialize()
         ]);
         await this.#collisionsDetector.initialize();
+        setInterval(() => {
+            this.#excavator.pick();
+        }, 1000);
+        
     }
 
     update(time) {
@@ -570,24 +574,13 @@ async function initializeModel({ scene, DEBUG_HIDE_CABINET }) {
             const userData = material.userData;
             const name = userData.name;
             if (userData.collider || userData.sensor) {
-                const index = geometry.index;
-                const position = geometry.attributes.position;
-                const vertices = [];
-                const indices = [];
-                for (let indexVertex = 0; indexVertex < position.count; indexVertex++) {
-                    vertices.push(position.getX(indexVertex), position.getY(indexVertex), position.getZ(indexVertex));
-                }
-                for (let indexVertex = 0; indexVertex < index.count; indexVertex++) {
-                    indices.push(index.getX(indexVertex));
-                }
                 const partData = getPart(parts, name);
                 partData.sensor = userData.sensor;
                 partData.friction = userData.friction;
                 partData.restitution = userData.restitution;
                 partData.meshes.push({
                     data: child,
-                    vertices,
-                    indices
+                    geometry
                 });
             } else {
                 const name = child.userData.name;
@@ -611,9 +604,7 @@ function initializeColliders({ scene, parts, sensorListeners }) {
     parts.forEach((partData, name) => {
         const { meshes, sensor, friction, restitution } = partData;
         const body = scene.createFixedBody();
-        const vertices = [];
-        const indices = [];
-        let offsetIndex = 0;
+        const geometries = [];
         meshes.forEach(meshData => {
             if (sensor) {
                 const collider = scene.createCuboidColliderFromBoundingBox({
@@ -626,13 +617,12 @@ function initializeColliders({ scene, parts, sensorListeners }) {
                     sensor
                 }, body);
                 sensorColliders.set(name, collider);
-            } else if (meshData.vertices) {
-                vertices.push(...meshData.vertices);
-                indices.push(...meshData.indices.map(index => index + offsetIndex));
-                offsetIndex += Math.max(...meshData.indices) + 1;
+            } else if (meshData.geometry) {
+                geometries.push(meshData.geometry);
             }
         });
-        if (vertices.length > 0) {
+        if (geometries.length > 0) {
+            const { vertices, indices } = scene.mergeGeometries(geometries);
             const collider = scene.createTrimeshCollider({
                 vertices,
                 indices,

@@ -1,4 +1,5 @@
 import { Quaternion, Vector3, SpotLight } from "three";
+
 const MODEL_PATH = "./assets/excavator.glb";
 const Y_AXIS = new Vector3(0, 1, 0);
 const BEACON_LIGHT_BULB_NAME = "beacon-light-bulb";
@@ -458,16 +459,6 @@ async function initializeModel({ scene }) {
             const userData = material.userData;
             const name = userData.name;
             if (userData.collider || userData.sensor) {
-                const index = geometry.index;
-                const position = geometry.attributes.position;
-                const vertices = [];
-                const indices = [];
-                for (let indexVertex = 0; indexVertex < position.count; indexVertex++) {
-                    vertices.push(position.getX(indexVertex), position.getY(indexVertex), position.getZ(indexVertex));
-                }
-                for (let indexVertex = 0; indexVertex < index.count; indexVertex++) {
-                    indices.push(index.getX(indexVertex));
-                }
                 const partData = getPart(parts, name);
                 partData.sensor = userData.sensor;
                 partData.friction = userData.friction;
@@ -477,8 +468,7 @@ async function initializeModel({ scene }) {
                 partData.contactSkin = userData.contactSkin;
                 partData.meshes.push({
                     data: child,
-                    vertices,
-                    indices
+                    geometry
                 });
             } else {
                 const name = child.userData.name;
@@ -521,16 +511,14 @@ function getPart(parts, name) {
     return partData;
 }
 
-function initializeColliders({ scene, cabinet, parts, joints, onRecycleObject }) {
+function initializeColliders({ scene, cabinet, parts, joints }) {
     let trapSensor;
     let indexPart = 0;
     parts.forEach((partData, name) => {
         const { meshes, sensor, friction, restitution, fixed, kinematic, light, contactSkin } = partData;
         const body = partData.body = fixed ? scene.createFixedBody() : kinematic ? scene.createKinematicBody() : scene.createDynamicBody();
         body.setEnabled(false);
-        const vertices = [];
-        const indices = [];
-        let offsetIndex = 0;
+        const geometries = [];
         meshes.forEach(meshData => {
             if (!light) {
                 if (sensor) {
@@ -543,14 +531,13 @@ function initializeColliders({ scene, cabinet, parts, joints, onRecycleObject })
                         },
                         sensor
                     }, body);
-                } else if (meshData.vertices) {
-                    vertices.push(...meshData.vertices);
-                    indices.push(...meshData.indices.map(index => index + offsetIndex));
-                    offsetIndex += Math.max(...meshData.indices) + 1;
+                } else if (meshData.geometry) {
+                    geometries.push(meshData.geometry);
                 }
             }
         });
-        if (vertices.length > 0) {
+        if (geometries.length > 0) {
+            const { vertices, indices } = scene.mergeGeometries(geometries);
             const collider = scene.createTrimeshCollider({
                 vertices,
                 indices,
