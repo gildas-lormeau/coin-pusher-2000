@@ -38,7 +38,7 @@ export default class {
         const { materials, geometries } = await initializeModel({ scene });
         this.#meshes = initializeInstancedMeshes({ scene, materials, geometries });
         this.#instances = [];
-        const colliderData = initializeCollider(this.#meshes[0].geometry);
+        const colliderData = scene.mergeGeometries(geometries);
         createInstances({
             scene,
             instances: this.#instances,
@@ -149,20 +149,6 @@ async function initializeModel({ scene }) {
         materials: [colorMaterial, backgroundMaterial],
         geometries: [meshes[0].geometry, meshes[1].geometry]
     };
-}
-
-function initializeCollider(colliderGeometry) {
-    const position = colliderGeometry.attributes.position;
-    const vertices = [];
-    const indices = [];
-    const index = colliderGeometry.index;
-    for (let indexVertex = 0; indexVertex < position.count; indexVertex++) {
-        vertices.push(position.getX(indexVertex), position.getY(indexVertex), position.getZ(indexVertex));
-    }
-    for (let indexVertex = 0; indexVertex < index.count; indexVertex++) {
-        indices.push(index.getX(indexVertex));
-    }
-    return { vertices, indices };
 }
 
 function initializeInstancedMeshes({ scene, materials, geometries }) {
