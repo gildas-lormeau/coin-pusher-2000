@@ -230,10 +230,12 @@ export default class {
                             collider.userData = {
                                 objectType,
                                 onIntersect: userData => {
-                                    if (name === TRAP_SENSOR_NAME) {
-                                        this.#onGameLost();
-                                    } else {
-                                        this.#onBonusWon(userData, objectType);
+                                    if (coinRoller.coin && userData.objectType === coinRoller.coin.objectType && userData.index === coinRoller.coin.index) {
+                                        if (name === TRAP_SENSOR_NAME) {
+                                            this.#onGameLost();
+                                        } else {
+                                            this.#onBonusWon(userData, objectType);
+                                        }
                                     }
                                 }
                             };
@@ -495,7 +497,6 @@ function initializeColliders({ scene, parts, coinRoller, sensorColliders, onBonu
                                 onBonusWon(userData, name);
                             }
                         }
-
                     }
                 }
             }, body);
