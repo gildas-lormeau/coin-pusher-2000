@@ -1,0 +1,1 @@
+see https://github.com/gildas-lormeau/rapier3d-wasm-f64/tree/main/builds/rapier3d-wasm-simd-f64
