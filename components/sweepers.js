@@ -581,17 +581,14 @@ function initializeColliders({ scene, parts }) {
             const boundingBox = meshes[0].data.geometry.boundingBox;
             const position = new Vector3().addVectors(boundingBox.min, boundingBox.max).multiplyScalar(0.5).toArray();
             const colliderSize = new Vector3(boundingBox.max.x - boundingBox.min.x, boundingBox.max.y - boundingBox.min.y, boundingBox.max.z - boundingBox.min.z);
-            let collider;
-            if (cuboid) {
-                collider = scene.createCuboidCollider({
-                    position,
-                    width: colliderSize.x,
-                    height: colliderSize.y,
-                    depth: colliderSize.z,
-                    friction,
-                    restitution,
-                }, body);
-            }
+            const collider = scene.createCuboidCollider({
+                position,
+                width: colliderSize.x,
+                height: colliderSize.y,
+                depth: colliderSize.z,
+                friction,
+                restitution,
+            }, body);
             collider.setCollisionGroups((1 << (indexPart % 16)) << 16 | (1 << (indexPart % 16)));
             indexPart++;
         } else {
