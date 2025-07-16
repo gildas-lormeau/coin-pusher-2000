@@ -1,5 +1,5 @@
 {
-    "time": 215849.99999996592,
+    "time": 0,
     "cabinet": {
         "cards": [
             [
@@ -18041,7 +18041,7 @@
                 "flashCount": 0,
                 "letters": [
                     {
-                        "state": "sensor-gate-locked-on",
+                        "state": "sensor-gate-off",
                         "nextState": null,
                         "frameFlashStart": -1,
                         "flashCount": 0
