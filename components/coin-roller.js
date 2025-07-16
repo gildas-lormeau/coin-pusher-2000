@@ -230,7 +230,7 @@ export default class {
                             collider.userData = {
                                 objectType,
                                 onIntersect: userData => {
-                                    if (coinRoller.coin && userData.objectType === coinRoller.coin.objectType && userData.index === coinRoller.coin.index) {
+                                    if (this.#coinRoller.coin && userData.objectType === this.#coinRoller.coin.objectType && userData.index === this.#coinRoller.coin.index) {
                                         if (name === TRAP_SENSOR_NAME) {
                                             this.#onGameLost();
                                         } else {
