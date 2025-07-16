@@ -1,14 +1,16 @@
 import { Quaternion, Vector3, SpotLight } from "three";
 
 const MODEL_PATH = "./assets/excavator.glb";
+const X_AXIS = new Vector3(1, 0, 0);
 const Y_AXIS = new Vector3(0, 1, 0);
 const BEACON_LIGHT_BULB_NAME = "beacon-light-bulb";
 const BEACON_LIGHT_MIRROR_NAME = "beacon-light-mirror";
 const PLATFORM = "rotating-platform";
+const ARM_PLATFORM = "arm-rotating-platform";
 const DROP_POSITION = "drop-position";
 const BEACON_LIGHT_POSITION = "beacon-light-position";
-const JOINT_PLATFORM = "joint-rotating-platform";
-const JOINT_ARM_PLATFORM = "joint-arm-rotating-platform";
+const PIVOT_ARM_PLATFORM = "pivot-arm-rotating-platform";
+const PIVOT_PLATFORM = "pivot-rotating-platform";
 const JOINT_ARMS = "joint-arms";
 const JOINT_JAWS = "joint-jaws";
 const JOINT_JAW_1 = "joint-jaw-1";
@@ -29,6 +31,9 @@ const BEACON_LIGHT_BULB_INTENSITY_ON = 10;
 const BEACON_LIGHT_OPACITY_OFF = 0.3;
 const BEACON_LIGHT_OPACITY_ON = 1;
 const BEACON_LIGHT_ROTATION_SPEED = 0.1;
+const PLATFORM_ROTATION_SPEED = 0.01;
+const PLATFORM_ARM_ROTATION_SPEED = 0.01;
+
 
 const EXCAVATOR_STATES = {
     IDLE: Symbol.for("excavator-idle"),
@@ -56,10 +61,20 @@ export default class {
     #beaconLight;
     #beaconLightPosition;
     #trapSensor;
+    #pivots;
+    #platformPosition = new Vector3(0, 0, 0);
+    #platformRotationY = new Quaternion(0, 0, 0, 1);
+    #platformArmPosition = new Vector3(0, 0, 0);
+    #platformArmRotation = new Quaternion(0, 0, 0, 1);
+    #platformArmRotationX = new Quaternion(0, 0, 0, 1);
+    #beaconLightMirrorPosition = new Vector3(0, 0, 0);
+    #beaconLightMirrorRotation = new Quaternion(0, 0, 0, 1);
     #excavator = {
         state: EXCAVATOR_STATES.IDLE,
         pendingPicks: 0,
-        beaconLightAngle: 0
+        beaconLightAngle: 0,
+        platformAngle: 0,
+        platformArmAngle: 0
     };
 
     constructor({ scene, cabinet, onPick }) {
@@ -73,6 +88,7 @@ export default class {
         const {
             parts,
             joints,
+            pivots,
             dropPosition,
             beaconLightPosition
         } = await initializeModel({ scene });
@@ -86,15 +102,15 @@ export default class {
             trapSensor: this.#trapSensor
         });
         this.#trapSensor = trapSensor;
+        this.#pivots = pivots;
         parts.forEach(({ body, meshes }) => {
             meshes.forEach(({ data }) => this.#scene.addObject(data));
             body.setEnabled(true);
         });
         parts.get(PLATFORM).body.setEnabledRotations(false, false, false);
         Object.assign(this.#excavator, { parts, joints });
-        this.#platformArmJoint.joint.configureMotor(0, 1, MOTOR_STIFFNESS, MOTOR_DAMPING);
-        this.#armsJoint.joint.configureMotor(0, 3.7, MOTOR_STIFFNESS, MOTOR_DAMPING);
-        this.#jawsJoint.joint.configureMotor(0, 0, 1, 0);
+        this.#armsJoint.joint.configureMotor(0, 1.75, MOTOR_STIFFNESS, MOTOR_DAMPING);
+        this.#jawsJoint.joint.configureMotor(0, 0, 1, 50);
         this.#beaconLight = new SpotLight(
             BEACON_LIGHT_COLOR,
             BEACON_LIGHT_INTENSITY_OFF,
@@ -115,8 +131,6 @@ export default class {
         updateExcavatorState({
             excavator: this.#excavator,
             joints: {
-                platformJoint: this.#platformJoint,
-                platformArmJoint: this.#platformArmJoint,
                 armsJoint: this.#armsJoint,
                 jaw1Joint: this.#jaw1Joint,
                 jaw2Joint: this.#jaw2Joint,
@@ -129,17 +143,6 @@ export default class {
         if (state !== EXCAVATOR_STATES.IDLE) {
             if (state === EXCAVATOR_STATES.PICKING) {
                 this.#onPick(this.#dropPosition);
-            } if (state === EXCAVATOR_STATES.MOVING_TO_DROP_ZONE) {
-                this.#platform.body.setEnabledRotations(false, true, false);
-            }
-            if (state === EXCAVATOR_STATES.EXTENDING_ARMS) {
-                this.#platform.body.setEnabledRotations(false, false, false);
-            }
-            if (state === EXCAVATOR_STATES.MOVING_TO_BASE) {
-                this.#platform.body.setEnabledRotations(false, true, false);
-            }
-            if (state === EXCAVATOR_STATES.CLOSING_JAWS_AFTER_DROPPING) {
-                this.#platform.body.setEnabledRotations(false, false, false);
             }
         }
     }
@@ -152,15 +155,33 @@ export default class {
             data.quaternion.copy(body.rotation());
         }));
         if (state !== EXCAVATOR_STATES.IDLE) {
+            this.#platformRotationY.setFromAxisAngle(Y_AXIS, -this.#excavator.platformAngle);
+            this.#platformPosition.set(0, 0, 0)
+                .sub(this.#platformPivot)
+                .applyQuaternion(this.#platformRotationY)
+                .add(this.#platformPivot);
+            this.#platform.body.setNextKinematicTranslation(this.#platformPosition);
+            this.#platform.body.setNextKinematicRotation(this.#platformRotationY);
+            this.#platformArmRotationX.setFromAxisAngle(X_AXIS, this.#excavator.platformArmAngle);
+            this.#platformArmRotation
+                .setFromAxisAngle(Y_AXIS, -this.#excavator.platformAngle)
+                .multiply(this.#platformArmRotationX);
+            this.#platformArmPosition.set(0, 0, 0)
+                .sub(this.#platformArmPivot)
+                .applyQuaternion(this.#platformArmRotation)
+                .add(this.#platformArmPivot);
+            this.#platformArm.body.setNextKinematicTranslation(this.#platformArmPosition);
+            this.#platformArm.body.setNextKinematicRotation(this.#platformArmRotation);
             lightBulbMaterial.emissiveIntensity = BEACON_LIGHT_BULB_INTENSITY_ON;
             lightBulbMaterial.opacity = BEACON_LIGHT_OPACITY_ON;
             this.#beaconLight.intensity = BEACON_LIGHT_INTENSITY_ON;
-            const beaconLightRotation = new Quaternion().setFromAxisAngle(Y_AXIS, this.#excavator.beaconLightAngle);
-            this.#beaconLightMirror.body.setNextKinematicTranslation(new Vector3(0, 0, 0)
+            this.#beaconLightMirrorRotation.setFromAxisAngle(Y_AXIS, this.#excavator.beaconLightAngle);
+            this.#beaconLightMirrorPosition.set(0, 0, 0)
                 .sub(this.#beaconLightPosition)
-                .applyQuaternion(beaconLightRotation)
-                .add(this.#beaconLightPosition));
-            this.#beaconLightMirror.body.setNextKinematicRotation(beaconLightRotation);
+                .applyQuaternion(this.#beaconLightMirrorRotation)
+                .add(this.#beaconLightPosition);
+            this.#beaconLightMirror.body.setNextKinematicTranslation(this.#beaconLightMirrorPosition);
+            this.#beaconLightMirror.body.setNextKinematicRotation(this.#beaconLightMirrorRotation);
             this.#beaconLight.target.position.set(
                 this.#beaconLight.position.x + Math.sin(this.#excavator.beaconLightAngle),
                 this.#beaconLight.position.y,
@@ -196,6 +217,8 @@ export default class {
             nextState: this.#excavator.nextState ? this.#excavator.nextState.description : null,
             pendingPicks: this.#excavator.pendingPicks,
             beaconLightAngle: this.#excavator.beaconLightAngle,
+            platformAngle: this.#excavator.platformAngle,
+            platformArmAngle: this.#excavator.platformArmAngle,
             joints,
             parts,
             trapSensorHandle: this.#trapSensor.handle
@@ -226,6 +249,8 @@ export default class {
         this.#excavator.nextState = excavator.nextState ? Symbol.for(excavator.nextState) : null;
         this.#excavator.pendingPicks = excavator.pendingPicks;
         this.#excavator.beaconLightAngle = excavator.beaconLightAngle;
+        this.#excavator.platformAngle = excavator.platformAngle;
+        this.#excavator.platformArmAngle = excavator.platformArmAngle;
         this.#excavator.joints.forEach((jointData, name) => {
             const loadedJoint = excavator.joints[name];
             if (loadedJoint) {
@@ -263,12 +288,12 @@ export default class {
         return joints;
     }
 
-    get #platformJoint() {
-        return this.#excavator.joints.get(JOINT_PLATFORM);
+    get #platformPivot() {
+        return this.#pivots.get(PIVOT_PLATFORM);
     }
 
-    get #platformArmJoint() {
-        return this.#excavator.joints.get(JOINT_ARM_PLATFORM);
+    get #platformArmPivot() {
+        return this.#pivots.get(PIVOT_ARM_PLATFORM);
     }
 
     get #armsJoint() {
@@ -299,6 +324,10 @@ export default class {
         return this.#excavator.parts.get(PLATFORM);
     }
 
+    get #platformArm() {
+        return this.#excavator.parts.get(ARM_PLATFORM);
+    }
+
     get #beaconLightBulb() {
         return this.#excavator.parts.get(BEACON_LIGHT_BULB_NAME);
     }
@@ -309,7 +338,7 @@ export default class {
 }
 
 function updateExcavatorState({ excavator, joints, canActivate }) {
-    const { platformJoint, platformArmJoint, armsJoint, jaw1Joint, jaw2Joint, jaw3Joint, jaw4Joint } = joints;
+    const { armsJoint, jaw1Joint, jaw2Joint, jaw3Joint, jaw4Joint } = joints;
     switch (excavator.state) {
         case EXCAVATOR_STATES.IDLE:
             break;
@@ -325,14 +354,15 @@ function updateExcavatorState({ excavator, joints, canActivate }) {
         case EXCAVATOR_STATES.OPENING_JAWS:
             // console.log("=> opening jaws", getAngle(jaw1Joint), getAngle(jaw2Joint), getAngle(jaw3Joint), getAngle(jaw4Joint));
             if (getAngle(jaw1Joint) < -.5 && getAngle(jaw2Joint) > .5 && getAngle(jaw3Joint) < -.5 && getAngle(jaw4Joint) > .5) {
-                platformArmJoint.joint.configureMotor(-.7, 1, MOTOR_STIFFNESS, MOTOR_DAMPING);
-                armsJoint.joint.configureMotor(.5, 3, MOTOR_STIFFNESS, MOTOR_DAMPING);
+                armsJoint.joint.configureMotor(.4, 1.5, MOTOR_STIFFNESS, MOTOR_DAMPING);
                 excavator.nextState = EXCAVATOR_STATES.MOVING_DOWN;
             }
             break;
         case EXCAVATOR_STATES.MOVING_DOWN:
-            // console.log("=> moving down", getAngle(platformArmJoint), getAngle(armsJoint));
-            if (getAngle(platformArmJoint) < -.7 && getAngle(armsJoint) > .5) {
+            // console.log("=> moving down", excavator.platformArmAngle, getAngle(armsJoint));
+            excavator.platformArmAngle -= PLATFORM_ARM_ROTATION_SPEED;
+            if (excavator.platformArmAngle < -.75 && getAngle(armsJoint) > .4) {
+                excavator.platformArmAngle = -.75;
                 jaw1Joint.joint.configureMotor(0, 2.5, MOTOR_STIFFNESS, MOTOR_DAMPING);
                 jaw2Joint.joint.configureMotor(0, -2.5, MOTOR_STIFFNESS, MOTOR_DAMPING);
                 jaw3Joint.joint.configureMotor(0, 2.5, MOTOR_STIFFNESS, MOTOR_DAMPING);
@@ -348,28 +378,30 @@ function updateExcavatorState({ excavator, joints, canActivate }) {
             break;
         case EXCAVATOR_STATES.PICKING:
             // console.log("=> picking", getAngle(jaw1Joint), getAngle(jaw2Joint), getAngle(jaw3Joint), getAngle(jaw4Joint));
-            platformArmJoint.joint.configureMotor(.5, 1, MOTOR_STIFFNESS, MOTOR_DAMPING);
-            armsJoint.joint.configureMotor(-.2, 4, MOTOR_STIFFNESS, MOTOR_DAMPING);
+            armsJoint.joint.configureMotor(-.2, 2, MOTOR_STIFFNESS, MOTOR_DAMPING);
             excavator.nextState = EXCAVATOR_STATES.MOVING_UP;
             break;
         case EXCAVATOR_STATES.MOVING_UP:
-            // console.log("=> moving up", getAngle(platformArmJoint), getAngle(armsJoint));
-            if (getAngle(platformArmJoint) > .5) {
-                platformJoint.joint.configureMotor(-2, -3, MOTOR_STIFFNESS, MOTOR_STIFFNESS);
+            excavator.platformArmAngle += PLATFORM_ARM_ROTATION_SPEED;
+            if (excavator.platformArmAngle > .5) {
+                excavator.platformArmAngle = 0.5;
                 excavator.nextState = EXCAVATOR_STATES.MOVING_TO_DROP_ZONE;
             }
             break;
         case EXCAVATOR_STATES.MOVING_TO_DROP_ZONE:
-            // console.log("=> moving to drop zone", getAngle(platformJoint));
-            if (getAngle(platformJoint) < -2) {
-                platformArmJoint.joint.configureMotor(-.3, 1, MOTOR_STIFFNESS, MOTOR_DAMPING);
-                armsJoint.joint.configureMotor(.9, 8, MOTOR_STIFFNESS, MOTOR_DAMPING);
+            // console.log("=> moving to drop zone", excavator.platformAngle);
+            excavator.platformAngle -= PLATFORM_ROTATION_SPEED;
+            if (excavator.platformAngle < -2) {
+                excavator.platformAngle = -2;
+                armsJoint.joint.configureMotor(.9, 4, MOTOR_STIFFNESS, MOTOR_DAMPING);
                 excavator.nextState = EXCAVATOR_STATES.EXTENDING_ARMS;
             }
             break;
         case EXCAVATOR_STATES.EXTENDING_ARMS:
-            // console.log("=> extending arms", getAngle(armsJoint));
-            if (getAngle(armsJoint) > .8) {
+            // console.log("=> extending arms", excavator.platformArmAngle, getAngle(armsJoint));
+            excavator.platformArmAngle -= 2 * PLATFORM_ARM_ROTATION_SPEED;
+            if (excavator.platformArmAngle < -.3 && getAngle(armsJoint) > .9) {
+                excavator.platformArmAngle = -.3;
                 jaw1Joint.joint.configureMotor(-.5, -2.5, MOTOR_STIFFNESS, MOTOR_DAMPING);
                 jaw2Joint.joint.configureMotor(.5, 2.5, MOTOR_STIFFNESS, MOTOR_DAMPING);
                 jaw3Joint.joint.configureMotor(-.5, -2.5, MOTOR_STIFFNESS, MOTOR_DAMPING);
@@ -380,29 +412,32 @@ function updateExcavatorState({ excavator, joints, canActivate }) {
         case EXCAVATOR_STATES.DROPPING:
             // console.log("=> closing jaws", getAngle(jaw1Joint), getAngle(jaw2Joint), getAngle(jaw3Joint), getAngle(jaw4Joint));
             if (getAngle(jaw1Joint) < -.5 && getAngle(jaw2Joint) > .5 && getAngle(jaw3Joint) < -.5 && getAngle(jaw4Joint) > .5) {
-                platformArmJoint.joint.configureMotor(.5, .7, MOTOR_STIFFNESS, MOTOR_DAMPING);
-                armsJoint.joint.configureMotor(-.3, 3.45, MOTOR_STIFFNESS, MOTOR_DAMPING);
+                armsJoint.joint.configureMotor(.3, .5, MOTOR_STIFFNESS, MOTOR_DAMPING);
                 excavator.nextState = EXCAVATOR_STATES.RETRACTING_ARMS;
             }
             break;
         case EXCAVATOR_STATES.RETRACTING_ARMS:
-            // console.log("=> retracting arms", getAngle(platformArmJoint), getAngle(armsJoint));
-            if (getAngle(platformArmJoint) > .4 && getAngle(armsJoint) < .5) {
-                platformJoint.joint.configureMotor(0, -.7, MOTOR_STIFFNESS, MOTOR_STIFFNESS);
+            // console.log("=> retracting arms", excavator.platformArmAngle, getAngle(armsJoint));
+            excavator.platformArmAngle += PLATFORM_ARM_ROTATION_SPEED;
+            if (excavator.platformArmAngle > 0.5 && getAngle(armsJoint) < .3) {
+                excavator.platformArmAngle = 0.5;
                 excavator.nextState = EXCAVATOR_STATES.MOVING_TO_BASE;
             }
             break;
         case EXCAVATOR_STATES.MOVING_TO_BASE:
-            // console.log("=> moving to base", getAngle(platformJoint));
-            if (getAngle(platformJoint) > -.01) {
-                platformArmJoint.joint.configureMotor(0, 1, MOTOR_STIFFNESS, MOTOR_DAMPING);
-                armsJoint.joint.configureMotor(0, 3.7, MOTOR_STIFFNESS, MOTOR_DAMPING);
+            // console.log("=> moving to base", excavator.platformAngle);
+            excavator.platformAngle += PLATFORM_ROTATION_SPEED;
+            if (excavator.platformAngle > 0) {
+                excavator.platformAngle = 0;
+                armsJoint.joint.configureMotor(0, 1.75, MOTOR_STIFFNESS, MOTOR_DAMPING);
                 excavator.nextState = EXCAVATOR_STATES.CLOSING_JAWS_AFTER_DROPPING;
             }
             break;
         case EXCAVATOR_STATES.CLOSING_JAWS_AFTER_DROPPING:
-            // console.log("=> dropping", getAngle(platformArmJoint), getAngle(armsJoint));
-            if (getAngle(platformArmJoint) < .1 && getAngle(armsJoint) > -.1) {
+            // console.log("=> dropping", excavator.platformArmAngle, getAngle(armsJoint));
+            excavator.platformArmAngle -= PLATFORM_ARM_ROTATION_SPEED;
+            if (excavator.platformArmAngle < 0 && getAngle(armsJoint) > 0) {
+                excavator.platformArmAngle = 0;
                 if (excavator.pendingPicks > 0) {
                     excavator.pendingPicks--;
                     excavator.nextState = EXCAVATOR_STATES.ACTIVATING;
@@ -434,10 +469,13 @@ function updateExcavatorState({ excavator, joints, canActivate }) {
     }
 }
 
+const rotationBody1 = new Quaternion();
+const rotationBody2 = new Quaternion();
+
 function getAngle(jointData) {
     const axis = jointData.params.axis;
-    const rotationBody1 = new Quaternion().copy(jointData.params.body1.rotation());
-    const rotationBody2 = new Quaternion().copy(jointData.params.body2.rotation());
+    rotationBody1.copy(jointData.params.body1.rotation());
+    rotationBody2.copy(jointData.params.body2.rotation());
     const relativeRotation = rotationBody1.invert().multiply(rotationBody2);
     const axisWorld = axis.clone().normalize();
     return 2 * Math.atan2(
@@ -451,6 +489,7 @@ async function initializeModel({ scene }) {
     const mesh = model.scene;
     const parts = new Map();
     const joints = new Map();
+    const pivots = new Map();
     const dropPosition = new Vector3();
     const beaconLightPosition = new Vector3();
     mesh.traverse((child) => {
@@ -465,6 +504,8 @@ async function initializeModel({ scene }) {
                 partData.restitution = userData.restitution;
                 partData.fixed = userData.fixed;
                 partData.kinematic = userData.kinematic;
+                partData.cylinder = userData.cylinder;
+                partData.cuboid = userData.cuboid;
                 partData.contactSkin = userData.contactSkin;
                 partData.meshes.push({
                     data: child,
@@ -486,6 +527,9 @@ async function initializeModel({ scene }) {
                 pair: [userData["name-1"], userData["name-2"]],
                 limits: userData.limits
             });
+        } else if (child.userData.pivot) {
+            const { position } = child;
+            pivots.set(child.name, position);
         } else if (child.name == DROP_POSITION) {
             dropPosition.copy(child.position);
         } else if (child.name === BEACON_LIGHT_POSITION) {
@@ -495,6 +539,7 @@ async function initializeModel({ scene }) {
     return {
         parts,
         joints,
+        pivots,
         dropPosition,
         beaconLightPosition
     };
@@ -515,43 +560,69 @@ function initializeColliders({ scene, cabinet, parts, joints }) {
     let trapSensor;
     let indexPart = 0;
     parts.forEach((partData, name) => {
-        const { meshes, sensor, friction, restitution, fixed, kinematic, light, contactSkin } = partData;
+        const { meshes, sensor, friction, restitution, fixed, cylinder, cuboid, kinematic, light, contactSkin } = partData;
         const body = partData.body = fixed ? scene.createFixedBody() : kinematic ? scene.createKinematicBody() : scene.createDynamicBody();
         body.setEnabled(false);
-        const geometries = [];
-        meshes.forEach(meshData => {
-            if (!light) {
-                if (sensor) {
-                    trapSensor = scene.createCuboidColliderFromBoundingBox({
-                        mesh: meshData.data,
-                        height: SENSOR_HEIGHT,
-                        userData: {
-                            objectType: name,
-                            onIntersect: userData => cabinet.recycleObject(userData)
-                        },
-                        sensor
-                    }, body);
-                } else if (meshData.geometry) {
-                    geometries.push(meshData.geometry);
-                }
+        if (cylinder || cuboid) {
+            const boundingBox = meshes[0].data.geometry.boundingBox;
+            const position = new Vector3().addVectors(boundingBox.min, boundingBox.max).multiplyScalar(0.5).toArray();
+            const colliderSize = new Vector3(boundingBox.max.x - boundingBox.min.x, boundingBox.max.y - boundingBox.min.y, boundingBox.max.z - boundingBox.min.z);
+            let collider;
+            if (cuboid) {
+                collider = scene.createCuboidCollider({
+                    position,
+                    width: colliderSize.x,
+                    height: colliderSize.y,
+                    depth: colliderSize.z,
+                    friction,
+                    restitution,
+                }, body);
+            } else if (cylinder) {
+                collider = scene.createCylinderCollider({
+                    position,
+                    radius: colliderSize.x / 2,
+                    height: colliderSize.y,
+                    friction,
+                    restitution
+                }, body);
             }
-        });
-        if (geometries.length > 0) {
-            const { vertices, indices } = scene.mergeGeometries(geometries);
-            const collider = scene.createTrimeshCollider({
-                vertices,
-                indices,
-                friction,
-                restitution
-            }, body);
             collider.setContactSkin(contactSkin);
             collider.setCollisionGroups((1 << (indexPart % 16)) << 16 | (1 << (indexPart % 16)));
             indexPart++;
+        } else {
+            const geometries = [];
+            meshes.forEach(meshData => {
+                if (!light) {
+                    if (sensor) {
+                        trapSensor = scene.createCuboidColliderFromBoundingBox({
+                            mesh: meshData.data,
+                            height: SENSOR_HEIGHT,
+                            userData: {
+                                objectType: name,
+                                onIntersect: userData => cabinet.recycleObject(userData)
+                            },
+                            sensor
+                        }, body);
+                    } else if (meshData.geometry) {
+                        geometries.push(meshData.geometry);
+                    }
+                }
+            });
+            if (geometries.length > 0) {
+                const { vertices, indices } = scene.mergeGeometries(geometries);
+                const collider = scene.createTrimeshCollider({
+                    vertices,
+                    indices,
+                    friction,
+                    restitution
+                }, body);
+                collider.setContactSkin(contactSkin);
+                collider.setCollisionGroups((1 << (indexPart % 16)) << 16 | (1 << (indexPart % 16)));
+                indexPart++;
+            }
         }
     });
-    const platform = parts.get(PLATFORM);
-    platform.body.setEnabledRotations(false, true, false);
-    platform.body.setEnabledTranslations(false, false, false);
+    const defaultRotation = new Quaternion();
     joints.forEach(jointData => {
         const { position, axis, pair, limits } = jointData;
         jointData.params = {
@@ -562,7 +633,6 @@ function initializeColliders({ scene, cabinet, parts, joints }) {
             axis: axis
         };
         if (axis === undefined) {
-            const defaultRotation = new Quaternion();
             Object.assign(jointData.params, { frame1: defaultRotation, frame2: defaultRotation });
             jointData.joint = scene.connectBodiesWithFixedJoint(jointData.params);
         } else {
