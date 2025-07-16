@@ -26,7 +26,7 @@ export default class {
     static #scene;
     static #pointer;
 
-    static pixelRatio = 2;
+    static pixelRatio = 1;
 
     static async initialize({ rapier }) {
         this.#containerElement = document.body;
