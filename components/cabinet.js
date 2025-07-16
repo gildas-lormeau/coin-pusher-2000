@@ -320,7 +320,6 @@ export default class {
             this.#runs.initialize()
         ]);
         await this.#collisionsDetector.initialize();
-        
     }
 
     update(time) {
