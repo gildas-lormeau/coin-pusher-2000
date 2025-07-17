@@ -7,7 +7,6 @@ const BACKGROUND_COLOR = 0x222222;
 const NUM_SOLVER_ITERATIONS = 2;
 const NUM_ADDITIONAL_FRICTION_ITERATIONS = 1;
 const NUM_INTERNAL_PGS_ITERATIONS = 3;
-const MIN_ISLAND_SIZE = 24;
 const TIMESTEP = 1 / 60;
 const ANTIALIAS = true;
 const POWER_PREFERENCE = "high-performance";
@@ -45,7 +44,6 @@ export default class {
         this.#world.integrationParameters.numSolverIterations = NUM_SOLVER_ITERATIONS;
         this.#world.integrationParameters.numAdditionalFrictionIterations = NUM_ADDITIONAL_FRICTION_ITERATIONS;
         this.#world.integrationParameters.numInternalPgsIterations = NUM_INTERNAL_PGS_ITERATIONS;
-        this.#world.integrationParameters.minIslandSize = MIN_ISLAND_SIZE;
         this.#world.timestep = TIMESTEP;
         this.#scene.add(new AmbientLight(AMBIANT_LIGHT_COLOR, AMBIANT_LIGHT_INTENSITY));
         const directionalLight = new DirectionalLight(DIRECTIONAL_LIGHT_COLOR, DIRECTIONAL_LIGHT_INTENSITY);
