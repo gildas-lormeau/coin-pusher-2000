@@ -512,12 +512,12 @@ function updateExcavatorState({ excavator, joints, canActivate }) {
                 excavator.jawsArmAngle = 0;
             }
             if (excavator.platformArmAngle == 0 && excavator.jawsArmAngle == 0) {
-                excavator.frameLast = 0;
+                excavator.frameReady = 0;
                 excavator.nextState = EXCAVATOR_STATES.WAITING_FOR_IDLE;
             }
             break;
         case EXCAVATOR_STATES.WAITING_FOR_IDLE:
-            excavator.frameLast++;
+            excavator.frameReady++;
             if (excavator.frameReady > 90) {
                 excavator.frameReady = -1;
                 if (excavator.pendingPicks > 0) {
