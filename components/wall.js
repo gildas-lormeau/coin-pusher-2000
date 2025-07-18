@@ -23,7 +23,8 @@ const OBSTACLE_FRICTION = 0;
 const OBSTACLE_RESTITUTION = 0.25;
 const BOTTOM_OBSTACLE_FRICTION = 0.5;
 const BOTTOM_OBSTACLE_RESTITUTION = 0;
-const OBSTACLE_COLOR = "#555";
+const OBSTACLE_COLOR = 0xffffff;
+const OBSTACLE_OPACITY = 0.25;
 
 export default class {
     constructor({ scene }) {
@@ -105,7 +106,11 @@ function initiliazeWallObstacles({ scene, wallBody }) {
         const x = startX + col * OBSTACLE_SPACING_X + (row % 2 === 0 ? 0 : OBSTACLE_SPACING_X / 2);
         const y = startY + row * OBSTACLE_SPACING_Y;
         const obstacleGeometry = new CylinderGeometry(obstacleRadius, obstacleRadius, OBSTACLE_HEIGHT, 8);
-        const obstacleMaterial = new MeshStandardMaterial({ color: OBSTACLE_COLOR });
+        const obstacleMaterial = new MeshStandardMaterial({
+            color: OBSTACLE_COLOR,
+            opacity: OBSTACLE_OPACITY,
+            transparent: true
+        });
         const obstacleMesh = new Mesh(obstacleGeometry, obstacleMaterial);
         obstacleMesh.position.set(x, y, OBSTACLE_POSITION_Z);
         obstacleMesh.rotation.set(Math.PI / 2, Math.PI / 4, 0);
