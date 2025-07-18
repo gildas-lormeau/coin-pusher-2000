@@ -4,8 +4,7 @@ const TYPE = "coin";
 const MAX_INSTANCES = 1024;
 const RADIUS = 0.03;
 const DEPTH = 0.005;
-const INIIAL_POSITION_DELTA_X = .0025;
-const INITIAL_POSITION_MIN_DELTA_X = 0.001;
+const INITIAL_POSITION_MIN_DELTA_X = 0.015;
 const INITIAL_POSITIONS_X = [-0.1125, 0, 0.1125];
 const INITIAL_POSITION = [0, .9, -0.32 + DEPTH / 2];
 const INITIAL_HIDDEN_POSITION = [0, 0, 0];
@@ -289,7 +288,7 @@ function initializePosition({ instance, hidden, position, rotation, slot = 1 }) 
         } else {
             const randomNumber = Math.random();
             instance.position.fromArray([
-                INITIAL_POSITIONS_X[slot] + (randomNumber < 0.5 ? -INIIAL_POSITION_DELTA_X : INIIAL_POSITION_DELTA_X) * Math.random() + (randomNumber < 0.5 ? -INITIAL_POSITION_MIN_DELTA_X : INITIAL_POSITION_MIN_DELTA_X),
+                INITIAL_POSITIONS_X[slot] + (randomNumber <= 0.5 ? -INITIAL_POSITION_MIN_DELTA_X : INITIAL_POSITION_MIN_DELTA_X) * Math.random(),
                 INITIAL_POSITION[1],
                 INITIAL_POSITION[2]
             ]);
