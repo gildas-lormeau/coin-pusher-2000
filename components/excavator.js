@@ -306,7 +306,12 @@ export default class {
     }
 
     get active() {
-        return this.#excavator.state !== EXCAVATOR_STATES.IDLE && this.#excavator.state !== EXCAVATOR_STATES.ACTIVATING;
+        return this.#excavator.state !== EXCAVATOR_STATES.IDLE &&
+            this.#excavator.state !== EXCAVATOR_STATES.ACTIVATING &&
+            this.#excavator.state !== EXCAVATOR_STATES.MOVING_TO_BASE &&
+            this.#excavator.state !== EXCAVATOR_STATES.CLOSING_JAWS_AFTER_DROPPING &&
+            this.#excavator.state !== EXCAVATOR_STATES.INITIALIZING_PREPARING_IDLE &&
+            this.#excavator.state !== EXCAVATOR_STATES.PREPARING_IDLE;
     }
 
     pick() {
