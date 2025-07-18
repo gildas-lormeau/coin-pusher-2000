@@ -15,12 +15,13 @@ const OBSTACLE_POSITION_Z = -0.31;
 const OBSTACLE_START_Y = 0.45;
 const OBSTACLE_RADIUS = 0.005;
 const OBSTACLE_HEIGHT = 0.05;
-const OBSTACLE_SPACING = 0.075;
+const OBSTACLE_SPACING_X = 0.075;
+const OBSTACLE_SPACING_Y = 0.09;
 const OBSTACLE_ROWS = 5;
 const OBSTACLE_COLS = 7;
 const OBSTACLE_FRICTION = 0;
-const OBSTACLE_RESTITUTION = .5;
-const BOTTOM_OBSTACLE_FRICTION = 0.75;
+const OBSTACLE_RESTITUTION = 0.25;
+const BOTTOM_OBSTACLE_FRICTION = 0.5;
 const BOTTOM_OBSTACLE_RESTITUTION = 0;
 const OBSTACLE_COLOR = "#555";
 
@@ -87,12 +88,12 @@ export default class {
 
 function initiliazeWallObstacles({ scene, wallBody }) {
     const spacing = 0.075;
-    const startX = (-OBSTACLE_COLS * OBSTACLE_SPACING / 2) + (OBSTACLE_SPACING / 2);
+    const startX = (-OBSTACLE_COLS * OBSTACLE_SPACING_X / 2) + (OBSTACLE_SPACING_X / 2);
     for (let col = 0; col < OBSTACLE_COLS; col++) {
-        initializeObstacle(startX - OBSTACLE_SPACING / 2, OBSTACLE_START_Y - OBSTACLE_SPACING, col, -1, OBSTACLE_RADIUS / 2, BOTTOM_OBSTACLE_FRICTION, BOTTOM_OBSTACLE_RESTITUTION);
+        initializeObstacle(startX - OBSTACLE_SPACING_X / 2, OBSTACLE_START_Y - OBSTACLE_SPACING_Y / 1.6, col, -1, OBSTACLE_RADIUS / 2, BOTTOM_OBSTACLE_FRICTION, BOTTOM_OBSTACLE_RESTITUTION);
     }
     for (let col = 0; col < OBSTACLE_COLS; col++) {
-        initializeObstacle(startX - spacing / 2, OBSTACLE_START_Y - OBSTACLE_SPACING / 2, col, -1, OBSTACLE_RADIUS / 2, BOTTOM_OBSTACLE_FRICTION, BOTTOM_OBSTACLE_RESTITUTION);
+        initializeObstacle(startX - spacing / 2, OBSTACLE_START_Y - OBSTACLE_SPACING_Y / 6, col, -1, OBSTACLE_RADIUS / 2, BOTTOM_OBSTACLE_FRICTION, BOTTOM_OBSTACLE_RESTITUTION);
     }
     for (let row = 0; row < OBSTACLE_ROWS; row++) {
         for (let col = 0; col < (row % 2 === 0 ? OBSTACLE_COLS : OBSTACLE_COLS - 1); col++) {
@@ -101,8 +102,8 @@ function initiliazeWallObstacles({ scene, wallBody }) {
     }
 
     function initializeObstacle(startX, startY, col, row, obstacleRadius, friction, restitution) {
-        const x = startX + col * OBSTACLE_SPACING + (row % 2 === 0 ? 0 : OBSTACLE_SPACING / 2);
-        const y = startY + row * OBSTACLE_SPACING;
+        const x = startX + col * OBSTACLE_SPACING_X + (row % 2 === 0 ? 0 : OBSTACLE_SPACING_X / 2);
+        const y = startY + row * OBSTACLE_SPACING_Y;
         const obstacleGeometry = new CylinderGeometry(obstacleRadius, obstacleRadius, OBSTACLE_HEIGHT, 8);
         const obstacleMaterial = new MeshStandardMaterial({ color: OBSTACLE_COLOR });
         const obstacleMesh = new Mesh(obstacleGeometry, obstacleMaterial);
