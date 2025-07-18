@@ -54,6 +54,7 @@ const EXCAVATOR_STATES = {
     CLOSING_JAWS_AFTER_DROPPING: Symbol.for("excavator-closing-jaws-after-dropping"),
     RETRACTING_ARMS: Symbol.for("excavator-retracting-arms"),
     MOVING_TO_BASE: Symbol.for("excavator-moving-to-base"),
+    WAITING_FOR_IDLE: Symbol.for("excavator-waiting-for-idle"),
     INITIALIZING_PREPARING_IDLE: Symbol.for("excavator-initializing-preparing-idle"),
     PREPARING_IDLE: Symbol.for("excavator-preparing-idle")
 };
@@ -84,7 +85,8 @@ export default class {
         beaconLightAngle: 0,
         platformAngle: 0,
         platformArmAngle: 0,
-        jawsArmAngle: 0
+        jawsArmAngle: 0,
+        frameReady: -1,
     };
 
     constructor({ scene, cabinet, onPick }) {
@@ -256,6 +258,7 @@ export default class {
             platformAngle: this.#excavator.platformAngle,
             platformArmAngle: this.#excavator.platformArmAngle,
             jawsArmAngle: this.#excavator.jawsArmAngle,
+            frameReady: this.#excavator.frameReady,
             joints,
             parts,
             trapSensorHandle: this.#trapSensor.handle
@@ -289,6 +292,7 @@ export default class {
         this.#excavator.platformAngle = excavator.platformAngle;
         this.#excavator.platformArmAngle = excavator.platformArmAngle;
         this.#excavator.jawsArmAngle = excavator.jawsArmAngle;
+        this.#excavator.frameReady = excavator.frameReady;
         this.#excavator.joints.forEach((jointData, name) => {
             const loadedJoint = excavator.joints[name];
             if (loadedJoint) {
@@ -508,6 +512,14 @@ function updateExcavatorState({ excavator, joints, canActivate }) {
                 excavator.jawsArmAngle = 0;
             }
             if (excavator.platformArmAngle == 0 && excavator.jawsArmAngle == 0) {
+                excavator.frameLast = 0;
+                excavator.nextState = EXCAVATOR_STATES.WAITING_FOR_IDLE;
+            }
+            break;
+        case EXCAVATOR_STATES.WAITING_FOR_IDLE:
+            excavator.frameLast++;
+            if (excavator.frameReady > 90) {
+                excavator.frameReady = -1;
                 if (excavator.pendingPicks > 0) {
                     excavator.pendingPicks--;
                     excavator.nextState = EXCAVATOR_STATES.ACTIVATING;
@@ -686,7 +698,6 @@ function initializeColliders({ scene, cabinet, parts, joints }) {
             }
         }
     });
-    debugger
     const defaultRotation = new Quaternion();
     joints.forEach(jointData => {
         const { position, axis, pair, limits } = jointData;
