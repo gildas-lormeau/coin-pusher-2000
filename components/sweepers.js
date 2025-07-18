@@ -352,7 +352,10 @@ export default class {
             this.#sweepers.state !== SWEEPERS_STATES.ACTIVATING &&
             this.#sweepers.state !== SWEEPERS_STATES.OPENING_DOORS &&
             this.#sweepers.state !== SWEEPERS_STATES.MOVING_BASE &&
-            this.#sweepers.state !== SWEEPERS_STATES.ROTATING_BASE;
+            this.#sweepers.state !== SWEEPERS_STATES.ROTATING_BASE &&
+            this.#sweepers.state !== SWEEPERS_STATES.ROTATING_BASE_BACK &&
+            this.#sweepers.state !== SWEEPERS_STATES.MOVING_BASE_BACK &&
+            this.#sweepers.state !== SWEEPERS_STATES.CLOSING_DOORS;
     }
 }
 
