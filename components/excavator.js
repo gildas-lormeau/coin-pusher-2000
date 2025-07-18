@@ -86,6 +86,7 @@ export default class {
         platformAngle: 0,
         platformArmAngle: 0,
         jawsArmAngle: 0,
+        framePicking: -1,
         frameReady: -1,
     };
 
@@ -141,12 +142,6 @@ export default class {
         }
         updateExcavatorState({
             excavator: this.#excavator,
-            joints: {
-                jaw1Joint: this.#jaw1Joint,
-                jaw2Joint: this.#jaw2Joint,
-                jaw3Joint: this.#jaw3Joint,
-                jaw4Joint: this.#jaw4Joint
-            },
             canActivate: () => this.#cabinet.canActivate(this)
         });
         const { state } = this.#excavator;
@@ -258,6 +253,7 @@ export default class {
             platformAngle: this.#excavator.platformAngle,
             platformArmAngle: this.#excavator.platformArmAngle,
             jawsArmAngle: this.#excavator.jawsArmAngle,
+            framePicking: this.#excavator.framePicking,
             frameReady: this.#excavator.frameReady,
             joints,
             parts,
@@ -292,6 +288,7 @@ export default class {
         this.#excavator.platformAngle = excavator.platformAngle;
         this.#excavator.platformArmAngle = excavator.platformArmAngle;
         this.#excavator.jawsArmAngle = excavator.jawsArmAngle;
+        this.#excavator.framePicking = excavator.framePicking;
         this.#excavator.frameReady = excavator.frameReady;
         this.#excavator.joints.forEach((jointData, name) => {
             const loadedJoint = excavator.joints[name];
@@ -388,8 +385,7 @@ export default class {
     }
 }
 
-function updateExcavatorState({ excavator, joints, canActivate }) {
-    const { jaw1Joint, jaw2Joint, jaw3Joint, jaw4Joint } = joints;
+function updateExcavatorState({ excavator, canActivate }) {
     switch (excavator.state) {
         case EXCAVATOR_STATES.IDLE:
             break;
@@ -402,10 +398,7 @@ function updateExcavatorState({ excavator, joints, canActivate }) {
             excavator.nextState = EXCAVATOR_STATES.OPENING_JAWS;
             break;
         case EXCAVATOR_STATES.OPENING_JAWS:
-            // console.log("=> opening jaws", getAngle(jaw1Joint), getAngle(jaw2Joint), getAngle(jaw3Joint), getAngle(jaw4Joint));
-            if (getAngle(jaw1Joint) < -.5 && getAngle(jaw2Joint) > .5 && getAngle(jaw3Joint) < -.5 && getAngle(jaw4Joint) > .5) {
-                excavator.nextState = EXCAVATOR_STATES.MOVING_DOWN;
-            }
+            excavator.nextState = EXCAVATOR_STATES.MOVING_DOWN;
             break;
         case EXCAVATOR_STATES.MOVING_DOWN:
             // console.log("=> moving down", excavator.platformArmAngle, excavator.jawsArmAngle);
@@ -422,16 +415,17 @@ function updateExcavatorState({ excavator, joints, canActivate }) {
             }
             break;
         case EXCAVATOR_STATES.INITIALIZING_CLOSING_JAWS:
+            excavator.framePicking = 0;
             excavator.nextState = EXCAVATOR_STATES.CLOSING_JAWS;
             break;
         case EXCAVATOR_STATES.CLOSING_JAWS:
-            // console.log("=> closing jaws", getAngle(jaw1Joint), getAngle(jaw2Joint), getAngle(jaw3Joint), getAngle(jaw4Joint));
-            if (getAngle(jaw1Joint) > -.01 && getAngle(jaw2Joint) < .01 && getAngle(jaw3Joint) > -.01 && getAngle(jaw4Joint) < .01) {
+            excavator.framePicking++;
+            if (excavator.framePicking > 30) {
+                excavator.framePicking = -1;
                 excavator.nextState = EXCAVATOR_STATES.PICKING;
             }
             break;
         case EXCAVATOR_STATES.PICKING:
-            // console.log("=> picking");
             excavator.nextState = EXCAVATOR_STATES.MOVING_UP;
             break;
         case EXCAVATOR_STATES.MOVING_UP:
@@ -474,10 +468,7 @@ function updateExcavatorState({ excavator, joints, canActivate }) {
             excavator.nextState = EXCAVATOR_STATES.DROPPING;
             break;
         case EXCAVATOR_STATES.DROPPING:
-            // console.log("=> closing jaws", getAngle(jaw1Joint), getAngle(jaw2Joint), getAngle(jaw3Joint), getAngle(jaw4Joint));
-            if (getAngle(jaw1Joint) < -.5 && getAngle(jaw2Joint) > .5 && getAngle(jaw3Joint) < -.5 && getAngle(jaw4Joint) > .5) {
-                excavator.nextState = EXCAVATOR_STATES.RETRACTING_ARMS;
-            }
+            excavator.nextState = EXCAVATOR_STATES.RETRACTING_ARMS;
             break;
         case EXCAVATOR_STATES.RETRACTING_ARMS:
             // console.log("=> retracting arms", excavator.platformArmAngle, excavator.jawsArmAngle);
@@ -535,14 +526,11 @@ function updateExcavatorState({ excavator, joints, canActivate }) {
             excavator.nextState = EXCAVATOR_STATES.PREPARING_IDLE;
             break;
         case EXCAVATOR_STATES.PREPARING_IDLE:
-            // console.log("=> preparing idle", getAngle(jaw1Joint), getAngle(jaw2Joint), getAngle(jaw3Joint), getAngle(jaw4Joint));
-            if (getAngle(jaw1Joint) > -.01 && getAngle(jaw2Joint) < .01 && getAngle(jaw3Joint) > -.01 && getAngle(jaw4Joint) < .01) {
-                if (excavator.pendingPicks > 0) {
-                    excavator.pendingPicks--;
-                    excavator.nextState = EXCAVATOR_STATES.ACTIVATING;
-                } else {
-                    excavator.nextState = EXCAVATOR_STATES.IDLE;
-                }
+            if (excavator.pendingPicks > 0) {
+                excavator.pendingPicks--;
+                excavator.nextState = EXCAVATOR_STATES.ACTIVATING;
+            } else {
+                excavator.nextState = EXCAVATOR_STATES.IDLE;
             }
             break;
         default:
@@ -550,21 +538,6 @@ function updateExcavatorState({ excavator, joints, canActivate }) {
     if (excavator.state !== EXCAVATOR_STATES.IDLE && excavator.state !== EXCAVATOR_STATES.PREPARING_IDLE) {
         excavator.beaconLightAngle = (excavator.beaconLightAngle + BEACON_LIGHT_ROTATION_SPEED) % (2 * Math.PI);
     }
-}
-
-const rotationBody1 = new Quaternion();
-const rotationBody2 = new Quaternion();
-
-function getAngle(jointData) {
-    const axis = jointData.params.axis;
-    rotationBody1.copy(jointData.params.body1.rotation());
-    rotationBody2.copy(jointData.params.body2.rotation());
-    const relativeRotation = rotationBody1.invert().multiply(rotationBody2);
-    const axisWorld = axis.clone().normalize();
-    return 2 * Math.atan2(
-        axisWorld.x * relativeRotation.x + axisWorld.y * relativeRotation.y + axisWorld.z * relativeRotation.z,
-        relativeRotation.w
-    );
 }
 
 async function initializeModel({ scene }) {
