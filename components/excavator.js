@@ -517,8 +517,10 @@ function updateExcavatorState({ excavator, joints, canActivate }) {
             }
             break;
         case EXCAVATOR_STATES.WAITING_FOR_IDLE:
-            excavator.frameReady++;
-            if (excavator.frameReady > 90) {
+            if (excavator.frameReady > -1) {
+                excavator.frameReady++;
+            }
+            if (excavator.frameReady > 90 || excavator.frameReady === -1) {
                 excavator.frameReady = -1;
                 if (excavator.pendingPicks > 0) {
                     excavator.pendingPicks--;
