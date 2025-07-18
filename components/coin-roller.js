@@ -462,7 +462,6 @@ function getPart(parts, name) {
 }
 
 function initializeColliders({ scene, parts, coinRoller, sensorColliders, onBonusWon, onGameLost }) {
-    let indexPart = 0;
     parts.forEach((partData, name) => {
         const { meshes, friction, restitution, sensor, kinematic } = partData;
         let body;
@@ -500,8 +499,6 @@ function initializeColliders({ scene, parts, coinRoller, sensorColliders, onBonu
                     }
                 }
             }, body);
-            collider.setCollisionGroups((1 << (indexPart % 16)) << 16 | (1 << (indexPart % 16)));
-            indexPart++;
             if (sensor) {
                 sensorColliders.set(name, collider);
             }

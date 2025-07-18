@@ -625,7 +625,6 @@ function initializeColliders({ scene, parts, sensorListeners }) {
                 friction,
                 restitution
             }, body);
-            collider.setCollisionGroups(CABINET_COLLISION_GROUP);
         }
     });
     return {

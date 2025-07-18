@@ -627,7 +627,6 @@ function getPart(parts, name) {
 
 function initializeColliders({ scene, cabinet, parts, joints }) {
     let trapSensor;
-    let indexPart = 0;
     parts.forEach((partData, name) => {
         const { meshes, sensor, friction, restitution, fixed, cylinder, cuboid, kinematic, light, contactSkin } = partData;
         const body = partData.body = fixed ? scene.createFixedBody() : kinematic ? scene.createKinematicBody() : scene.createDynamicBody();
@@ -656,8 +655,6 @@ function initializeColliders({ scene, cabinet, parts, joints }) {
                 }, body);
             }
             collider.setContactSkin(contactSkin);
-            collider.setCollisionGroups((1 << (indexPart % 16)) << 16 | (1 << (indexPart % 16)));
-            indexPart++;
         } else {
             const geometries = [];
             meshes.forEach(meshData => {
@@ -686,11 +683,10 @@ function initializeColliders({ scene, cabinet, parts, joints }) {
                     restitution
                 }, body);
                 collider.setContactSkin(contactSkin);
-                collider.setCollisionGroups((1 << (indexPart % 16)) << 16 | (1 << (indexPart % 16)));
-                indexPart++;
             }
         }
     });
+    debugger
     const defaultRotation = new Quaternion();
     joints.forEach(jointData => {
         const { position, axis, pair, limits } = jointData;

@@ -771,7 +771,6 @@ function getPart(parts, name) {
 }
 
 function initializeColliders({ scene, parts }) {
-    let indexPart = 0;
     parts.forEach(partData => {
         const { meshes, colliders, friction, restitution, kinematic, cuboid, cylinder } = partData;
         const body = partData.body = kinematic ? scene.createKinematicBody() : scene.createFixedBody();
@@ -799,8 +798,6 @@ function initializeColliders({ scene, parts }) {
                     restitution
                 }, body);
             }
-            collider.setCollisionGroups((1 << (indexPart % 16)) << 16 | (1 << (indexPart % 16)));
-            indexPart++;
         } else {
             const geometries = [];
             meshes.forEach(meshData => {
@@ -816,8 +813,6 @@ function initializeColliders({ scene, parts }) {
                     friction,
                     restitution
                 }, body);
-                collider.setCollisionGroups((1 << (indexPart % 16)) << 16 | (1 << (indexPart % 16)));
-                indexPart++;
             }
         }
         colliders.forEach(colliderData => {
@@ -829,9 +824,7 @@ function initializeColliders({ scene, parts }) {
                 friction,
                 restitution
             }, body);
-            collider.setCollisionGroups((1 << (indexPart % 16)) << 16 | (1 << (indexPart % 16)));
         });
-        indexPart++;
     });
 }
 

@@ -269,7 +269,6 @@ function getPart(parts, name) {
 }
 
 function initializeColliders({ scene, parts }) {
-    let indexPart = 0;
     parts.forEach((partData, name) => {
         const { meshes, friction, restitution, fixed } = partData;
         const body = partData.body = fixed ? scene.createFixedBody() : scene.createKinematicBody();
@@ -287,8 +286,6 @@ function initializeColliders({ scene, parts }) {
                 friction,
                 restitution
             }, body);
-            collider.setCollisionGroups((1 << (indexPart % 16)) << 16 | (1 << (indexPart % 16)));
-            indexPart++;
         }
     });
 }
