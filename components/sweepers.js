@@ -348,7 +348,11 @@ export default class {
     }
 
     get active() {
-        return this.#sweepers.state !== SWEEPERS_STATES.IDLE && this.#sweepers.state !== SWEEPERS_STATES.ACTIVATING;
+        return this.#sweepers.state !== SWEEPERS_STATES.IDLE &&
+            this.#sweepers.state !== SWEEPERS_STATES.ACTIVATING &&
+            this.#sweepers.state !== SWEEPERS_STATES.OPENING_DOORS &&
+            this.#sweepers.state !== SWEEPERS_STATES.MOVING_BASE &&
+            this.#sweepers.state !== SWEEPERS_STATES.ROTATING_BASE;
     }
 }
 
@@ -357,9 +361,7 @@ function updateSweepersState({ sweepers, canActivate }) {
         case SWEEPERS_STATES.IDLE:
             break;
         case SWEEPERS_STATES.ACTIVATING:
-            if (canActivate()) {
-                sweepers.state = sweepers.nextState = SWEEPERS_STATES.OPENING_DOORS;
-            }
+            sweepers.state = sweepers.nextState = SWEEPERS_STATES.OPENING_DOORS;
             break;
         case SWEEPERS_STATES.OPENING_DOORS:
             sweepers.doorsRotation += DOORS_ROTATION_SPEED;
@@ -379,7 +381,9 @@ function updateSweepersState({ sweepers, canActivate }) {
             sweepers.rotation += BASE_ROTATION_SPEED;
             if (sweepers.rotation > SWEEPERS_ROTATION) {
                 sweepers.rotation = SWEEPERS_ROTATION;
-                sweepers.nextState = SWEEPERS_STATES.TRANSLATING_BASE;
+                if (canActivate()) {
+                    sweepers.nextState = SWEEPERS_STATES.TRANSLATING_BASE;
+                }
             }
             break;
         case SWEEPERS_STATES.TRANSLATING_BASE:
