@@ -25,7 +25,6 @@ import Runs from "./runs.js";
 const MIN_POSITION_Y_OBJECTS = -1;
 const MODEL_PATH = "./assets/cabinet.glb";
 const SENSOR_HEIGHT = 0.2;
-const CABINET_COLLISION_GROUP = 0x10001000;
 
 export default class {
 
