@@ -401,7 +401,6 @@ function updateExcavatorState({ excavator, canActivate }) {
             excavator.nextState = EXCAVATOR_STATES.MOVING_DOWN;
             break;
         case EXCAVATOR_STATES.MOVING_DOWN:
-            // console.log("=> moving down", excavator.platformArmAngle, excavator.jawsArmAngle);
             excavator.platformArmAngle -= PLATFORM_ARM_ROTATION_SPEED;
             excavator.jawsArmAngle += JAWS_ARM_ROTATION_SLOW_SPEED;
             if (excavator.platformArmAngle < -.7) {
@@ -442,7 +441,6 @@ function updateExcavatorState({ excavator, canActivate }) {
             }
             break;
         case EXCAVATOR_STATES.MOVING_TO_DROP_ZONE:
-            // console.log("=> moving to drop zone", excavator.platformAngle);
             excavator.platformAngle -= PLATFORM_ROTATION_SPEED;
             if (excavator.platformAngle < -2) {
                 excavator.platformAngle = -2;
@@ -450,7 +448,6 @@ function updateExcavatorState({ excavator, canActivate }) {
             }
             break;
         case EXCAVATOR_STATES.EXTENDING_ARMS:
-            // console.log("=> extending arms", excavator.platformArmAngle, excavator.jawsArmAngle);
             excavator.platformArmAngle -= PLATFORM_ARM_ROTATION_SPEED;
             excavator.jawsArmAngle += JAWS_ARM_ROTATION_SPEED;
             if (excavator.platformArmAngle < -.3) {
@@ -471,7 +468,6 @@ function updateExcavatorState({ excavator, canActivate }) {
             excavator.nextState = EXCAVATOR_STATES.RETRACTING_ARMS;
             break;
         case EXCAVATOR_STATES.RETRACTING_ARMS:
-            // console.log("=> retracting arms", excavator.platformArmAngle, excavator.jawsArmAngle);
             excavator.platformArmAngle += PLATFORM_ARM_ROTATION_SPEED;
             excavator.jawsArmAngle -= JAWS_ARM_ROTATION_SPEED;
             if (excavator.platformArmAngle > 0.5) {
@@ -485,15 +481,13 @@ function updateExcavatorState({ excavator, canActivate }) {
             }
             break;
         case EXCAVATOR_STATES.MOVING_TO_BASE:
-            // console.log("=> moving to base", excavator.platformAngle);
-            excavator.platformAngle += PLATFORM_ROTATION_SPEED;
+            xcavator.platformAngle += PLATFORM_ROTATION_SPEED;
             if (excavator.platformAngle > 0) {
                 excavator.platformAngle = 0;
                 excavator.nextState = EXCAVATOR_STATES.CLOSING_JAWS_AFTER_DROPPING;
             }
             break;
         case EXCAVATOR_STATES.CLOSING_JAWS_AFTER_DROPPING:
-            // console.log("=> dropping", excavator.platformArmAngle, excavator.jawsArmAngle);
             excavator.platformArmAngle -= PLATFORM_ARM_ROTATION_SPEED;
             excavator.jawsArmAngle += JAWS_ARM_ROTATION_SPEED;
             if (excavator.platformArmAngle < 0) {
