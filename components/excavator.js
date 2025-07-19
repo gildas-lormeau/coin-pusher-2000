@@ -481,7 +481,7 @@ function updateExcavatorState({ excavator, canActivate }) {
             }
             break;
         case EXCAVATOR_STATES.MOVING_TO_BASE:
-            xcavator.platformAngle += PLATFORM_ROTATION_SPEED;
+            excavator.platformAngle += PLATFORM_ROTATION_SPEED;
             if (excavator.platformAngle > 0) {
                 excavator.platformAngle = 0;
                 excavator.nextState = EXCAVATOR_STATES.CLOSING_JAWS_AFTER_DROPPING;
