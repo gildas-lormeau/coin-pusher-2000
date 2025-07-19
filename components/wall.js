@@ -20,7 +20,7 @@ const OBSTACLE_SPACING_Y = 0.09;
 const OBSTACLE_ROWS = 5;
 const OBSTACLE_COLS = 7;
 const OBSTACLE_FRICTION = 0;
-const OBSTACLE_RESTITUTION = 0.15;
+const OBSTACLE_RESTITUTION = 0.1;
 const BOTTOM_OBSTACLE_FRICTION = 0.5;
 const BOTTOM_OBSTACLE_RESTITUTION = 0;
 const OBSTACLE_COLOR = 0xffffff;
@@ -117,9 +117,9 @@ function initiliazeWallObstacles({ scene, wallBody }) {
         if (row !== 4 || (col != 0 && col != 6)) {
             scene.addObject(obstacleMesh);
             scene.createCuboidCollider({
-                width: obstacleRadius / 8,
+                width: obstacleRadius,
                 height: OBSTACLE_HEIGHT,
-                depth: obstacleRadius / 8,
+                depth: obstacleRadius,
                 friction,
                 restitution,
                 position: [x, y, OBSTACLE_POSITION_Z],
