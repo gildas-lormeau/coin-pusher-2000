@@ -14,6 +14,7 @@ const INITIAL_HIDDEN_ANGULAR_VELOCITY = new Vector3(0, 0, 0);
 const INITIAL_SCALE = new Vector3(0, 0, 0);
 const DEFAULT_SCALE = new Vector3(1, 1, 1);
 const EULER_ROTATION = new Euler(Math.PI / 2, 0, 0);
+const SPAWN_IMPULSE = new Vector3(0, -0.000025, 0);
 const SOFT_CCD_PREDICTION = Math.max(RADIUS, DEPTH);
 const ADDITIONAL_SOLVER_ITERATIONS = 1;
 const ANGULAR_DAMPING = 0.5;
@@ -59,8 +60,17 @@ export default class {
                 const { slot } = this.#spawnedCoins.shift();
                 const instance = this.#instances.find(instance => !instance.used);
                 instance.used = true;
-                initializePosition({ instance, slot });
+                const randomNumber = Math.random();
+                const position = new Vector3(
+                    INITIAL_POSITIONS_X[slot] + (randomNumber <= 0.5 ? -INITIAL_POSITION_MIN_DELTA_X : INITIAL_POSITION_MIN_DELTA_X) * Math.random(),
+                    INITIAL_POSITION[1],
+                    INITIAL_POSITION[2]
+                );
+                const rotation = EULER_ROTATION.clone();
+                rotation.x += Math.random() <= 0.5 ? Math.PI : 0;
+                initializePosition({ instance, slot, position, rotation });
                 instance.body.setEnabled(true);
+                instance.pendingImpulse = SPAWN_IMPULSE;
                 this.#onSpawnedCoin(instance);
                 this.#frameLastSpawn = 0;
             }
@@ -276,7 +286,7 @@ function createInstance({ scene, instances }) {
     return instance;
 }
 
-function initializePosition({ instance, hidden, position, rotation, slot = 1 }) {
+function initializePosition({ instance, hidden, position, rotation }) {
     if (hidden) {
         instance.position.fromArray(INITIAL_HIDDEN_POSITION);
         instance.rotation.fromArray(INITIAL_HIDDEN_ROTATION);
@@ -285,20 +295,9 @@ function initializePosition({ instance, hidden, position, rotation, slot = 1 }) 
     } else {
         if (position) {
             instance.position.copy(position);
-        } else {
-            const randomNumber = Math.random();
-            instance.position.fromArray([
-                INITIAL_POSITIONS_X[slot] + (randomNumber <= 0.5 ? -INITIAL_POSITION_MIN_DELTA_X : INITIAL_POSITION_MIN_DELTA_X) * Math.random(),
-                INITIAL_POSITION[1],
-                INITIAL_POSITION[2]
-            ]);
         }
         if (rotation) {
             instance.rotation.setFromEuler(new Euler(rotation.x, rotation.y, rotation.z));
-        } else {
-            const rotation = EULER_ROTATION.clone();
-            rotation.x += Math.random() <= 0.5 ? Math.PI : 0;
-            instance.rotation.setFromEuler(rotation);
         }
     }
     instance.body.setTranslation(instance.position);
