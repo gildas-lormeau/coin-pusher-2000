@@ -50,7 +50,11 @@ export default class {
             }
         });
         this.#instances = [];
-        createInstances({ scene, instances: this.#instances, bulbLights: this.#bulbLights });
+        createInstances({
+            scene,
+            instances: this.#instances,
+            bulbLights: this.#bulbLights
+        });
     }
 
     static update() {
@@ -69,7 +73,6 @@ export default class {
                         object.getMatrixAt(instance.index, matrix);
                         matrix.decompose(position, rotation, scale);
                     } else {
-                        const bulbLight = this.#bulbLights[color][type][instance.index];
                         instance.framePressStart++;
                         if (instance.framePressStart < BUTTON_RELEASE_DURATION) {
                             const offsetY = new Vector3(0, BUTTON_PRESS_DEPTH, 0);
@@ -79,10 +82,10 @@ export default class {
                             const newPosition = instance.initialPosition.clone().add(offset);
                             instance.buttonPosition.copy(newPosition);
                             if (instance.enabled) {
-                                bulbLight.intensity = interpolationFactor * LIGHT_INTENSITY_ON;
+                                instance.bulbLightIntensity = interpolationFactor * LIGHT_INTENSITY_ON;
                             }
                         } else {
-                            bulbLight.intensity = LIGHT_INTENSITY_OFF;
+                            instance.bulbLightIntensity = LIGHT_INTENSITY_OFF;
                             instance.isPressing = false;
                             instance.framePressStart = -1;
                             instance.buttonPosition.copy(instance.initialPosition);
@@ -95,14 +98,9 @@ export default class {
                     } else {
                         instance.frameBlinkStart++;
                         if (instance.frameBlinkStart >= BLINK_DURATION) {
-                            const bulbLight = this.#bulbLights[color][type][instance.index];
                             instance.frameBlinkStart = 0;
                             instance.blinkingOn = !instance.blinkingOn;
-                            if (instance.blinkingOn) {
-                                bulbLight.intensity = LIGHT_INTENSITY_ON;
-                            } else {
-                                bulbLight.intensity = LIGHT_INTENSITY_OFF;
-                            }
+                            instance.bulbLightIntensity = instance.blinkingOn ? LIGHT_INTENSITY_ON : LIGHT_INTENSITY_OFF;
                         }
                     }
                     if (!instance.blinkingOn && !instance.enabled) {
@@ -112,7 +110,6 @@ export default class {
                 }
             }
         });
-
         for (let color = 0; color < MAX_COLORS; color++) {
             for (let type = 0; type < TYPES; type++) {
                 for (const instance of this.#instances[color][type]) {
@@ -133,7 +130,14 @@ export default class {
                 this.#meshes[color][type].forEach(mesh => mesh.instanceMatrix.needsUpdate = true);
             }
         }
-        // TODO: handle lights
+        this.#interactiveObjects.forEach(object => {
+            const { color, type } = object.userData;
+            const instances = this.#instances[color][type];
+            for (const instance of instances) {
+                const bulbLight = this.#bulbLights[color][type][instance.index];
+                bulbLight.intensity = instance.bulbLightIntensity;
+            }
+        });
     }
 
     static load(buttons) {
@@ -148,6 +152,7 @@ export default class {
                     instance.frameBlinkStart = button.frameBlinkStart;
                     instance.blinkingOn = button.blinkingOn;
                     instance.framePressStart = button.framePressStart;
+                    instance.bulbLightIntensity = button.bulbLightIntensity;
                     instance.buttonPosition.fromArray(button.position);
                 });
             });
@@ -165,6 +170,7 @@ export default class {
                         frameBlinkStart: instance.frameBlinkStart,
                         blinkingOn: instance.blinkingOn,
                         framePressStart: instance.framePressStart,
+                        bulbLightIntensity: instance.bulbLightIntensity,
                         position: instance.buttonPosition.toArray()
                     };
                 });
@@ -299,7 +305,7 @@ function createInstances({ scene, instances, bulbLights }) {
             bulbLights[color][type] = [];
             for (let indexButton = instances[color][type].length; indexButton < MAX_INSTANCES; indexButton++) {
                 createInstance({ type, color, instances });
-                const bulbLight = new PointLight(LIGHT_COLOR, LIGHT_INTENSITY_ON, LIGHT_DISTANCE, LIGHT_DECAY);
+                const bulbLight = new PointLight(LIGHT_COLOR, LIGHT_INTENSITY_OFF, LIGHT_DISTANCE, LIGHT_DECAY);
                 bulbLight.castShadow = false;
                 bulbLights[color][type][indexButton] = bulbLight;
                 bulbLight.visible = false;
@@ -327,7 +333,8 @@ function createInstance({ type, color, instances }) {
         isBlinking: false,
         frameBlinkStart: -1,
         blinkingOn: false,
-        framePressStart: -1
+        framePressStart: -1,
+        bulbLightIntensity: LIGHT_INTENSITY_OFF
     };
     instances[color][type].push(instance);
     return instance;
