@@ -11,7 +11,7 @@ const LIGHT_INTENSITY_OFF = 0;
 const LIGHT_COLOR = 0xffaa00;
 const LIGHT_DISTANCE = 0.03;
 const LIGHT_DECAY = .1;
-const LIGHT_POSITION_Y = -0.004;
+const LIGHT_POSITION_Y = 0.005;
 const MODEL_PATH = "./assets/buttons.glb";
 const TYPES = 6;
 const COLORS = [
@@ -339,8 +339,10 @@ function initializePosition({ instance, position, rotation, bulbLight }) {
     instance.initialPosition.fromArray([position.x, position.y, position.z]);
     instance.initialRotation.setFromEuler(new Euler(rotation.x, rotation.y, rotation.z));
     instance.buttonPosition.fromArray([position.x, position.y, position.z]);
-    bulbLight.position.fromArray([position.x, position.y - LIGHT_POSITION_Y, position.z]);
-    bulbLight.rotation.set(instance.initialRotation);
+    bulbLight.position
+        .add(new Vector3(0, LIGHT_POSITION_Y, 0))
+        .applyQuaternion(instance.initialRotation)
+        .add(instance.initialPosition);
 }
 
 function update({ instance, meshes }) {
