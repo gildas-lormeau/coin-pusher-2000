@@ -3,22 +3,33 @@ import Buttons from "./instanced-meshes/buttons.js";
 
 const BUTTONS_POSITION = [0, 0.16125, 1.25];
 const BUTTONS_ROTATION = [2 * Math.PI + Math.PI / 10, 0, 0];
-const BUTTONS_POSITION_X = [-0.2, 0, 0.2];
-const ALT_BUTTONS_POSITION_X = [-0.4, 0.4];
+const START_BUTTON_POSITION = [.85, .2, .785];
+const START_BUTTON_ROTATION = [Math.PI / 2, 0, 0];
+const BUTTONS_POSITION_X = [-.2, 0, .2];
+const ALT_BUTTONS_POSITION_X = [-.65, -.45, .45, .65];
 
 export default class {
 
     #dropButtons = [];
     #startButton;
-    #actionButton;
+    #holdButton;
+    #aButton;
+    #bButton;
+    #shootButton;
     #onPressDropButton;
-    #onPressActionButton;
+    #onPressShootButton;
     #onPressStartButton;
+    #onPressHoldButton;
+    #onPressAButton;
+    #onPressBButton;
 
-    constructor({ onPressDropButton, onPressActionButton, onPressStartButton }) {
+    constructor({ onPressDropButton, onPressShootButton, onPressStartButton, onPressHoldButton, onPressAButton, onPressBButton }) {
         this.#onPressDropButton = onPressDropButton;
-        this.#onPressActionButton = onPressActionButton;
+        this.#onPressShootButton = onPressShootButton;
         this.#onPressStartButton = onPressStartButton;
+        this.#onPressHoldButton = onPressHoldButton;
+        this.#onPressAButton = onPressAButton;
+        this.#onPressBButton = onPressBButton;
     }
 
     async initialize() {
@@ -31,27 +42,55 @@ export default class {
             });
             Buttons.enable(this.#dropButtons[indexButton], false);
         }
-        this.#actionButton = Buttons.addButton({
-            type: 2,
-            color: 0,
+        this.#shootButton = Buttons.addButton({
+            type: 5,
+            color: 1,
             position: new Vector3(ALT_BUTTONS_POSITION_X[0], BUTTONS_POSITION[1], BUTTONS_POSITION[2]),
             rotation: new Vector3().fromArray(BUTTONS_ROTATION)
         });
-        Buttons.enable(this.#actionButton, false);
-        this.#startButton = Buttons.addButton({
-            type: 1,
-            color: 0,
+        Buttons.enable(this.#shootButton, false);
+        this.#holdButton = Buttons.addButton({
+            type: 2,
+            color: 1,
             position: new Vector3(ALT_BUTTONS_POSITION_X[1], BUTTONS_POSITION[1], BUTTONS_POSITION[2]),
             rotation: new Vector3().fromArray(BUTTONS_ROTATION)
         });
+        Buttons.enable(this.#holdButton, false);
+        this.#aButton = Buttons.addButton({
+            type: 3,
+            color: 2,
+            position: new Vector3(ALT_BUTTONS_POSITION_X[2], BUTTONS_POSITION[1], BUTTONS_POSITION[2]),
+            rotation: new Vector3().fromArray(BUTTONS_ROTATION)
+        });
+        Buttons.enable(this.#aButton, false);
+        this.#bButton = Buttons.addButton({
+            type: 4,
+            color: 2,
+            position: new Vector3(ALT_BUTTONS_POSITION_X[3], BUTTONS_POSITION[1], BUTTONS_POSITION[2]),
+            rotation: new Vector3().fromArray(BUTTONS_ROTATION)
+        });
+        Buttons.enable(this.#bButton, false);
+        this.#startButton = Buttons.addButton({
+            type: 1,
+            color: 0,
+            position: new Vector3(START_BUTTON_POSITION[0], START_BUTTON_POSITION[1], START_BUTTON_POSITION[2]),
+            rotation: new Vector3().fromArray(START_BUTTON_ROTATION)
+        });
+        Buttons.enable(this.#startButton, true);
         Buttons.onPress = instance => {
             if (instance === this.#startButton) {
                 this.#onPressStartButton();
             } else if (this.#dropButtons.includes(instance)) {
                 const index = this.#dropButtons.indexOf(instance);
                 this.#onPressDropButton(index);
-            } else if (instance === this.#actionButton) {
-                this.#onPressActionButton();
+            } else if (instance === this.#shootButton) {
+                this.#onPressShootButton();
+            } else if (instance === this.#holdButton) {
+                this.#onPressHoldButton();
+            } else if (instance === this.#aButton) {
+                this.#onPressAButton();
+            } else if (instance === this.#bButton) {
+                this.#onPressBButton();
             }
         };
         Buttons.blink(this.#startButton, true);
@@ -79,11 +118,11 @@ export default class {
     }
 
     enableActionButton() {
-        Buttons.enable(this.#actionButton, true);
+        Buttons.enable(this.#shootButton, true);
     }
 
     disableActionButton() {
-        Buttons.enable(this.#actionButton, false);
+        Buttons.enable(this.#shootButton, false);
     }
 
 

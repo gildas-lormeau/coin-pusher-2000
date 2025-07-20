@@ -11,11 +11,13 @@ const LIGHT_INTENSITY_OFF = 0;
 const LIGHT_COLOR = 0xffaa00;
 const LIGHT_DISTANCE = 0.03;
 const LIGHT_DECAY = .1;
-const LIGHT_POSITION_Y = 0.00725;
+const LIGHT_POSITION_Y = -0.004;
 const MODEL_PATH = "./assets/buttons.glb";
-const TYPES = 3;
+const TYPES = 6;
 const COLORS = [
-    { color: 0xffffff, background: 0xff0000 }
+    { color: 0xffffff, background: 0xff0000 },
+    { color: 0xffffff, background: 0xdd2299 },
+    { color: 0xffffff, background: 0x4422dd }
 ];
 const MAX_COLORS = COLORS.length;
 
@@ -212,17 +214,45 @@ async function initializeModel({ scene }) {
         startButtonColorMaterial.color.setHex(COLORS[color].color);
         const startButtonBackgroundMaterial = startButtonMesh.children[1].material.clone();
         startButtonBackgroundMaterial.color.setHex(COLORS[color].background);
-        const defaultMesh = meshes[1];
+        const holdButtonMesh = meshes[1];
+        const holdButtonColorMaterial = holdButtonMesh.children[0].material.clone();
+        holdButtonColorMaterial.color.setHex(COLORS[color].color);
+        const holdButtonBackgroundMaterial = holdButtonMesh.children[1].material.clone();
+        holdButtonBackgroundMaterial.color.setHex(COLORS[color].background);
+        const aButtonMesh = meshes[3];
+        const aButtonColorMaterial = aButtonMesh.children[0].material.clone();
+        aButtonColorMaterial.color.setHex(COLORS[color].color);
+        const aButtonBackgroundMaterial = aButtonMesh.children[1].material.clone();
+        aButtonBackgroundMaterial.color.setHex(COLORS[color].background);
+        const bButtonMesh = meshes[4];
+        const bButtonColorMaterial = bButtonMesh.children[0].material.clone();
+        bButtonColorMaterial.color.setHex(COLORS[color].color);
+        const bButtonBackgroundMaterial = bButtonMesh.children[1].material.clone();
+        bButtonBackgroundMaterial.color.setHex(COLORS[color].background);
+        const shootButtonMesh = meshes[5];
+        const shootButtonColorMaterial = shootButtonMesh.children[0].material.clone();
+        shootButtonColorMaterial.color.setHex(COLORS[color].color);
+        const shootButtonBackgroundMaterial = shootButtonMesh.children[1].material.clone();
+        shootButtonBackgroundMaterial.color.setHex(COLORS[color].background);
+        const defaultMesh = meshes[6];
         const defaultButtonBackgroundMaterial = defaultMesh.children[1].material.clone();
         defaultButtonBackgroundMaterial.color.setHex(COLORS[color].background);
         materials.push([
             [dropButtonMesh.children[0].material, dropButtonColorMaterial, dropButtonBackgroundMaterial],
             [startButtonMesh.children[0].material, startButtonColorMaterial, startButtonBackgroundMaterial],
+            [holdButtonMesh.children[0].material, holdButtonColorMaterial, holdButtonBackgroundMaterial],
+            [aButtonMesh.children[0].material, aButtonColorMaterial, aButtonBackgroundMaterial],
+            [bButtonMesh.children[0].material, bButtonColorMaterial, bButtonBackgroundMaterial],
+            [shootButtonMesh.children[0].material, shootButtonColorMaterial, shootButtonBackgroundMaterial],
             [defaultMesh.children[0].material, defaultButtonBackgroundMaterial]
         ]);
         geometries.push([
             [dropButtonMesh.children[0].geometry, dropButtonMesh.children[1].geometry, dropButtonMesh.children[2].geometry],
             [startButtonMesh.children[0].geometry, startButtonMesh.children[1].geometry, startButtonMesh.children[2].geometry],
+            [holdButtonMesh.children[0].geometry, holdButtonMesh.children[1].geometry, holdButtonMesh.children[2].geometry],
+            [aButtonMesh.children[0].geometry, aButtonMesh.children[1].geometry, aButtonMesh.children[2].geometry],
+            [bButtonMesh.children[0].geometry, bButtonMesh.children[1].geometry, bButtonMesh.children[2].geometry],
+            [shootButtonMesh.children[0].geometry, shootButtonMesh.children[1].geometry, shootButtonMesh.children[2].geometry],
             [defaultMesh.children[0].geometry, defaultMesh.children[1].geometry]
         ]);
     }
@@ -309,8 +339,8 @@ function initializePosition({ instance, position, rotation, bulbLight }) {
     instance.initialPosition.fromArray([position.x, position.y, position.z]);
     instance.initialRotation.setFromEuler(new Euler(rotation.x, rotation.y, rotation.z));
     instance.buttonPosition.fromArray([position.x, position.y, position.z]);
-    bulbLight.position.fromArray([position.x, position.y + LIGHT_POSITION_Y, position.z,]);
-    bulbLight.rotation.set(rotation.x, rotation.y, rotation.z);
+    bulbLight.position.fromArray([position.x, position.y - LIGHT_POSITION_Y, position.z]);
+    bulbLight.rotation.set(instance.initialRotation);
 }
 
 function update({ instance, meshes }) {

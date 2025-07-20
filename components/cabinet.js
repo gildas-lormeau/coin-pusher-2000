@@ -106,7 +106,7 @@ export default class {
                     this.#cabinet.state.coins--;
                 }
             },
-            onPressActionButton: () => {
+            onPressShootButton: () => {
                 this.#coinRoller.triggerCoin();
             },
             onPressStartButton: () => {
