@@ -116,6 +116,7 @@ export default class {
 
     disableStartButton() {
         Buttons.enable(this.#startButton, false);
+        Buttons.blink(this.#startButton, false);
     }
 
     enableDropButtons() {
