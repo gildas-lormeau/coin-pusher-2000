@@ -292,6 +292,7 @@ export default class {
             state: this.#cabinet.state,
             screen: this.#screen,
             onFinishedGame: () => {
+                this.#cabinet.state.coins = 0;
                 this.#controlPanel.enableStartButton();
                 this.#controlPanel.disableDropButtons();
                 this.#controlPanel.disableHoldButton();
