@@ -111,7 +111,12 @@ export default class {
             },
             onPressStartButton: () => {
                 this.#controlPanel.disableStartButton();
+                this.#controlPanel.enableDropButtons();
+                this.#controlPanel.enableHoldButton();
                 this.#runs.start();
+            },
+            onPressHoldButton: () => {
+                this.#pusher.hold();
             }
         });
         this.#pusher = new Pusher({
@@ -142,7 +147,7 @@ export default class {
                     } else if (random < .28) {
                         this.#excavator.pick();
                     } else if (random < .43) {
-                        this.#controlPanel.enableActionButton();
+                        this.#controlPanel.enableShootButton();
                         this.#coinRoller.shootCoin();
                     } else if (random < .57) {
                         this.#leftTower.shootCoins();
@@ -226,10 +231,10 @@ export default class {
             scene,
             cabinet: this,
             onInitializeCoin: ({ position, rotation }) => Coins.depositCoin({ position, rotation }),
-            onGameLost: () => this.#controlPanel.disableActionButton(),
+            onGameLost: () => this.#controlPanel.disableShootButton(),
             onBonusWon: bonus => {
                 Coins.dropCoins({ count: Math.pow(bonus + 1, 2) * 5 });
-                this.#controlPanel.disableActionButton();
+                this.#controlPanel.disableShootButton();
             }
         });
         this.#stacker = new Stacker({

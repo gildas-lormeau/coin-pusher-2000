@@ -13,10 +13,13 @@ const DELIVERY_POSITION = "delivery-position";
 const LIGHTS_EMISSIVE_COLOR = 0x5353A6;
 const LIGHTS_MIN_INTENSITY = 0;
 const LIGHTS_MAX_INTENSITY = 1.5;
-const LIGHTS_ON_DURATION = 10; // ms
+const LIGHTS_ON_DURATION = 10;
+const HOLD_DURATION = 180;
+const HOLD_IDLE_DURATION = 600;
 
 const PUSHER_STATES = {
     MOVING: Symbol.for("pusher-moving"),
+    HOLDING: Symbol.for("pusher-holding"),
     PREPARING_DELIVERY: Symbol.for("pusher-preparing-delivery"),
     OPENING_DOOR: Symbol.for("pusher-opening-door"),
     DELIVERING_BONUS: Symbol.for("pusher-delivering-bonus"),
@@ -29,7 +32,6 @@ const LIGHTS_STATES = {
     ROTATING: Symbol.for("pusher-lights-rotating"),
     DELIVERING: Symbol.for("pusher-lights-delivering")
 };
-
 
 export default class {
     constructor({ scene, onDeliverBonus }) {
@@ -52,6 +54,8 @@ export default class {
         rewards: [],
         phase: 0,
         platform: {},
+        frameHold: 0,
+        frameNextHold: 0,
         door: {
             position: 0
         },
@@ -124,6 +128,12 @@ export default class {
         }
     }
 
+    hold() {
+        if (this.#pusher.state === PUSHER_STATES.MOVING && this.#pusher.frameNextHold == 0) {
+            this.#pusher.state = PUSHER_STATES.HOLDING;
+        }
+    }
+
     get phase() {
         return this.#pusher.phase;
     }
@@ -133,6 +143,8 @@ export default class {
             state: this.#pusher.state.description,
             nextState: this.#pusher.nextState ? this.#pusher.nextState.description : null,
             phase: this.#pusher.phase,
+            frameHold: this.#pusher.frameHold,
+            frameNextHold: this.#pusher.frameNextHold,
             rewards: [...this.#pusher.rewards],
             platformBodyHandle: this.#platform.body.handle,
             doorBodyHandle: this.#door.body.handle,
@@ -154,6 +166,8 @@ export default class {
         this.#pusher.nextState = pusher.nextState ? Symbol.for(pusher.nextState) : null;
         this.#pusher.rewards = pusher.rewards;
         this.#pusher.phase = pusher.phase;
+        this.#pusher.frameHold = pusher.frameHold;
+        this.#pusher.frameNextHold = pusher.frameNextHold;
         this.#platform.body = this.#scene.worldBodies.get(pusher.platformBodyHandle);
         this.#door.body = this.#scene.worldBodies.get(pusher.doorBodyHandle);
         this.#pusher.door.position = pusher.door.position;
@@ -171,6 +185,18 @@ function updatePusherState({ pusher }) {
     switch (pusher.state) {
         case PUSHER_STATES.MOVING:
             pusher.phase = (pusher.phase + SPEED) % (Math.PI * 2);
+            pusher.frameNextHold--;
+            if (pusher.frameNextHold < 0) {
+                pusher.frameNextHold = 0;
+            }
+            break;
+        case PUSHER_STATES.HOLDING:
+            pusher.frameHold++;
+            if (pusher.frameHold > HOLD_DURATION) {
+                pusher.frameHold = 0;
+                pusher.frameNextHold = HOLD_IDLE_DURATION;
+                pusher.nextState = PUSHER_STATES.MOVING;
+            }
             break;
         case PUSHER_STATES.PREPARING_DELIVERY:
             pusher.phase = (pusher.phase + SPEED) % (Math.PI * 2);

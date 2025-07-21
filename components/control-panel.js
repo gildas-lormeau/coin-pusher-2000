@@ -112,19 +112,35 @@ export default class {
 
     disableStartButton() {
         Buttons.enable(this.#startButton, false);
+    }
+
+    enableDropButtons() {
         for (const button of this.#dropButtons) {
             Buttons.enable(button, true);
         }
     }
 
-    enableActionButton() {
+    disableDropButtons() {
+        for (const button of this.#dropButtons) {
+            Buttons.enable(button, false);
+        }
+    }
+
+    enableShootButton() {
         Buttons.enable(this.#shootButton, true);
     }
 
-    disableActionButton() {
+    disableShootButton() {
         Buttons.enable(this.#shootButton, false);
     }
 
+    enableHoldButton() {
+        Buttons.enable(this.#holdButton, true);
+    }
+
+    disableHoldButton() {
+        Buttons.enable(this.#holdButton, false);
+    }
 
     get interactiveObjects() {
         return Buttons.interactiveObjects;
