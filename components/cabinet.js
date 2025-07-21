@@ -126,6 +126,12 @@ export default class {
                 Tokens.depositTokens({ position, count: reward.tokenCount });
                 Cards.depositCards({ position, count: reward.cardCount });
                 Ingots.depositIngots({ position, count: reward.ingotCount });
+            },
+            onEnableHold: () => {
+                this.#controlPanel.enableHoldButton();
+            },
+            onDisableHold: () => {
+                this.#controlPanel.disableHoldButton();
             }
         });
         this.#scoreboard = new ScoreBoard({

@@ -34,9 +34,11 @@ const LIGHTS_STATES = {
 };
 
 export default class {
-    constructor({ scene, onDeliverBonus }) {
+    constructor({ scene, onDeliverBonus, onDisableHold, onEnableHold }) {
         this.#scene = scene;
         this.#onDeliverBonus = onDeliverBonus;
+        this.#onDisableHold = onDisableHold;
+        this.#onEnableHold = onEnableHold;
     }
 
     #scene;
@@ -45,6 +47,8 @@ export default class {
     #platform;
     #deliveryPosition;
     #onDeliverBonus;
+    #onDisableHold;
+    #onEnableHold;
     #lightBulbsMaterials;
     #platformPosition = new Vector3();
     #doorPosition = new Vector3();
@@ -100,6 +104,14 @@ export default class {
                 reward,
                 position: this.#deliveryPosition
             });
+        }
+        if (this.#pusher.state === PUSHER_STATES.MOVING) {
+            if (this.#pusher.frameNextHold == 0) {
+                this.#onEnableHold();
+            }
+        }
+        if (this.#pusher.state === PUSHER_STATES.HOLDING) {
+            this.#onDisableHold();
         }
         this.#platformPosition.setZ(Math.sin(this.#pusher.phase) * DISTANCE);
         this.#doorPosition.setZ(this.#pusher.door.position);
