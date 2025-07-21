@@ -291,6 +291,11 @@ export default class {
         this.#runs = new Runs({
             state: this.#cabinet.state,
             screen: this.#screen,
+            onStartedGame: () => {
+                this.#cabinet.state.coins = 100;
+                this.#cabinet.state.score = 0;
+                this.#cabinet.state.points = 0;
+            },
             onFinishedGame: () => {
                 this.#cabinet.state.coins = 0;
                 this.#controlPanel.enableStartButton();

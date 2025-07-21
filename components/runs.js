@@ -45,6 +45,7 @@ export default class {
     #state;
     #screen;
     #onFinishedGame;
+    #onStartedGame;
     #run = {
         state: RUNS_STATES.IDLE,
         nextState: null,
@@ -53,10 +54,11 @@ export default class {
     };
 
 
-    constructor({ state, screen, onFinishedGame }) {
+    constructor({ state, screen, onStartedGame, onFinishedGame }) {
         this.#state = state;
         this.#screen = screen;
         this.#onFinishedGame = onFinishedGame;
+        this.#onStartedGame = onStartedGame;
     }
 
     initialize() {
@@ -91,6 +93,9 @@ export default class {
         if (this.#run.state !== RUNS_STATES.IDLE) {
             const currentRun = RUNS[this.#run.step];
             updateRunsState({ run: this.#run, state: this.#state, currentRun, time });
+        }
+        if (this.#run.state === RUNS_STATES.STARTING_RUNS) {
+            this.#onStartedGame();
         }
         if (this.#run.state === RUNS_STATES.FINISHING_GAME) {
             this.#onFinishedGame();
@@ -129,7 +134,6 @@ function updateRunsState({ run, state, currentRun, time }) {
     switch (run.state) {
         case RUNS_STATES.STARTING_RUNS:
             run.step = 0;
-            state.coins = 100;
             run.nextState = RUNS_STATES.STARTING_RUN;
             break;
         case RUNS_STATES.STARTING_RUN:
