@@ -113,6 +113,7 @@ export default class {
                 this.#controlPanel.disableStartButton();
                 this.#controlPanel.enableDropButtons();
                 this.#controlPanel.enableHoldButton();
+                this.#sensorGate.reset();
                 this.#runs.start();
             },
             onPressHoldButton: () => {
@@ -289,7 +290,12 @@ export default class {
         });
         this.#runs = new Runs({
             state: this.#cabinet.state,
-            screen: this.#screen
+            screen: this.#screen,
+            onFinishedGame: () => {
+                this.#controlPanel.enableStartButton();
+                this.#controlPanel.disableDropButtons();
+                this.#controlPanel.disableHoldButton();
+            }
         });
         this.#floorAccessRules.set(this.#leftStacker, new Set([this.#sweepers]));
         this.#floorAccessRules.set(this.#rightStacker, new Set([this.#sweepers]));
@@ -330,6 +336,7 @@ export default class {
             this.#runs.initialize()
         ]);
         await this.#collisionsDetector.initialize();
+        this.#controlPanel.enableStartButton();
     }
 
     update(time) {

@@ -149,6 +149,19 @@ export default class {
         });
     }
 
+    reset() {
+        this.#sensor.state = SENSOR_STATES.IDLE;
+        this.#sensor.nextState = null;
+        this.#sensor.frameFlashStart = -1;
+        this.#sensor.flashCount = 0;
+        this.#sensor.letters.forEach(letter => {
+            letter.state = LETTER_STATES.OFF;
+            letter.nextState = null;
+            letter.frameFlashStart = -1;
+            letter.flashCount = 0;
+        });
+    }
+
     sensorColliders() {
         return [this.#collider];
     }

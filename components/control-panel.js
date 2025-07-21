@@ -76,7 +76,7 @@ export default class {
             position: new Vector3(START_BUTTON_POSITION[0], START_BUTTON_POSITION[1], START_BUTTON_POSITION[2]),
             rotation: new Vector3().fromArray(START_BUTTON_ROTATION)
         });
-        Buttons.enable(this.#startButton, true);
+        Buttons.enable(this.#startButton, false);
         Buttons.onPress = instance => {
             if (instance === this.#startButton) {
                 this.#onPressStartButton();
@@ -93,7 +93,6 @@ export default class {
                 this.#onPressBButton();
             }
         };
-        Buttons.blink(this.#startButton, true);
     }
 
     update() {
@@ -108,6 +107,11 @@ export default class {
         for (const button of this.#dropButtons) {
             Buttons.on(button);
         }
+    }
+
+    enableStartButton() {
+        Buttons.enable(this.#startButton, true);
+        Buttons.blink(this.#startButton, true);
     }
 
     disableStartButton() {

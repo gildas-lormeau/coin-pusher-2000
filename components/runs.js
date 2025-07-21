@@ -14,6 +14,21 @@ const RUNS = [
         description: "Win 250 points",
         passed: (state, data) => state.score - data.scoreStart >= 250,
         message: (state, data) => "Remaining points: " + (250 - (state.score - data.scoreStart))
+    },
+    {
+        description: "Win 300 points",
+        passed: (state, data) => state.score - data.scoreStart >= 300,
+        message: (state, data) => "Remaining points: " + (300 - (state.score - data.scoreStart))
+    },
+    {
+        description: "Win 350 points",
+        passed: (state, data) => state.score - data.scoreStart >= 350,
+        message: (state, data) => "Remaining points: " + (350 - (state.score - data.scoreStart))
+    },
+    {
+        description: "Win 400 points",
+        passed: (state, data) => state.score - data.scoreStart >= 400,
+        message: (state, data) => "Remaining points: " + (400 - (state.score - data.scoreStart))
     }
 ];
 const RUNS_STATES = {
@@ -21,23 +36,27 @@ const RUNS_STATES = {
     STARTING_RUNS: Symbol.for("runs-starting-runs"),
     STARTING_RUN: Symbol.for("runs-starting-run"),
     RUNNING: Symbol.for("runs-running"),
-    COMPLETED_RUN: Symbol.for("runs-completed-run")
+    COMPLETING_RUN: Symbol.for("runs-completing-run"),
+    FINISHING_GAME: Symbol.for("runs-finishing-game")
 };
 
 export default class {
 
     #state;
     #screen;
+    #onFinishedGame;
     #run = {
         state: RUNS_STATES.IDLE,
+        nextState: null,
         step: -1,
         timeRunCompleted: -1
     };
 
 
-    constructor({ state, screen }) {
+    constructor({ state, screen, onFinishedGame }) {
         this.#state = state;
         this.#screen = screen;
+        this.#onFinishedGame = onFinishedGame;
     }
 
     initialize() {
@@ -46,6 +65,7 @@ export default class {
 
     load(run) {
         this.#run.state = Symbol.for(run.state);
+        this.#run.nextState = run.nextState ? Symbol.for(run.nextState) : null;
         this.#run.data = run.data;
         this.#run.step = run.step;
         this.#run.timeRunCompleted = run.timeRunCompleted;
@@ -54,6 +74,7 @@ export default class {
     save() {
         return {
             state: this.#run.state.description,
+            nextState: this.#run.nextState ? this.#run.nextState.description : null,
             data: this.#run.data,
             step: this.#run.step,
             timeRunCompleted: this.#run.timeRunCompleted
@@ -71,6 +92,12 @@ export default class {
             const currentRun = RUNS[this.#run.step];
             updateRunsState({ run: this.#run, state: this.#state, currentRun, time });
         }
+        if (this.#run.state === RUNS_STATES.FINISHING_GAME) {
+            this.#onFinishedGame();
+        }
+        if (this.#run.nextState) {
+            this.#run.state = this.#run.nextState;
+        }
     }
 
     refresh() {
@@ -86,7 +113,7 @@ export default class {
                     });
                 }
             }
-            if (this.#run.state === RUNS_STATES.COMPLETED_RUN) {
+            if (this.#run.state === RUNS_STATES.COMPLETING_RUN) {
                 this.#screen.showRunComplete();
             }
         }
@@ -98,34 +125,38 @@ export default class {
 }
 
 function updateRunsState({ run, state, currentRun, time }) {
+    run.nextState = null;
     switch (run.state) {
         case RUNS_STATES.STARTING_RUNS:
             run.step = 0;
             state.coins = 100;
-            run.state = RUNS_STATES.STARTING_RUN;
+            run.nextState = RUNS_STATES.STARTING_RUN;
             break;
         case RUNS_STATES.STARTING_RUN:
             run.data = {
                 scoreStart: state.score
             };
-            run.state = RUNS_STATES.RUNNING;
+            run.nextState = RUNS_STATES.RUNNING;
             break;
         case RUNS_STATES.RUNNING:
             if (currentRun.passed(state, run.data)) {
                 run.timeRunCompleted = time;
-                run.state = RUNS_STATES.COMPLETED_RUN;
+                run.nextState = RUNS_STATES.COMPLETING_RUN;
             }
             break;
-        case RUNS_STATES.COMPLETED_RUN:
+        case RUNS_STATES.COMPLETING_RUN:
             if (time - run.timeRunCompleted > DELAY_WAIT_AFTER_RUN) {
                 run.step++;
                 run.timeRunCompleted = -1;
                 if (run.step < RUNS.length) {
-                    run.state = RUNS_STATES.STARTING_RUN;
+                    run.nextState = RUNS_STATES.STARTING_RUN;
                 } else {
-                    run.state = RUNS_STATES.IDLE;
+                    run.nextState = RUNS_STATES.FINISHING_GAME;
                 }
             }
+            break;
+        case RUNS_STATES.FINISHING_GAME:
+            run.nextState = RUNS_STATES.IDLE;
             break;
         default:
             break;
