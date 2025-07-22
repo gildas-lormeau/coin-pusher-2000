@@ -133,10 +133,12 @@ export default class {
 
     enableShootButton() {
         Buttons.enable(this.#shootButton, true);
+        Buttons.blink(this.#shootButton, true);
     }
 
     disableShootButton() {
         Buttons.enable(this.#shootButton, false);
+        Buttons.blink(this.#shootButton, false);
     }
 
     enableHoldButton() {
