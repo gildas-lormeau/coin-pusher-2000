@@ -122,12 +122,14 @@ export default class {
     enableDropButtons() {
         for (const button of this.#dropButtons) {
             Buttons.enable(button, true);
+            Buttons.on(button);
         }
     }
 
     disableDropButtons() {
         for (const button of this.#dropButtons) {
             Buttons.enable(button, false);
+            Buttons.off(button);
         }
     }
 

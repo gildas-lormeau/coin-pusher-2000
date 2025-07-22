@@ -4,13 +4,13 @@ const MAX_INSTANCES = 3;
 const INITIAL_SCALE = new Vector3(0, 0, 0);
 const DEFAULT_SCALE = new Vector3(1, 1, 1);
 const BUTTON_PRESS_DEPTH = -0.005;
-const BUTTON_RELEASE_DURATION = 10;
+const BUTTON_RELEASE_DURATION = 15;
 const BLINK_DURATION = 50;
-const LIGHT_INTENSITY_ON = 3;
+const LIGHT_INTENSITY_ON = 1;
 const LIGHT_INTENSITY_OFF = 0;
 const LIGHT_COLOR = 0xffaa00;
 const LIGHT_DISTANCE = 0.03;
-const LIGHT_DECAY = .1;
+const LIGHT_DECAY = .5;
 const LIGHT_POSITION_Y = 0.005;
 const MODEL_PATH = "./assets/buttons.glb";
 const TYPES = 6;
@@ -58,56 +58,37 @@ export default class {
     }
 
     static update() {
-        const matrix = new Matrix4();
-        const position = new Vector3();
-        const rotation = new Quaternion();
-        const scale = new Vector3();
-
         this.#interactiveObjects.forEach(object => {
             const { color, type } = object.userData;
             const instances = this.#instances[color][type];
             for (const instance of instances) {
                 if (instance.isPressing) {
-                    if (instance.framePressStart === -1) {
-                        instance.framePressStart = 0;
-                        object.getMatrixAt(instance.index, matrix);
-                        matrix.decompose(position, rotation, scale);
-                    } else {
-                        instance.framePressStart++;
-                        if (instance.framePressStart < BUTTON_RELEASE_DURATION) {
-                            const offsetY = new Vector3(0, BUTTON_PRESS_DEPTH, 0);
-                            const interpolationFactor = instance.framePressStart / BUTTON_RELEASE_DURATION;
-                            const offset = offsetY.multiplyScalar(interpolationFactor);
-                            offset.applyQuaternion(instance.initialRotation);
-                            const newPosition = instance.initialPosition.clone().add(offset);
-                            instance.buttonPosition.copy(newPosition);
-                            if (instance.enabled) {
-                                instance.bulbLightIntensity = interpolationFactor * LIGHT_INTENSITY_ON;
-                            }
-                        } else {
-                            instance.bulbLightIntensity = LIGHT_INTENSITY_OFF;
-                            instance.isPressing = false;
-                            instance.framePressStart = -1;
-                            instance.buttonPosition.copy(instance.initialPosition);
+                    instance.framePressStart++;
+                    if (instance.framePressStart < BUTTON_RELEASE_DURATION) {
+                        const offsetY = new Vector3(0, BUTTON_PRESS_DEPTH, 0);
+                        const interpolationFactor = instance.framePressStart / BUTTON_RELEASE_DURATION;
+                        const offset = offsetY.multiplyScalar(interpolationFactor);
+                        offset.applyQuaternion(instance.initialRotation);
+                        const newPosition = instance.initialPosition.clone().add(offset);
+                        instance.buttonPosition.copy(newPosition);
+                        if (instance.enabled) {
+                            instance.bulbLightIntensity = interpolationFactor * (instance.isOn ? LIGHT_INTENSITY_ON : LIGHT_INTENSITY_OFF);
                         }
+                    } else {
+                        instance.bulbLightIntensity = instance.enabled && instance.isOn ? LIGHT_INTENSITY_ON : LIGHT_INTENSITY_OFF;
+                        instance.isPressing = false;
+                        instance.framePressStart = 0;
+                        instance.buttonPosition.copy(instance.initialPosition);
                     }
                 } else if (instance.isBlinking) {
-                    if (instance.frameBlinkStart === -1) {
+                    instance.frameBlinkStart++;
+                    if (instance.frameBlinkStart >= BLINK_DURATION) {
                         instance.frameBlinkStart = 0;
-                    } else {
-                        instance.frameBlinkStart++;
-                        if (instance.frameBlinkStart >= BLINK_DURATION) {
-                            instance.frameBlinkStart = 0;
-                            instance.blinkingOn = !instance.blinkingOn;
-                            instance.bulbLightIntensity = instance.blinkingOn ? LIGHT_INTENSITY_ON : LIGHT_INTENSITY_OFF;
-                        }
-                    }
-                    if (!instance.blinkingOn && !instance.enabled) {
-                        instance.isBlinking = false;
-                        instance.frameBlinkStart = undefined;
+                        instance.blinkingOn = !instance.blinkingOn;
+                        instance.bulbLightIntensity = instance.blinkingOn ? LIGHT_INTENSITY_ON : LIGHT_INTENSITY_OFF;
                     }
                 } else {
-                    instance.bulbLightIntensity = instance.isOn ? LIGHT_INTENSITY_ON : LIGHT_INTENSITY_OFF;
+                    instance.bulbLightIntensity = instance.enabled && instance.isOn ? LIGHT_INTENSITY_ON : LIGHT_INTENSITY_OFF;
                 }
             }
         });
@@ -200,6 +181,7 @@ export default class {
     static blink({ type, color, index }, active) {
         const instance = this.#instances[color][type].find(instance => instance.index === index);
         instance.isBlinking = active;
+        instance.frameBlinkStart = 0;
     }
 
     static on({ type, color, index }) {
@@ -345,9 +327,9 @@ function createInstance({ type, color, instances }) {
         isPressing: false,
         isBlinking: false,
         isOn: false,
-        frameBlinkStart: -1,
+        frameBlinkStart: 0,
         blinkingOn: false,
-        framePressStart: -1,
+        framePressStart: 0,
         bulbLightIntensity: LIGHT_INTENSITY_OFF
     };
     instances[color][type].push(instance);
