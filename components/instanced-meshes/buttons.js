@@ -91,8 +91,7 @@ export default class {
                             instance.buttonPosition.copy(instance.initialPosition);
                         }
                     }
-                }
-                if (instance.isBlinking) {
+                } else if (instance.isBlinking) {
                     if (instance.frameBlinkStart === -1) {
                         instance.frameBlinkStart = 0;
                     } else {
@@ -107,6 +106,8 @@ export default class {
                         instance.isBlinking = false;
                         instance.frameBlinkStart = undefined;
                     }
+                } else {
+                    instance.bulbLightIntensity = instance.isOn ? LIGHT_INTENSITY_ON : LIGHT_INTENSITY_OFF;
                 }
             }
         });
@@ -149,6 +150,7 @@ export default class {
                     instance.enabled = button.enabled;
                     instance.isPressing = button.isPressing;
                     instance.isBlinking = button.isBlinking;
+                    instance.isOn = button.isOn;
                     instance.frameBlinkStart = button.frameBlinkStart;
                     instance.blinkingOn = button.blinkingOn;
                     instance.framePressStart = button.framePressStart;
@@ -167,6 +169,7 @@ export default class {
                         enabled: instance.enabled,
                         isPressing: instance.isPressing,
                         isBlinking: instance.isBlinking,
+                        isOn: instance.isOn,
                         frameBlinkStart: instance.frameBlinkStart,
                         blinkingOn: instance.blinkingOn,
                         framePressStart: instance.framePressStart,
@@ -197,6 +200,16 @@ export default class {
     static blink({ type, color, index }, active) {
         const instance = this.#instances[color][type].find(instance => instance.index === index);
         instance.isBlinking = active;
+    }
+
+    static on({ type, color, index }) {
+        const instance = this.#instances[color][type].find(instance => instance.index === index);
+        instance.isOn = true;
+    }
+
+    static off({ type, color, index }) {
+        const instance = this.#instances[color][type].find(instance => instance.index === index);
+        instance.isOn = false;
     }
 
     static get interactiveObjects() {
@@ -331,6 +344,7 @@ function createInstance({ type, color, instances }) {
         enabled: false,
         isPressing: false,
         isBlinking: false,
+        isOn: false,
         frameBlinkStart: -1,
         blinkingOn: false,
         framePressStart: -1,

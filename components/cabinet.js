@@ -129,7 +129,9 @@ export default class {
                 Ingots.depositIngots({ position, count: reward.ingotCount });
             },
             onEnableHold: () => {
-                this.#controlPanel.enableHoldButton();
+                if (this.#runs.started) {
+                    this.#controlPanel.enableHoldButton();
+                }
             },
             onDisableHold: () => {
                 this.#controlPanel.disableHoldButton();

@@ -143,10 +143,12 @@ export default class {
 
     enableHoldButton() {
         Buttons.enable(this.#holdButton, true);
+        Buttons.on(this.#holdButton);
     }
 
     disableHoldButton() {
         Buttons.enable(this.#holdButton, false);
+        Buttons.off(this.#holdButton);
     }
 
     get interactiveObjects() {
