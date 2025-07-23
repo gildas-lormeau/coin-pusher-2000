@@ -5,7 +5,7 @@ const DROP_POSITION = "drop-position";
 const PIVOT_POSITION = "pivot-position";
 const ARM_PROTECTION_LID_PIVOT_POSITION = "arm-protection-lid-pivot-position";
 const COIN_ROTATION = new Vector3(0, 0, 0);
-const COIN_HEIGHT = 0.006;
+const COIN_HEIGHT = 0.005;
 const X_AXIS = new Vector3(1, 0, 0);
 const Y_AXIS = new Vector3(0, 1, 0);
 const ARM_SPEED = 0.02;
@@ -29,7 +29,7 @@ const BASE_INITIAL_ANGLE = 0;
 const BASE_INITIAL_ROTATIONS = 0;
 const BASE_INITIAL_POSITION = 0;
 const BASE_CLEANUP_POSITION = 0.005;
-const BASE_READY_POSITION = -0.03;
+const BASE_READY_POSITION = -0.035;
 const SUPPORT_INITIAL_POSITION = 0;
 const SUPPORT_READY_POSITION = -0.01;
 const STACKER_INITIAL_POSITION = 0;
@@ -279,12 +279,17 @@ export default class {
                 position.setZ(position.z + this.#stacker.armPosition - ARM_CIRCUMFERENCE_POSITION);
                 position.setY(position.y + this.#stacker.position);
                 this.#stacker.coins.push(this.#onInitializeCoin({
-                    position,
+                    position: position.clone().setY(position.y - COIN_HEIGHT / 2),
+                    rotation: COIN_ROTATION
+                }));
+                this.#stacker.coins.push(this.#onInitializeCoin({
+                    position: position.clone().setY(position.y + COIN_HEIGHT / 2),
                     rotation: COIN_ROTATION
                 }));
             }
             if (state === STACKER_STATES.PUSHING_COIN) {
                 this.#stacker.coins[this.#stacker.coins.length - 1].body.applyImpulse(COIN_IMPULSE_FORCE, true);
+                this.#stacker.coins[this.#stacker.coins.length - 2].body.applyImpulse(COIN_IMPULSE_FORCE, true);
             }
         }
     }
@@ -539,7 +544,7 @@ function updateStackerState({ stacker, canActivate }) {
             break;
         case STACKER_STATES.LOWERING_BASE:
             stacker.basePosition -= BASE_SPEED;
-            if (COIN_SETTLED_POSITION_Y + stacker.position - stacker.coins[stacker.coins.length - 1].position.y > COIN_HEIGHT) {
+            if (COIN_SETTLED_POSITION_Y + stacker.position - stacker.coins[stacker.coins.length - 1].position.y > 2 * COIN_HEIGHT) {
                 stacker.rotationDirection = -stacker.rotationDirection;
                 if (stacker.stacks == 1) {
                     stacker.nextState = STACKER_STATES.FINISHING_LEVEL;

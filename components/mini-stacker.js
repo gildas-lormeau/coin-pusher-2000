@@ -5,7 +5,7 @@ const DROP_POSITION = "drop-position";
 const PIVOT_POSITION = "pivot-position";
 const ARM_PROTECTION_LID_PIVOT_POSITION = "arm-protection-lid-pivot-position";
 const COIN_ROTATION = new Vector3(0, 0, 0);
-const COIN_HEIGHT = 0.006;
+const COIN_HEIGHT = 0.005;
 const X_AXIS = new Vector3(1, 0, 0);
 const Y_AXIS = new Vector3(0, 1, 0);
 const ARM_SPEED = 0.02;
@@ -25,7 +25,7 @@ const ARM_DOOR_OPENED_POSITION = -0.025;
 const BASE_INITIAL_ANGLE = 0;
 const BASE_INITIAL_POSITION = 0;
 const BASE_CLEANUP_POSITION = 0.005;
-const BASE_READY_POSITION = -0.03;
+const BASE_READY_POSITION = -0.035;
 const SUPPORT_INITIAL_POSITION = 0;
 const SUPPORT_READY_POSITION = -0.01;
 const STACKER_INITIAL_POSITION = 0;
@@ -95,7 +95,6 @@ export default class {
     #stacker = {
         parts: null,
         level: LEVEL_INITIAL,
-        coin: null,
         coins: [],
         nextState: null,
         levels: -1,
@@ -269,19 +268,18 @@ export default class {
                 const position = this.#dropPosition.clone();
                 position.setZ(position.z + this.#stacker.armPosition);
                 position.setY(position.y + this.#stacker.position);
-                this.#stacker.coin = this.#onInitializeCoin({
-                    position,
+                this.#stacker.coins.push(this.#onInitializeCoin({
+                    position: position.clone().setY(position.y - COIN_HEIGHT / 2),
                     rotation: COIN_ROTATION
-                });
-                this.#stacker.coins.push(this.#stacker.coin);
+                }));
+                this.#stacker.coins.push(this.#onInitializeCoin({
+                    position: position.clone().setY(position.y + COIN_HEIGHT / 2),
+                    rotation: COIN_ROTATION
+                }));
             }
             if (state === STACKER_STATES.PUSHING_COIN) {
-                this.#stacker.coin.body.applyImpulse(COIN_IMPULSE_FORCE, true);
-            }
-            if (state === STACKER_STATES.LOWERING_BASE) {
-                this.#stacker.coin.body.setRotation(new Quaternion(COIN_ROTATION.x, COIN_ROTATION.y, COIN_ROTATION.z, 1), false);
-                const position = this.#stacker.coin.body.translation();
-                this.#stacker.coin.body.setTranslation(new Vector3(this.#offsetX, position.y, this.#pivotPosition.z), false);
+                this.#stacker.coins[this.#stacker.coins.length - 1].body.applyImpulse(COIN_IMPULSE_FORCE, true);
+                this.#stacker.coins[this.#stacker.coins.length - 2].body.applyImpulse(COIN_IMPULSE_FORCE, true);
             }
         }
     }
@@ -335,7 +333,6 @@ export default class {
             levels: this.#stacker.levels,
             pendingDeliveries: this.#stacker.pendingDeliveries.map(delivery => ({ levels: delivery.levels })),
             nextState: this.#stacker.nextState ? this.#stacker.nextState.description : null,
-            coinHandle: this.#stacker.coin ? this.#stacker.coin.handle : null,
             coinsHandles,
             lights: {
                 state: this.#stacker.lights.state.description,
@@ -361,11 +358,6 @@ export default class {
         this.#stacker.levels = stacker.levels;
         this.#stacker.pendingDeliveries = stacker.pendingDeliveries.map(delivery => ({ levels: delivery.levels }));
         this.#stacker.nextState = stacker.nextState ? Symbol.for(stacker.nextState) : null;
-        if (stacker.coinHandle) {
-            this.#stacker.coin = this.#scene.worldBodies.get(stacker.coinHandle);
-        } else {
-            this.#stacker.coin = null;
-        }
         this.#stacker.coins = [];
         stacker.coinsHandles.forEach(handle => this.#stacker.coins.push(this.#scene.worldBodies.get(handle)));
         this.#stacker.parts.forEach((partData, name) => {
@@ -478,13 +470,13 @@ function updateStackerState({ stacker, canActivate }) {
             stacker.nextState = STACKER_STATES.PUSHING_COIN;
             break;
         case STACKER_STATES.PUSHING_COIN:
-            if (stacker.coin.position.y < COIN_SETTLED_POSITION_Y + stacker.position) {
+            if (stacker.coins[stacker.coins.length - 1].position.y < COIN_SETTLED_POSITION_Y + stacker.position) {
                 stacker.nextState = STACKER_STATES.LOWERING_BASE;
             }
             break;
         case STACKER_STATES.LOWERING_BASE:
             stacker.basePosition -= BASE_SPEED;
-            if (COIN_SETTLED_POSITION_Y + stacker.position - stacker.coin.position.y > COIN_HEIGHT) {
+            if (COIN_SETTLED_POSITION_Y + stacker.position - stacker.coins[stacker.coins.length - 1].position.y > 2 * COIN_HEIGHT) {
                 stacker.nextState = STACKER_STATES.FINISHING_LEVEL;
             }
             break;
@@ -523,7 +515,6 @@ function updateStackerState({ stacker, canActivate }) {
             }
             break;
         case STACKER_STATES.PREPARING_IDLE:
-            stacker.coin = null;
             stacker.coins = [];
             if (stacker.pendingDeliveries.length > 0) {
                 const { levels } = stacker.pendingDeliveries.shift();
