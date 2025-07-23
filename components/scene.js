@@ -44,6 +44,7 @@ export default class {
         this.#world.integrationParameters.numSolverIterations = NUM_SOLVER_ITERATIONS;
         this.#world.integrationParameters.numAdditionalFrictionIterations = NUM_ADDITIONAL_FRICTION_ITERATIONS;
         this.#world.integrationParameters.numInternalPgsIterations = NUM_INTERNAL_PGS_ITERATIONS;
+        this.#world.integrationParameters.minIslandSize = 32;
         this.#world.timestep = TIMESTEP;
         this.#scene.add(new AmbientLight(AMBIANT_LIGHT_COLOR, AMBIANT_LIGHT_INTENSITY));
         const directionalLight = new DirectionalLight(DIRECTIONAL_LIGHT_COLOR, DIRECTIONAL_LIGHT_INTENSITY);
