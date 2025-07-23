@@ -505,7 +505,7 @@ function initializeColliders({ scene, parts, coinRoller, sensorColliders, onBonu
             if (sensor) {
                 sensorColliders.set(name, collider);
             } else {
-                collider.setCollisionGroups(groups.COIN_ROLLER | groups.OBJECTS);
+                collider.setCollisionGroups(groups.COIN_ROLLER << 16 | groups.OBJECTS);
             }
         }
     });

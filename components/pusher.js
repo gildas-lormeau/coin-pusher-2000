@@ -386,7 +386,7 @@ function initializeColliders({ scene, parts, groups }) {
                     friction,
                     restitution,
                 }, body);
-                collider.setCollisionGroups(groups.COIN_PUSHER | groups.OBJECTS);
+                collider.setCollisionGroups(groups.PUSHER << 16 | groups.OBJECTS);
             }
         });
         colliders.forEach(({ friction, restitution, position, rotation, size }) => {
@@ -399,7 +399,7 @@ function initializeColliders({ scene, parts, groups }) {
                 friction,
                 restitution,
             }, body);
-            collider.setCollisionGroups(groups.COIN_PUSHER | groups.OBJECTS);
+            collider.setCollisionGroups(groups.PUSHER << 16 | groups.OBJECTS);
         });
     });
 }

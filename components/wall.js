@@ -54,7 +54,7 @@ export default class {
             restitution: RESTITUTION,
             position: POSITION_WALL,
         }, wallBody);
-        collider.setCollisionGroups(this.#groups.WALL | this.#groups.OBJECTS);
+        collider.setCollisionGroups(this.#groups.WALL << 16 | this.#groups.OBJECTS);
         collider = this.#scene.createCuboidCollider({
             width: WIDTH_GLASS,
             height: HEIGHT_GLASS,
@@ -63,7 +63,7 @@ export default class {
             restitution: RESTITUTION,
             position: POSITION_GLASS,
         }, wallBody);
-        collider.setCollisionGroups(this.#groups.WALL | this.#groups.OBJECTS);
+        collider.setCollisionGroups(this.#groups.WALL << 16 | this.#groups.OBJECTS);
         collider = this.#scene.createCuboidCollider({
             width: .05,
             height: HEIGHT_GLASS,
@@ -72,8 +72,8 @@ export default class {
             restitution: RESTITUTION,
             position: [POSITION_GLASS[0] - WIDTH_GLASS / 2 - .025, POSITION_GLASS[1], POSITION_GLASS[2]],
         }, wallBody);
-        collider.setCollisionGroups(this.#groups.WALL | this.#groups.OBJECTS);
-        this.#scene.createCuboidCollider({
+        collider.setCollisionGroups(this.#groups.WALL << 16 | this.#groups.OBJECTS);
+        collider = this.#scene.createCuboidCollider({
             width: .05,
             height: HEIGHT_GLASS,
             depth: DEPTH_WALL,
@@ -81,6 +81,7 @@ export default class {
             restitution: RESTITUTION,
             position: [POSITION_GLASS[0] + WIDTH_GLASS / 2 + .025, POSITION_GLASS[1], POSITION_GLASS[2]],
         }, wallBody);
+        collider.setCollisionGroups(this.#groups.WALL << 16 | this.#groups.OBJECTS);
         collider = this.#scene.createCuboidCollider({
             width: WIDTH_WALL,
             height: .05,
@@ -89,7 +90,7 @@ export default class {
             restitution: RESTITUTION,
             position: [POSITION_GLASS[0], POSITION_GLASS[1] + HEIGHT_GLASS / 2 + .025, POSITION_GLASS[2]],
         }, wallBody);
-        collider.setCollisionGroups(this.#groups.WALL | this.#groups.OBJECTS);
+        collider.setCollisionGroups(this.#groups.WALL << 16 | this.#groups.OBJECTS);
         initiliazeWallObstacles({ scene: this.#scene, wallBody, groups: this.#groups });
     }
 };
@@ -132,7 +133,7 @@ function initiliazeWallObstacles({ scene, wallBody, groups }) {
                 position: [x, y, OBSTACLE_POSITION_Z],
                 rotation: [Math.PI / 2, Math.PI / 4, 0],
             }, wallBody);
-            collider.setCollisionGroups(groups.WALL | groups.OBJECTS);
+            collider.setCollisionGroups(groups.WALL << 16 | groups.OBJECTS);
         }
     }
 }

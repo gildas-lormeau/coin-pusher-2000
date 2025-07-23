@@ -639,7 +639,7 @@ function initializeColliders({ scene, cabinet, parts, joints, groups }) {
                 }, body);
             }
             collider.setContactSkin(contactSkin);
-            collider.setCollisionGroups(groups.EXCAVATOR | groups.OBJECTS);
+            collider.setCollisionGroups(groups.EXCAVATOR << 16 | groups.OBJECTS);
         } else {
             const geometries = [];
             meshes.forEach(meshData => {
@@ -668,7 +668,7 @@ function initializeColliders({ scene, cabinet, parts, joints, groups }) {
                     restitution
                 }, body);
                 collider.setContactSkin(contactSkin);
-                collider.setCollisionGroups(groups.EXCAVATOR | groups.OBJECTS);
+                collider.setCollisionGroups(groups.EXCAVATOR << 16 | groups.OBJECTS);
             }
         }
     });

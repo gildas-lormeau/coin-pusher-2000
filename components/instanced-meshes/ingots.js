@@ -187,7 +187,7 @@ function createInstance({ scene, instances, colliderData: { vertices, indices },
         restitution: RESTITUTION,
         density: DENSITY
     }, body);
-    collider.setCollisionGroups(groups.ALL);
+    collider.setCollisionGroups(groups.OBJECTS << 16 | groups.ALL);
     const instance = {
         objectType: TYPE,
         index,

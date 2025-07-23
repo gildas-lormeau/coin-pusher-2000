@@ -288,7 +288,7 @@ function initializeColliders({ scene, parts, groups }) {
                 friction,
                 restitution
             }, body);
-            collider.setCollisionGroups(groups.TOWER | groups.OBJECTS);
+            collider.setCollisionGroups(groups.TOWER << 16 | groups.OBJECTS);
         }
     });
 }

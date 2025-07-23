@@ -105,7 +105,6 @@ export default class {
     #stacker = {
         parts: null,
         level: LEVEL_INITIAL,
-        coin: null,
         coins: [],
         nextState: null,
         stacks: -1,
@@ -279,14 +278,13 @@ export default class {
                 const position = this.#dropPosition.clone();
                 position.setZ(position.z + this.#stacker.armPosition - ARM_CIRCUMFERENCE_POSITION);
                 position.setY(position.y + this.#stacker.position);
-                this.#stacker.coin = this.#onInitializeCoin({
+                this.#stacker.coins.push(this.#onInitializeCoin({
                     position,
                     rotation: COIN_ROTATION
-                });
-                this.#stacker.coins.push(this.#stacker.coin);
+                }));
             }
             if (state === STACKER_STATES.PUSHING_COIN) {
-                this.#stacker.coin.body.applyImpulse(COIN_IMPULSE_FORCE, true);
+                this.#stacker.coins[this.#stacker.coins.length - 1].body.applyImpulse(COIN_IMPULSE_FORCE, true);
             }
         }
     }
@@ -345,7 +343,6 @@ export default class {
             levels: this.#stacker.levels,
             pendingDeliveries: this.#stacker.pendingDeliveries.map(delivery => ({ stacks: delivery.stacks, levels: delivery.levels })),
             nextState: this.#stacker.nextState ? this.#stacker.nextState.description : null,
-            coinHandle: this.#stacker.coin ? this.#stacker.coin.handle : null,
             coinsHandles,
             lights: {
                 state: this.#stacker.lights.state.description,
@@ -374,11 +371,6 @@ export default class {
         this.#stacker.levels = stacker.levels;
         this.#stacker.pendingDeliveries = stacker.pendingDeliveries.map(delivery => ({ stacks: delivery.stacks, levels: delivery.levels }));
         this.#stacker.nextState = stacker.nextState ? Symbol.for(stacker.nextState) : null;
-        if (stacker.coinHandle) {
-            this.#stacker.coin = this.#scene.worldBodies.get(stacker.coinHandle);
-        } else {
-            this.#stacker.coin = null;
-        }
         this.#stacker.coins = [];
         stacker.coinsHandles.forEach(handle => this.#stacker.coins.push(this.#scene.worldBodies.get(handle)));
         this.#stacker.parts.forEach((partData, name) => {
@@ -496,7 +488,7 @@ function updateStackerState({ stacker, canActivate }) {
             stacker.nextState = STACKER_STATES.PUSHING_COIN;
             break;
         case STACKER_STATES.PUSHING_COIN:
-            if (stacker.coin.position.y < COIN_SETTLED_POSITION_Y + stacker.position) {
+            if (stacker.coins[stacker.coins.length - 1].position.y < COIN_SETTLED_POSITION_Y + stacker.position) {
                 if (stacker.stacks == 1) {
                     stacker.nextState = STACKER_STATES.LOWERING_BASE;
                 } else if (stacker.armPosition === ARM_CIRCUMFERENCE_POSITION) {
@@ -547,7 +539,7 @@ function updateStackerState({ stacker, canActivate }) {
             break;
         case STACKER_STATES.LOWERING_BASE:
             stacker.basePosition -= BASE_SPEED;
-            if (COIN_SETTLED_POSITION_Y + stacker.position - stacker.coin.position.y > COIN_HEIGHT) {
+            if (COIN_SETTLED_POSITION_Y + stacker.position - stacker.coins[stacker.coins.length - 1].position.y > COIN_HEIGHT) {
                 stacker.rotationDirection = -stacker.rotationDirection;
                 if (stacker.stacks == 1) {
                     stacker.nextState = STACKER_STATES.FINISHING_LEVEL;
@@ -624,7 +616,6 @@ function updateStackerState({ stacker, canActivate }) {
             }
             break;
         case STACKER_STATES.PREPARING_IDLE:
-            stacker.coin = null;
             stacker.coins = [];
             if (stacker.pendingDeliveries.length > 0) {
                 const { stacks, levels } = stacker.pendingDeliveries.shift();
@@ -794,7 +785,7 @@ function initializeColliders({ scene, parts, groups }) {
                     restitution
                 }, body);
             }
-            collider.setCollisionGroups(groups.STACKER | groups.OBJECTS);
+            collider.setCollisionGroups(groups.STACKER << 16 | groups.OBJECTS);
         } else {
             const geometries = [];
             meshes.forEach(meshData => {
@@ -810,7 +801,7 @@ function initializeColliders({ scene, parts, groups }) {
                     friction,
                     restitution
                 }, body);
-                collider.setCollisionGroups(groups.STACKER | groups.OBJECTS);
+                collider.setCollisionGroups(groups.STACKER << 16 | groups.OBJECTS);
             }
         }
         colliders.forEach(colliderData => {
@@ -822,7 +813,7 @@ function initializeColliders({ scene, parts, groups }) {
                 friction,
                 restitution
             }, body);
-            collider.setCollisionGroups(groups.STACKER | groups.OBJECTS);
+            collider.setCollisionGroups(groups.STACKER << 16 | groups.OBJECTS);
         });
     });
 }

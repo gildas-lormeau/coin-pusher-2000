@@ -700,7 +700,7 @@ function initializeColliders({ scene, parts, offsetX, groups }) {
                     restitution,
                 }, body);
             }
-            collider.setCollisionGroups(groups.MINI_STACKER | groups.OBJECTS);
+            collider.setCollisionGroups(groups.MINI_STACKER << 16 | groups.OBJECTS);
         } else {
             const geometries = [];
             meshes.forEach(meshData => {
@@ -716,7 +716,7 @@ function initializeColliders({ scene, parts, offsetX, groups }) {
                     friction,
                     restitution
                 }, body);
-                collider.setCollisionGroups(groups.MINI_STACKER | groups.OBJECTS);
+                collider.setCollisionGroups(groups.MINI_STACKER << 16 | groups.OBJECTS);
             }
         }
         colliders.forEach(colliderData => {
@@ -729,7 +729,7 @@ function initializeColliders({ scene, parts, offsetX, groups }) {
                 friction,
                 restitution
             }, body);
-            collider.setCollisionGroups(groups.MINI_STACKER | groups.OBJECTS);
+            collider.setCollisionGroups(groups.MINI_STACKER << 16 | groups.OBJECTS);
         });
     });
 }

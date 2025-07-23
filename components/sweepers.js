@@ -598,7 +598,7 @@ function initializeColliders({ scene, parts, groups }) {
                 friction,
                 restitution,
             }, body);
-            collider.setCollisionGroups(groups.SWEEPERS | groups.OBJECTS);
+            collider.setCollisionGroups(groups.SWEEPERS << 16 | groups.OBJECTS);
         } else {
             const geometries = [];
             meshes.forEach(meshData => {
@@ -614,7 +614,7 @@ function initializeColliders({ scene, parts, groups }) {
                     friction,
                     restitution
                 }, body);
-                collider.setCollisionGroups(groups.SWEEPERS | groups.OBJECTS);
+                collider.setCollisionGroups(groups.SWEEPERS << 16 | groups.OBJECTS);
             }
         }
     });
