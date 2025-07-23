@@ -42,12 +42,12 @@ export default class {
     static #meshes;
     static #instances;
 
-    static async initialize({ scene }) {
+    static async initialize({ scene, groups }) {
         this.#scene = scene;
         const { materials, geometries } = await initializeModel({ scene });
         this.#meshes = initializeInstancedMeshes({ scene, materials, geometries });
         this.#instances = [];
-        createInstances({ scene, instances: this.#instances });
+        createInstances({ scene, instances: this.#instances, groups });
     }
 
     static getToken({ type, index }) {
@@ -201,16 +201,16 @@ function initializeInstancedMeshes({ scene, materials, geometries }) {
     return meshes;
 }
 
-function createInstances({ scene, instances }) {
+function createInstances({ scene, instances, groups }) {
     for (let type = 0; type < TYPES; type++) {
         instances[type] = [];
         for (let indexInstance = instances[type].length; indexInstance < MAX_INSTANCES; indexInstance++) {
-            createInstance({ scene, type, instances });
+            createInstance({ scene, type, instances, groups });
         }
     }
 }
 
-function createInstance({ scene, type, instances }) {
+function createInstance({ scene, type, instances, groups }) {
     const body = scene.createDynamicBody();
     body.setEnabled(false);
     body.setSoftCcdPrediction(SOFT_CCD_PREDICTION);
@@ -218,7 +218,7 @@ function createInstance({ scene, type, instances }) {
     body.setLinearDamping(LINEAR_DAMPING);
     body.setAdditionalSolverIterations(ADDITIONAL_SOLVER_ITERATIONS);
     const index = instances[type].length;
-    scene.createCylinderCollider({
+    const collider = scene.createCylinderCollider({
         userData: { objectType: TYPE, type, index },
         radius: RADIUS,
         height: DEPTH,
@@ -226,6 +226,7 @@ function createInstance({ scene, type, instances }) {
         restitution: RESTITUTION,
         density: DENSITY
     }, body);
+    collider.setCollisionGroups(groups.ALL);
     const instance = {
         objectType: TYPE,
         index,

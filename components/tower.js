@@ -32,6 +32,7 @@ export default class {
     #initPosition;
     #offsetX;
     #oscillationDirection;
+    #groups;
     #onShootCoin;
     #turret;
     #turretPosition = new Vector3();
@@ -49,18 +50,19 @@ export default class {
         lightOn: false
     };
 
-    constructor({ scene, cabinet, onShootCoin, offsetX = 0, oscillationDirection = -1 }) {
+    constructor({ scene, cabinet, onShootCoin, offsetX = 0, oscillationDirection = -1, groups }) {
         this.#scene = scene;
         this.#cabinet = cabinet;
         this.#onShootCoin = onShootCoin;
         this.#offsetX = offsetX;
         this.#oscillationDirection = oscillationDirection;
+        this.#groups = groups;
     }
 
     async initialize() {
         const scene = this.#scene;
         const { parts, initPosition, lightMaterial } = await initializeModel({ scene, offsetX: this.#offsetX });
-        initializeColliders({ scene, parts });
+        initializeColliders({ scene, parts, groups: this.#groups });
         this.#initPosition = initPosition;
         this.#lightMaterial = lightMaterial;
         parts.forEach(({ meshes }) => meshes.forEach(({ data }) => this.#scene.addObject(data)));
@@ -268,8 +270,8 @@ function getPart(parts, name) {
     return partData;
 }
 
-function initializeColliders({ scene, parts }) {
-    parts.forEach((partData, name) => {
+function initializeColliders({ scene, parts, groups }) {
+    parts.forEach(partData => {
         const { meshes, friction, restitution, fixed } = partData;
         const body = partData.body = fixed ? scene.createFixedBody() : scene.createKinematicBody();
         const geometries = [];
@@ -286,6 +288,7 @@ function initializeColliders({ scene, parts }) {
                 friction,
                 restitution
             }, body);
+            collider.setCollisionGroups(groups.TOWER | groups.OBJECTS);
         }
     });
 }

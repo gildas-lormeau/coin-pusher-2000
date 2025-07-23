@@ -33,7 +33,7 @@ export default class {
     static #meshes;
     static #instances;
 
-    static async initialize({ scene }) {
+    static async initialize({ scene, groups }) {
         this.#scene = scene;
         const { materials, geometries } = await initializeModel({ scene });
         this.#meshes = initializeInstancedMeshes({ scene, materials, geometries });
@@ -42,7 +42,8 @@ export default class {
         createInstances({
             scene,
             instances: this.#instances,
-            colliderData
+            colliderData,
+            groups
         });
     }
 
@@ -164,13 +165,13 @@ function initializeInstancedMeshes({ scene, materials, geometries }) {
     return meshes;
 }
 
-function createInstances({ scene, instances, colliderData }) {
+function createInstances({ scene, instances, colliderData, groups }) {
     for (let indexInstance = instances.length; indexInstance < MAX_INSTANCES; indexInstance++) {
-        createInstance({ scene, instances, colliderData });
+        createInstance({ scene, instances, colliderData, groups });
     }
 }
 
-function createInstance({ scene, instances, colliderData: { vertices, indices } }) {
+function createInstance({ scene, instances, colliderData: { vertices, indices }, groups }) {
     const body = scene.createDynamicBody();
     body.setEnabled(false);
     body.setSoftCcdPrediction(SOFT_CCD_PREDICTION);
@@ -178,7 +179,7 @@ function createInstance({ scene, instances, colliderData: { vertices, indices } 
     body.setLinearDamping(LINEAR_DAMPING);
     body.setAdditionalSolverIterations(ADDITIONAL_SOLVER_ITERATIONS);
     const index = instances.length;
-    scene.createConvexHullCollider({
+    const collider = scene.createConvexHullCollider({
         userData: { objectType: TYPE, index },
         vertices,
         indices,
@@ -186,6 +187,7 @@ function createInstance({ scene, instances, colliderData: { vertices, indices } 
         restitution: RESTITUTION,
         density: DENSITY
     }, body);
+    collider.setCollisionGroups(groups.ALL);
     const instance = {
         objectType: TYPE,
         index,

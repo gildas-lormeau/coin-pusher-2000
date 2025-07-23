@@ -64,6 +64,7 @@ export default class {
     #scene;
     #cabinet;
     #onPick;
+    #groups;
     #dropPosition;
     #beaconLight;
     #beaconLightPosition;
@@ -90,10 +91,11 @@ export default class {
         frameReady: -1,
     };
 
-    constructor({ scene, cabinet, onPick }) {
+    constructor({ scene, cabinet, onPick, groups }) {
         this.#scene = scene;
         this.#cabinet = cabinet;
         this.#onPick = onPick;
+        this.#groups = groups;
     }
 
     async initialize() {
@@ -112,7 +114,8 @@ export default class {
             cabinet: this.#cabinet,
             parts,
             joints,
-            trapSensor: this.#trapSensor
+            trapSensor: this.#trapSensor,
+            groups: this.#groups
         });
         this.#trapSensor = trapSensor;
         this.#pivots = pivots;
@@ -606,7 +609,7 @@ function getPart(parts, name) {
     return partData;
 }
 
-function initializeColliders({ scene, cabinet, parts, joints }) {
+function initializeColliders({ scene, cabinet, parts, joints, groups }) {
     let trapSensor;
     parts.forEach((partData, name) => {
         const { meshes, sensor, friction, restitution, fixed, cylinder, cuboid, kinematic, light, contactSkin } = partData;
@@ -636,6 +639,7 @@ function initializeColliders({ scene, cabinet, parts, joints }) {
                 }, body);
             }
             collider.setContactSkin(contactSkin);
+            collider.setCollisionGroups(groups.EXCAVATOR | groups.OBJECTS);
         } else {
             const geometries = [];
             meshes.forEach(meshData => {
@@ -664,6 +668,7 @@ function initializeColliders({ scene, cabinet, parts, joints }) {
                     restitution
                 }, body);
                 collider.setContactSkin(contactSkin);
+                collider.setCollisionGroups(groups.EXCAVATOR | groups.OBJECTS);
             }
         }
     });

@@ -98,6 +98,7 @@ export default class {
     #cabinet;
     #lightBulbsMaterials;
     #onInitializeCoin;
+    #groups;
     #dropPosition;
     #pivotPosition;
     #armProtectionLidPivotPosition;
@@ -128,10 +129,11 @@ export default class {
         }
     };
 
-    constructor({ scene, cabinet, onInitializeCoin }) {
+    constructor({ scene, cabinet, onInitializeCoin, groups }) {
         this.#scene = scene;
         this.#cabinet = cabinet;
         this.#onInitializeCoin = onInitializeCoin;
+        this.#groups = groups;
     }
 
     async initialize() {
@@ -147,14 +149,8 @@ export default class {
         this.#pivotPosition = pivotPosition;
         this.#armProtectionLidPivotPosition = armProtectionLidPivotPosition;
         this.#lightBulbsMaterials = lightBulbsMaterials;
-        initializeColliders({
-            scene,
-            parts
-        });
-        initializeLights({
-            lightBulbsMaterials,
-            lights: this.#stacker.lights
-        });
+        initializeColliders({ scene, parts, groups: this.#groups });
+        initializeLights({ lightBulbsMaterials, lights: this.#stacker.lights });
         parts.forEach(({ body, meshes }) => {
             meshes.forEach(({ data }) => this.#scene.addObject(data));
             body.setEnabled(true);
@@ -770,7 +766,7 @@ function getPart(parts, name) {
     return partData;
 }
 
-function initializeColliders({ scene, parts }) {
+function initializeColliders({ scene, parts, groups }) {
     parts.forEach(partData => {
         const { meshes, colliders, friction, restitution, kinematic, cuboid, cylinder } = partData;
         const body = partData.body = kinematic ? scene.createKinematicBody() : scene.createFixedBody();
@@ -798,6 +794,7 @@ function initializeColliders({ scene, parts }) {
                     restitution
                 }, body);
             }
+            collider.setCollisionGroups(groups.STACKER | groups.OBJECTS);
         } else {
             const geometries = [];
             meshes.forEach(meshData => {
@@ -813,6 +810,7 @@ function initializeColliders({ scene, parts }) {
                     friction,
                     restitution
                 }, body);
+                collider.setCollisionGroups(groups.STACKER | groups.OBJECTS);
             }
         }
         colliders.forEach(colliderData => {
@@ -824,6 +822,7 @@ function initializeColliders({ scene, parts }) {
                 friction,
                 restitution
             }, body);
+            collider.setCollisionGroups(groups.STACKER | groups.OBJECTS);
         });
     });
 }

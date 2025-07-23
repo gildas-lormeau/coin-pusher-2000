@@ -27,11 +27,13 @@ const OBSTACLE_COLOR = 0xffffff;
 const OBSTACLE_OPACITY = 0.25;
 
 export default class {
-    constructor({ scene }) {
+    constructor({ scene, groups }) {
         this.#scene = scene;
+        this.#groups = groups;
     }
 
     #scene;
+    #groups;
 
     initialize() {
         const glassGeometry = new BoxGeometry(WIDTH_GLASS, HEIGHT_GLASS, DEPTH_GLASS);
@@ -43,7 +45,8 @@ export default class {
         glassMesh.position.set(...POSITION_GLASS);
         this.#scene.addObject(glassMesh);
         const wallBody = this.#scene.createFixedBody();
-        this.#scene.createCuboidCollider({
+        let collider;
+        collider = this.#scene.createCuboidCollider({
             width: WIDTH_WALL,
             height: HEIGHT_WALL,
             depth: DEPTH_WALL,
@@ -51,7 +54,8 @@ export default class {
             restitution: RESTITUTION,
             position: POSITION_WALL,
         }, wallBody);
-        this.#scene.createCuboidCollider({
+        collider.setCollisionGroups(this.#groups.WALL | this.#groups.OBJECTS);
+        collider = this.#scene.createCuboidCollider({
             width: WIDTH_GLASS,
             height: HEIGHT_GLASS,
             depth: DEPTH_GLASS,
@@ -59,7 +63,8 @@ export default class {
             restitution: RESTITUTION,
             position: POSITION_GLASS,
         }, wallBody);
-        this.#scene.createCuboidCollider({
+        collider.setCollisionGroups(this.#groups.WALL | this.#groups.OBJECTS);
+        collider = this.#scene.createCuboidCollider({
             width: .05,
             height: HEIGHT_GLASS,
             depth: DEPTH_WALL,
@@ -67,6 +72,7 @@ export default class {
             restitution: RESTITUTION,
             position: [POSITION_GLASS[0] - WIDTH_GLASS / 2 - .025, POSITION_GLASS[1], POSITION_GLASS[2]],
         }, wallBody);
+        collider.setCollisionGroups(this.#groups.WALL | this.#groups.OBJECTS);
         this.#scene.createCuboidCollider({
             width: .05,
             height: HEIGHT_GLASS,
@@ -75,7 +81,7 @@ export default class {
             restitution: RESTITUTION,
             position: [POSITION_GLASS[0] + WIDTH_GLASS / 2 + .025, POSITION_GLASS[1], POSITION_GLASS[2]],
         }, wallBody);
-        this.#scene.createCuboidCollider({
+        collider = this.#scene.createCuboidCollider({
             width: WIDTH_WALL,
             height: .05,
             depth: DEPTH_WALL,
@@ -83,26 +89,27 @@ export default class {
             restitution: RESTITUTION,
             position: [POSITION_GLASS[0], POSITION_GLASS[1] + HEIGHT_GLASS / 2 + .025, POSITION_GLASS[2]],
         }, wallBody);
-        initiliazeWallObstacles({ scene: this.#scene, wallBody });
+        collider.setCollisionGroups(this.#groups.WALL | this.#groups.OBJECTS);
+        initiliazeWallObstacles({ scene: this.#scene, wallBody, groups: this.#groups });
     }
 };
 
-function initiliazeWallObstacles({ scene, wallBody }) {
+function initiliazeWallObstacles({ scene, wallBody, groups }) {
     const spacing = 0.075;
     const startX = (-OBSTACLE_COLS * OBSTACLE_SPACING_X / 2) + (OBSTACLE_SPACING_X / 2);
     for (let col = 0; col < OBSTACLE_COLS; col++) {
-        initializeObstacle(startX - OBSTACLE_SPACING_X / 2, OBSTACLE_START_Y - OBSTACLE_SPACING_Y / 1.6, col, -1, OBSTACLE_RADIUS / 2, BOTTOM_OBSTACLE_FRICTION, BOTTOM_OBSTACLE_RESTITUTION);
+        initializeObstacle(startX - OBSTACLE_SPACING_X / 2, OBSTACLE_START_Y - OBSTACLE_SPACING_Y / 1.6, col, -1, OBSTACLE_RADIUS / 2, BOTTOM_OBSTACLE_FRICTION, BOTTOM_OBSTACLE_RESTITUTION, groups);
     }
     for (let col = 0; col < OBSTACLE_COLS; col++) {
-        initializeObstacle(startX - spacing / 2, OBSTACLE_START_Y - OBSTACLE_SPACING_Y / 6, col, -1, OBSTACLE_RADIUS / 2, BOTTOM_OBSTACLE_FRICTION, BOTTOM_OBSTACLE_RESTITUTION);
+        initializeObstacle(startX - spacing / 2, OBSTACLE_START_Y - OBSTACLE_SPACING_Y / 6, col, -1, OBSTACLE_RADIUS / 2, BOTTOM_OBSTACLE_FRICTION, BOTTOM_OBSTACLE_RESTITUTION, groups);
     }
     for (let row = 0; row < OBSTACLE_ROWS; row++) {
         for (let col = 0; col < (row % 2 === 0 ? OBSTACLE_COLS : OBSTACLE_COLS - 1); col++) {
-            initializeObstacle(startX, OBSTACLE_START_Y, col, row, OBSTACLE_RADIUS, OBSTACLE_FRICTION, OBSTACLE_RESTITUTION);
+            initializeObstacle(startX, OBSTACLE_START_Y, col, row, OBSTACLE_RADIUS, OBSTACLE_FRICTION, OBSTACLE_RESTITUTION, groups);
         }
     }
 
-    function initializeObstacle(startX, startY, col, row, obstacleRadius, friction, restitution) {
+    function initializeObstacle(startX, startY, col, row, obstacleRadius, friction, restitution, groups) {
         const x = startX + col * OBSTACLE_SPACING_X + (row % 2 === 0 ? 0 : OBSTACLE_SPACING_X / 2);
         const y = startY + row * OBSTACLE_SPACING_Y;
         const obstacleGeometry = new CylinderGeometry(obstacleRadius, obstacleRadius, OBSTACLE_HEIGHT, 8);
@@ -116,7 +123,7 @@ function initiliazeWallObstacles({ scene, wallBody }) {
         obstacleMesh.rotation.set(Math.PI / 2, Math.PI / 4, 0);
         if (row !== 4 || (col != 0 && col != 6)) {
             scene.addObject(obstacleMesh);
-            scene.createCuboidCollider({
+            const collider = scene.createCuboidCollider({
                 width: obstacleRadius,
                 height: OBSTACLE_HEIGHT,
                 depth: obstacleRadius,
@@ -125,6 +132,7 @@ function initiliazeWallObstacles({ scene, wallBody }) {
                 position: [x, y, OBSTACLE_POSITION_Z],
                 rotation: [Math.PI / 2, Math.PI / 4, 0],
             }, wallBody);
+            collider.setCollisionGroups(groups.WALL | groups.OBJECTS);
         }
     }
 }

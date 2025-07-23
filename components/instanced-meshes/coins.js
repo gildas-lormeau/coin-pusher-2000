@@ -40,13 +40,13 @@ export default class {
     static #frameLastSpawn = 0;
     static #onSpawnedCoin;
 
-    static async initialize({ scene, onSpawnedCoin }) {
+    static async initialize({ scene, onSpawnedCoin, groups }) {
         this.#scene = scene;
         this.#onSpawnedCoin = onSpawnedCoin;
         const { materials, geometries } = await initializeModel({ scene });
         this.#meshes = initializeInstancedMeshes({ scene, materials, geometries });
         this.#instances = [];
-        createInstances({ scene, instances: this.#instances });
+        createInstances({ scene, instances: this.#instances, groups });
     }
 
     static getCoin({ index }) {
@@ -250,13 +250,13 @@ function initializeInstancedMeshes({ scene, materials, geometries }) {
     return meshes;
 }
 
-function createInstances({ scene, instances }) {
+function createInstances({ scene, instances, groups }) {
     for (let indexInstance = instances.length; indexInstance < MAX_INSTANCES; indexInstance++) {
-        createInstance({ scene, instances });
+        createInstance({ scene, instances, groups });
     }
 }
 
-function createInstance({ scene, instances }) {
+function createInstance({ scene, instances, groups }) {
     const body = scene.createDynamicBody();
     body.setEnabled(false);
     body.setSoftCcdPrediction(SOFT_CCD_PREDICTION);
@@ -264,7 +264,7 @@ function createInstance({ scene, instances }) {
     body.setLinearDamping(LINEAR_DAMPING);
     body.setAdditionalSolverIterations(ADDITIONAL_SOLVER_ITERATIONS);
     const index = instances.length;
-    scene.createCylinderCollider({
+    const collider = scene.createCylinderCollider({
         userData: { objectType: TYPE, index },
         radius: RADIUS,
         height: DEPTH,
@@ -272,6 +272,7 @@ function createInstance({ scene, instances }) {
         restitution: RESTITUTION,
         density: density
     }, body);
+    collider.setCollisionGroups(groups.ALL);
     const instance = {
         objectType: TYPE,
         index,

@@ -26,6 +26,31 @@ const MIN_POSITION_Y_OBJECTS = -1;
 const MODEL_PATH = "./assets/cabinet.glb";
 const SENSOR_HEIGHT = 0.2;
 
+const GROUPS = {
+    OBJECTS:
+        0b00000000000000001,
+    CABINET:
+        0b00000000000000010,
+    EXCAVATOR:
+        0b00000000000000100,
+    TOWER:
+        0b00000000000001000,
+    COIN_ROLLER:
+        0b00000000000010000,
+    PUSHER:
+        0b00000000000100000,
+    STACKER:
+        0b00000000001000000,
+    MINI_STACKER:
+        0b00000000010000000,
+    SWEEPERS:
+        0b00000000100000000,
+    WALL:
+        0b00000001000000000,
+    ALL:
+        0b00000001111111111
+};
+
 export default class {
 
     DEBUG_AUTOPLAY = false;
@@ -98,7 +123,7 @@ export default class {
             parts
         });
         this.#sensorColliders = sensorColliders;
-        const wall = new Wall({ scene });
+        const wall = new Wall({ scene, groups: GROUPS });
         this.#controlPanel = new ControlPanel({
             onPressDropButton: slot => {
                 if (this.#cabinet.state.coins) {
@@ -135,7 +160,8 @@ export default class {
             },
             onDisableHold: () => {
                 this.#controlPanel.disableHoldButton();
-            }
+            },
+            groups: GROUPS
         });
         this.#scoreboard = new ScoreBoard({
             scene,
@@ -181,7 +207,8 @@ export default class {
                     tokenCount: Math.random() < 0.5 ? 1 : 0,
                     ingotCount: Math.random() < 0.25 ? 1 : 0
                 });
-            }
+            },
+            groups: GROUPS
         });
         this.#excavator = new Excavator({
             scene,
@@ -220,21 +247,24 @@ export default class {
                     }));
                 }
                 return objects;
-            }
+            },
+            groups: GROUPS
         });
         this.#leftTower = new Tower({
             scene,
             cabinet: this,
             offsetX: -.25,
             oscillationDirection: 1,
-            onShootCoin: ({ position, impulse }) => Coins.depositCoin({ position, impulse })
+            onShootCoin: ({ position, impulse }) => Coins.depositCoin({ position, impulse }),
+            groups: GROUPS
         });
         this.#rightTower = new Tower({
             scene,
             cabinet: this,
             offsetX: .25,
             oscillationDirection: -1,
-            onShootCoin: ({ position, impulse }) => Coins.depositCoin({ position, impulse })
+            onShootCoin: ({ position, impulse }) => Coins.depositCoin({ position, impulse }),
+            groups: GROUPS
         });
         this.#coinRoller = new CoinRoller({
             scene,
@@ -244,28 +274,33 @@ export default class {
             onBonusWon: bonus => {
                 Coins.dropCoins({ count: Math.pow(bonus + 1, 2) * 5 });
                 this.#controlPanel.disableShootButton();
-            }
+            },
+            groups: GROUPS
         });
         this.#stacker = new Stacker({
             scene,
             cabinet: this,
             onInitializeCoin: ({ position, rotation, impulse }) => Coins.depositCoin({ position, rotation, impulse }),
+            groups: GROUPS
         });
         this.#leftStacker = new MiniStacker({
             scene,
             cabinet: this,
             onInitializeCoin: ({ position, rotation, impulse }) => Coins.depositCoin({ position, rotation, impulse }),
-            offsetX: -0.4
+            offsetX: -0.4,
+            groups: GROUPS
         });
         this.#rightStacker = new MiniStacker({
             scene,
             cabinet: this,
             onInitializeCoin: ({ position, rotation, impulse }) => Coins.depositCoin({ position, rotation, impulse }),
-            offsetX: 0.4
+            offsetX: 0.4,
+            groups: GROUPS
         });
         this.#sweepers = new Sweepers({
             scene,
-            cabinet: this
+            cabinet: this,
+            groups: GROUPS
         });
         this.#screen = new Screen({ scene });
         this.#cardReader = new CardReader({
@@ -313,15 +348,16 @@ export default class {
         this.#floorAccessRules.set(this.#leftTower, new Set([this.#sweepers]));
         this.#floorAccessRules.set(this.#rightTower, new Set([this.#sweepers]));
         await Promise.all([
-            Cards.initialize({ scene }),
+            Cards.initialize({ scene, groups: GROUPS }),
             Coins.initialize({
                 scene,
-                onSpawnedCoin: instance => Coins.enableCcd(instance, true)
+                onSpawnedCoin: instance => Coins.enableCcd(instance, true),
+                groups: GROUPS
             }),
-            Tokens.initialize({ scene }),
-            Buttons.initialize({ scene }),
-            Digits.initialize({ scene }),
-            Ingots.initialize({ scene })
+            Tokens.initialize({ scene, groups: GROUPS }),
+            Buttons.initialize({ scene, groups: GROUPS }),
+            Digits.initialize({ scene, groups: GROUPS }),
+            Ingots.initialize({ scene, groups: GROUPS })
         ]);
         await Promise.all([
             wall.initialize(),
@@ -650,6 +686,7 @@ function initializeColliders({ scene, parts, sensorListeners }) {
                 friction,
                 restitution
             }, body);
+            collider.setCollisionGroups(GROUPS.CABINET | GROUPS.OBJECTS);
         }
     });
     return {

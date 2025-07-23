@@ -72,6 +72,7 @@ export default class {
 
     #scene;
     #cabinet;
+    #groups;
     #leftPivotPosition;
     #rightPivotPosition;
     #leftDoorPivotPosition;
@@ -131,9 +132,10 @@ export default class {
         }
     };
 
-    constructor({ scene, cabinet }) {
+    constructor({ scene, cabinet, groups }) {
         this.#scene = scene;
         this.#cabinet = cabinet;
+        this.#groups = groups;
     }
 
     async initialize() {
@@ -155,7 +157,8 @@ export default class {
         this.#rightLightMaterial = rightLightMaterial;
         initializeColliders({
             scene,
-            parts
+            parts,
+            groups: this.#groups
         });
         parts.forEach(({ body, meshes }) => {
             meshes.forEach(({ data }) => this.#scene.addObject(data));
@@ -578,7 +581,7 @@ function getPart(parts, name) {
     return partData;
 }
 
-function initializeColliders({ scene, parts }) {
+function initializeColliders({ scene, parts, groups }) {
     parts.forEach(partData => {
         const { meshes, friction, restitution, kinematic, cuboid } = partData;
         const body = partData.body = kinematic ? scene.createKinematicBody() : scene.createFixedBody();
@@ -595,6 +598,7 @@ function initializeColliders({ scene, parts }) {
                 friction,
                 restitution,
             }, body);
+            collider.setCollisionGroups(groups.SWEEPERS | groups.OBJECTS);
         } else {
             const geometries = [];
             meshes.forEach(meshData => {
@@ -610,6 +614,7 @@ function initializeColliders({ scene, parts }) {
                     friction,
                     restitution
                 }, body);
+                collider.setCollisionGroups(groups.SWEEPERS | groups.OBJECTS);
             }
         }
     });

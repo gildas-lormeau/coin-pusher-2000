@@ -86,8 +86,8 @@ export default class {
     #scene;
     #cabinet;
     #lightBulbsMaterials;
-    #canActivate;
     #onInitializeCoin;
+    #groups;
     #dropPosition;
     #pivotPosition;
     #armProtectionLidPivotPosition;
@@ -116,11 +116,12 @@ export default class {
         }
     };
 
-    constructor({ scene, cabinet, onInitializeCoin, offsetX = 0 }) {
+    constructor({ scene, cabinet, onInitializeCoin, offsetX = 0, groups }) {
         this.#scene = scene;
         this.#cabinet = cabinet;
         this.#offsetX = offsetX;
         this.#onInitializeCoin = onInitializeCoin;
+        this.#groups = groups;
     }
 
     async initialize() {
@@ -139,7 +140,8 @@ export default class {
         initializeColliders({
             scene,
             parts,
-            offsetX: this.#offsetX
+            offsetX: this.#offsetX,
+            groups: this.#groups
         });
         initializeLights({
             lightBulbsMaterials,
@@ -669,7 +671,7 @@ function getPart(parts, name) {
     return partData;
 }
 
-function initializeColliders({ scene, parts, offsetX }) {
+function initializeColliders({ scene, parts, offsetX, groups }) {
     parts.forEach(partData => {
         const { meshes, colliders, friction, restitution, kinematic, cuboid, cylinder } = partData;
         const body = partData.body = kinematic ? scene.createKinematicBody() : scene.createFixedBody();
@@ -698,6 +700,7 @@ function initializeColliders({ scene, parts, offsetX }) {
                     restitution,
                 }, body);
             }
+            collider.setCollisionGroups(groups.MINI_STACKER | groups.OBJECTS);
         } else {
             const geometries = [];
             meshes.forEach(meshData => {
@@ -713,6 +716,7 @@ function initializeColliders({ scene, parts, offsetX }) {
                     friction,
                     restitution
                 }, body);
+                collider.setCollisionGroups(groups.MINI_STACKER | groups.OBJECTS);
             }
         }
         colliders.forEach(colliderData => {
@@ -725,6 +729,7 @@ function initializeColliders({ scene, parts, offsetX }) {
                 friction,
                 restitution
             }, body);
+            collider.setCollisionGroups(groups.MINI_STACKER | groups.OBJECTS);
         });
     });
 }

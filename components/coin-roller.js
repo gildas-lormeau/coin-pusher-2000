@@ -52,6 +52,7 @@ export default class {
     #onInitializeCoin;
     #onBonusWon;
     #onGameLost;
+    #groups;
     #initPosition;
     #sensorColliders = new Map();
     #lightsMaterials = [];
@@ -71,7 +72,7 @@ export default class {
         lightsRefreshes: -1
     };
 
-    constructor({ scene, cabinet, onInitializeCoin, onBonusWon, onGameLost }) {
+    constructor({ scene, cabinet, onInitializeCoin, onBonusWon, onGameLost, groups }) {
         this.#scene = scene;
         this.#cabinet = cabinet;
         this.#onInitializeCoin = onInitializeCoin;
@@ -89,6 +90,7 @@ export default class {
             this.#coinRoller.coin = null;
             onGameLost();
         };
+        this.#groups = groups;
     }
 
     async initialize() {
@@ -105,7 +107,8 @@ export default class {
             coinRoller: this.#coinRoller,
             sensorColliders: this.#sensorColliders,
             onBonusWon: this.#onBonusWon,
-            onGameLost: this.#onGameLost
+            onGameLost: this.#onGameLost,
+            groups: this.#groups
         });
         initializeLights({
             scene,
@@ -461,7 +464,7 @@ function getPart(parts, name) {
     return partData;
 }
 
-function initializeColliders({ scene, parts, coinRoller, sensorColliders, onBonusWon, onGameLost }) {
+function initializeColliders({ scene, parts, coinRoller, sensorColliders, onBonusWon, onGameLost, groups }) {
     parts.forEach((partData, name) => {
         const { meshes, friction, restitution, sensor, kinematic } = partData;
         let body;
@@ -501,6 +504,8 @@ function initializeColliders({ scene, parts, coinRoller, sensorColliders, onBonu
             }, body);
             if (sensor) {
                 sensorColliders.set(name, collider);
+            } else {
+                collider.setCollisionGroups(groups.COIN_ROLLER | groups.OBJECTS);
             }
         }
     });

@@ -34,11 +34,12 @@ const LIGHTS_STATES = {
 };
 
 export default class {
-    constructor({ scene, onDeliverBonus, onDisableHold, onEnableHold }) {
+    constructor({ scene, onDeliverBonus, onDisableHold, onEnableHold, groups }) {
         this.#scene = scene;
         this.#onDeliverBonus = onDeliverBonus;
         this.#onDisableHold = onDisableHold;
         this.#onEnableHold = onEnableHold;
+        this.#groups = groups;
     }
 
     #scene;
@@ -49,6 +50,7 @@ export default class {
     #onDeliverBonus;
     #onDisableHold;
     #onEnableHold;
+    #groups;
     #lightBulbsMaterials;
     #platformPosition = new Vector3();
     #doorPosition = new Vector3();
@@ -77,7 +79,7 @@ export default class {
         this.#parts = parts;
         this.#deliveryPosition = deliveryPosition;
         this.#lightBulbsMaterials = lightBulbsMaterials;
-        initializeColliders({ scene: this.#scene, parts });
+        initializeColliders({ scene: this.#scene, parts, groups: this.#groups });
         initializeLights({ lightBulbsMaterials: this.#lightBulbsMaterials, lights: this.#pusher.lights });
         this.#door = parts.get(DOOR_PART_NAME);
         this.#platform = parts.get(PLATFORM_PART_NAME);
@@ -366,7 +368,7 @@ function getPart(parts, name) {
     return partData;
 }
 
-function initializeColliders({ scene, parts }) {
+function initializeColliders({ scene, parts, groups }) {
     parts.forEach(partData => {
         const { meshes, kinematic, colliders } = partData;
         const body = partData.body = kinematic ? scene.createKinematicBody() : scene.createFixedBody();
@@ -384,6 +386,7 @@ function initializeColliders({ scene, parts }) {
                     friction,
                     restitution,
                 }, body);
+                collider.setCollisionGroups(groups.COIN_PUSHER | groups.OBJECTS);
             }
         });
         colliders.forEach(({ friction, restitution, position, rotation, size }) => {
@@ -396,6 +399,7 @@ function initializeColliders({ scene, parts }) {
                 friction,
                 restitution,
             }, body);
+            collider.setCollisionGroups(groups.COIN_PUSHER | groups.OBJECTS);
         });
     });
 }
