@@ -286,10 +286,16 @@ export default class {
                     position: position.clone().setY(position.y + COIN_HEIGHT / 2),
                     rotation: COIN_ROTATION
                 }));
+                this.#stacker.coins[this.#stacker.coins.length - 1].body.setEnabledTranslations(false, true, true);
+                this.#stacker.coins[this.#stacker.coins.length - 2].body.setEnabledTranslations(false, true, true);
             }
             if (state === STACKER_STATES.PUSHING_COIN) {
                 this.#stacker.coins[this.#stacker.coins.length - 1].body.applyImpulse(COIN_IMPULSE_FORCE, true);
                 this.#stacker.coins[this.#stacker.coins.length - 2].body.applyImpulse(COIN_IMPULSE_FORCE, true);
+            }
+            if (state === STACKER_STATES.LOWERING_BASE || state === STACKER_STATES.ROTATING_BASE) {
+                this.#stacker.coins[this.#stacker.coins.length - 1].body.setEnabledTranslations(true, true, true);
+                this.#stacker.coins[this.#stacker.coins.length - 2].body.setEnabledTranslations(true, true, true);
             }
         }
     }
