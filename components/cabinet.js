@@ -381,11 +381,6 @@ export default class {
         ]);
         await this.#collisionsDetector.initialize();
         this.#controlPanel.enableStartButton();
-        setTimeout(() => {
-            this.#stacker.deliver({ stacks: 6, levels: 30 });
-            this.#leftStacker.deliver({ levels: 20 });
-            this.#rightStacker.deliver({ levels: 20 });
-        }, 1000);
     }
 
     update(time) {
