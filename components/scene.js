@@ -6,7 +6,7 @@ import * as BufferGeometryUtils from "three/examples/jsm/utils/BufferGeometryUti
 const BACKGROUND_COLOR = 0x222222;
 const NUM_SOLVER_ITERATIONS = 2;
 const NUM_ADDITIONAL_FRICTION_ITERATIONS = 1;
-const NUM_INTERNAL_PGS_ITERATIONS = 2;
+const NUM_INTERNAL_PGS_ITERATIONS = 3;
 const TIMESTEP = 1 / 60;
 const ANTIALIAS = true;
 const POWER_PREFERENCE = "high-performance";
