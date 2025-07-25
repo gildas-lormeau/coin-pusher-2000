@@ -8,6 +8,10 @@ const BEACON_LIGHT_MIRROR_NAME = "beacon-light-mirror";
 const PLATFORM = "rotating-platform";
 const ARM_PLATFORM = "arm-rotating-platform";
 const ARM_JAWS = "arm-jaws";
+const JAW1 = "jaw-1";
+const JAW2 = "jaw-2";
+const JAW3 = "jaw-3";
+const JAW4 = "jaw-4";
 const DROP_POSITION = "drop-position";
 const BEACON_LIGHT_POSITION = "beacon-light-position";
 const PIVOT_ARM_PLATFORM = "pivot-arm-rotating-platform";
@@ -668,7 +672,17 @@ function initializeColliders({ scene, cabinet, parts, joints, groups }) {
                     restitution
                 }, body);
                 collider.setContactSkin(contactSkin);
-                collider.setCollisionGroups(groups.EXCAVATOR << 16 | groups.OBJECTS);
+                if (name == JAW1) {
+                    collider.setCollisionGroups(groups.EXCAVATOR_JAW1 << 16 | groups.OBJECTS);
+                } else if (name == JAW2) {
+                    collider.setCollisionGroups(groups.EXCAVATOR_JAW2 << 16 | groups.OBJECTS);
+                } else if (name == JAW3) {
+                    collider.setCollisionGroups(groups.EXCAVATOR_JAW3 << 16 | groups.OBJECTS);
+                } else if (name == JAW4) {
+                    collider.setCollisionGroups(groups.EXCAVATOR_JAW4 << 16 | groups.OBJECTS);
+                } else {
+                    collider.setCollisionGroups(groups.EXCAVATOR << 16 | groups.OBJECTS);
+                }
             }
         }
     });

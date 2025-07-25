@@ -8,6 +8,7 @@ const DOOR_SPEED = 0.003;
 const DOOR_MAX_DISTANCE = 0.3;
 const MODEL_PATH = "./assets/pusher.glb";
 const DOOR_PART_NAME = "door";
+const FLOOR_PART_NAME = "floor";
 const PLATFORM_PART_NAME = "platform";
 const DELIVERY_POSITION = "delivery-position";
 const LIGHTS_EMISSIVE_COLOR = 0x5353A6;
@@ -369,7 +370,7 @@ function getPart(parts, name) {
 }
 
 function initializeColliders({ scene, parts, groups }) {
-    parts.forEach(partData => {
+    parts.forEach((partData, name) => {
         const { meshes, kinematic, colliders } = partData;
         const body = partData.body = kinematic ? scene.createKinematicBody() : scene.createFixedBody();
         body.setEnabled(false);
@@ -386,7 +387,12 @@ function initializeColliders({ scene, parts, groups }) {
                     friction,
                     restitution,
                 }, body);
-                collider.setCollisionGroups(groups.PUSHER << 16 | groups.OBJECTS);
+                if (name === FLOOR_PART_NAME) {
+                    debugger;
+                    collider.setCollisionGroups(groups.FLOOR << 16 | groups.OBJECTS);
+                } else {
+                    collider.setCollisionGroups(groups.PUSHER << 16 | groups.OBJECTS);
+                }
             }
         });
         colliders.forEach(({ friction, restitution, position, rotation, size }) => {
