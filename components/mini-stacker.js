@@ -4,7 +4,7 @@ const MODEL_PATH = "./assets/mini-stacker.glb";
 const DROP_POSITION = "drop-position";
 const PIVOT_POSITION = "pivot-position";
 const ARM_PROTECTION_LID_PIVOT_POSITION = "arm-protection-lid-pivot-position";
-const COIN_ROTATION = new Vector3(0, 0, 0);
+const COIN_ROTATIONS = [new Vector3(0, 0, 0), new Vector3(0, 0, Math.PI)];
 const COIN_HEIGHT = 0.005;
 const X_AXIS = new Vector3(1, 0, 0);
 const Y_AXIS = new Vector3(0, 1, 0);
@@ -270,11 +270,11 @@ export default class {
                 position.setY(position.y + this.#stacker.position);
                 this.#stacker.coins.push(this.#onInitializeCoin({
                     position: position.clone().setY(position.y - COIN_HEIGHT / 2),
-                    rotation: COIN_ROTATION
+                    rotation: COIN_ROTATIONS[1]
                 }));
                 this.#stacker.coins.push(this.#onInitializeCoin({
                     position: position.clone().setY(position.y + COIN_HEIGHT / 2),
-                    rotation: COIN_ROTATION
+                    rotation: COIN_ROTATIONS[0]
                 }));
                 this.#stacker.coins[this.#stacker.coins.length - 1].body.setEnabledTranslations(false, true, true);
                 this.#stacker.coins[this.#stacker.coins.length - 2].body.setEnabledTranslations(false, true, true);
