@@ -388,7 +388,6 @@ function initializeColliders({ scene, parts, groups }) {
                     restitution,
                 }, body);
                 if (name === FLOOR_PART_NAME) {
-                    debugger;
                     collider.setCollisionGroups(groups.FLOOR << 16 | groups.OBJECTS);
                 } else {
                     collider.setCollisionGroups(groups.PUSHER << 16 | groups.OBJECTS);
