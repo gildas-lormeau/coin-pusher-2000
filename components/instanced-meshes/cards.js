@@ -247,11 +247,7 @@ function initializePosition({ instance, hidden, position, rotation, }) {
         if (rotation) {
             instance.rotation.setFromEuler(new Euler(rotation.x, rotation.y, rotation.z));
         } else {
-            instance.rotation.setFromEuler(new Euler(
-                EULER_ROTATION.x + (Math.random() * Math.PI * 2),
-                EULER_ROTATION.y + (Math.random() * Math.PI * 2),
-                EULER_ROTATION.z + (Math.random() * Math.PI * 2)
-            ));
+            instance.rotation.setFromEuler(EULER_ROTATION);
         }
     }
     instance.body.setTranslation(instance.position);
