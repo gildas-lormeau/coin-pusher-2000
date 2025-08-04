@@ -20,6 +20,7 @@ import Sweepers from "./sweepers.js";
 import Screen from "./screen.js";
 import CardReader from "./card-reader.js";
 import TokenSlot from "./token-slot.js";
+import ObjectsDistributor from "./objects-distributor.js";
 import Runs from "./runs.js";
 
 const MIN_POSITION_Y_OBJECTS = -1;
@@ -118,6 +119,7 @@ export default class {
     #cardReader;
     #tokenSlot;
     #runs;
+    #objectsDistributor;
     #parts;
 
     async initialize() {
@@ -157,12 +159,7 @@ export default class {
         });
         this.#pusher = new Pusher({
             scene,
-            onDeliverBonus: ({ reward, position }) => {
-                Coins.depositCoins({ position, count: reward.coinCount });
-                Tokens.depositTokens({ position, count: reward.tokenCount });
-                Cards.depositCards({ position, count: reward.cardCount });
-                Ingots.depositIngots({ position, count: reward.ingotCount });
-            },
+            onDeliverBonus: ({ position, reward }) => this.#objectsDistributor.deposit(position, [.55, .2], reward),
             onEnableHold: () => {
                 if (this.#runs.started) {
                     this.#controlPanel.enableHoldButton();
@@ -185,7 +182,24 @@ export default class {
             onBonusWon: () => {
                 const random = Math.random();
                 if (this.DEBUG_AUTOPLAY) {
-                    this.#pusher.deliverBonus({ coinCount: 10, cardCount: Math.random() < 0.5 ? 1 : 0, tokenCount: Math.random() < 0.5 ? 1 : 0, ingotCount: Math.random() < 0.5 ? 1 : 0 });
+                    const tokens = [];
+                    const cards = [];
+                    for (let i = 0; i < 5; i++) {
+                        if (Math.random() < 0.5) {
+                            tokens.push({ type: Math.floor(Math.random() * (Tokens.TYPES - 1)) });
+                        }
+                    }
+                    for (let i = 0; i < 3; i++) {
+                        if (Math.random() < 0.5) {
+                            cards.push({ type: Math.floor(Math.random() * (Cards.TYPES - 1)) });
+                        }
+                    }
+                    this.#pusher.deliverBonus(new Map([
+                        [Coins, { length: 20 + Math.floor(Math.random() * 30) }],
+                        [Tokens, tokens],
+                        [Cards, cards],
+                        [Ingots, { length: Math.random() < 0.5 ? 1 : 0 }]
+                    ]));
                 } else {
                     if (random < .14) {
                         this.#reelsBox.spinReels();
@@ -211,12 +225,24 @@ export default class {
         this.#reelsBox = new ReelsBox({
             scene,
             onBonusWon: (reels) => {
-                this.#pusher.deliverBonus({
-                    coinCount: Math.floor(5 * Math.random()) + 10,
-                    cardCount: Math.random() < 0.5 ? 1 : 0,
-                    tokenCount: Math.random() < 0.5 ? 1 : 0,
-                    ingotCount: Math.random() < 0.25 ? 1 : 0
-                });
+                const tokens = [];
+                const cards = [];
+                for (let i = 0; i < 5; i++) {
+                    if (Math.random() < 0.5) {
+                        tokens.push({ type: Math.floor(Math.random() * (Tokens.TYPES - 1)) });
+                    }
+                }
+                for (let i = 0; i < 3; i++) {
+                    if (Math.random() < 0.5) {
+                        cards.push({ type: Math.floor(Math.random() * (Cards.TYPES - 1)) });
+                    }
+                }
+                this.#pusher.deliverBonus(new Map([
+                    [Coins, { length: 20 + Math.floor(Math.random() * 30) }],
+                    [Tokens, tokens],
+                    [Cards, cards],
+                    [Ingots, { length: Math.random() < 0.5 ? 1 : 0 }]
+                ]));
             },
             groups: GROUPS
         });
@@ -224,39 +250,16 @@ export default class {
             scene,
             cabinet: this,
             onPick: dropPosition => {
-                const objects = [];
-                for (let i = 0; i < 30 + Math.floor(Math.random() * 10); i++) {
-                    const rotation = {
-                        x: (Math.random() - 0.5) * Math.PI / 4,
-                        y: (Math.random() - 0.5) * Math.PI / 4,
-                        z: (Math.random() - 0.5) * Math.PI / 4
-                    };
-                    const position = {
-                        x: dropPosition.x + (Math.random() - 0.5) * 0.02,
-                        y: dropPosition.y,
-                        z: dropPosition.z + (Math.random() - 0.5) * 0.02
-                    };
-                    objects.push(Coins.depositCoin({
-                        position,
-                        rotation
-                    }));
+                const tokens = [];
+                for (let i = 0; i < 1; i++) {
+                    if (Math.random() < 0.5) {
+                        tokens.push({ type: Math.floor(Math.random() * (Tokens.TYPES - 1)) });
+                    }
                 }
-                if (Math.random() < .25) {
-                    objects.push(Tokens.depositToken({
-                        type: Math.floor(Math.random() * (Tokens.TYPES - 1)),
-                        position: {
-                            x: dropPosition.x + (Math.random() - 0.5) * 0.02,
-                            y: dropPosition.y,
-                            z: dropPosition.z + (Math.random() - 0.5) * 0.02
-                        },
-                        rotation: {
-                            x: (Math.random() - 0.5) * Math.PI / 4,
-                            y: (Math.random() - 0.5) * Math.PI / 4,
-                            z: (Math.random() - 0.5) * Math.PI / 4
-                        }
-                    }));
-                }
-                return objects;
+                return this.#objectsDistributor.deposit(dropPosition, [0, 0], new Map([
+                    [Coins, { length: 30 + Math.floor(Math.random() * 10) }],
+                    [Tokens, tokens]
+                ]), { compacted: true, randomRotation: true, randomPosition: true });
             },
             groups: GROUPS
         });
@@ -316,7 +319,7 @@ export default class {
         this.#cardReader = new CardReader({
             scene,
             cabinet: this,
-            onRetrieveCard: ({ type, position, rotation }) => Cards.depositCard({ type, position, rotation }),
+            onRetrieveCard: ({ type, position, rotation }) => Cards.deposit({ type, position, rotation }),
             onReadCard: card => {
                 if (this.#runs.started) {
                     this.#cabinet.state.score += 50;
@@ -327,7 +330,7 @@ export default class {
         this.#tokenSlot = new TokenSlot({
             scene,
             cabinet: this,
-            onRetrieveToken: ({ type, position, rotation }) => Tokens.depositToken({ type, position, rotation }),
+            onRetrieveToken: ({ type, position, rotation }) => Tokens.deposit({ type, position, rotation }),
             onReadToken: token => {
                 if (this.#runs.started) {
                     this.#cabinet.state.score += 20;
@@ -350,6 +353,7 @@ export default class {
                 this.#controlPanel.disableHoldButton();
             }
         });
+        this.#objectsDistributor = new ObjectsDistributor({ scene });
         this.#floorAccessRules.set(this.#leftStacker, new Set([this.#sweepers]));
         this.#floorAccessRules.set(this.#rightStacker, new Set([this.#sweepers]));
         this.#floorAccessRules.set(this.#stacker, new Set([this.#sweepers, this.#excavator]));

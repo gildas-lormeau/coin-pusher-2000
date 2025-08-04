@@ -2,8 +2,8 @@ import { Vector3, Quaternion, Matrix4, Euler, InstancedMesh } from "three";
 
 const TYPE = "card";
 const MAX_INSTANCES = 8;
-const WIDTH = 0.11;
-const HEIGHT = 0.175;
+const WIDTH = 0.175;
+const HEIGHT = 0.11;
 const DEPTH = 0.005;
 const INITIAL_POSITION = [0, .6, .5];
 const INITIAL_POSITION_DELTA_X = 0.2;
@@ -75,15 +75,20 @@ export default class {
         }
     }
 
-    static depositCard({ type, position, rotation }) {
+    static getSize() {
+        return {
+            width: WIDTH,
+            height: HEIGHT,
+            depth: DEPTH
+        };
+    }
+
+    static deposit({ type, position, rotation }) {
         const instance = this.#instances[type].find(instance => !instance.used);
         instance.used = true;
         initializePosition({ instance, position, rotation });
         instance.body.setEnabled(true);
-        update({
-            instance,
-            meshes: this.#meshes[type]
-        });
+        update({ instance, meshes: this.#meshes[type] });
         return instance;
     }
 
@@ -225,9 +230,9 @@ function createInstance({ scene, type, instances, groups }) {
     const index = instances[type].length;
     const collider = scene.createCuboidCollider({
         userData: { objectType: TYPE, type, index },
-        width: HEIGHT,
+        width: WIDTH,
         height: DEPTH,
-        depth: WIDTH,
+        depth: HEIGHT,
         friction: FRICTION,
         restitution: RESTITUTION,
         density: DENSITY

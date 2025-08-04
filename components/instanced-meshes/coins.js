@@ -93,6 +93,25 @@ export default class {
         this.#meshes.forEach(mesh => mesh.instanceMatrix.needsUpdate = true);
     }
 
+    static getSize() {
+        return {
+            width: RADIUS * 2,
+            height: RADIUS * 2,
+            depth: DEPTH
+        }
+    }
+
+    static deposit({ position, rotation = new Vector3(0, 0, 0), impulse }) {
+        const instance = this.#instances.find(instance => !instance.used);
+        instance.used = true;
+        initializePosition({ instance, position, rotation });
+        instance.body.setEnabled(true);
+        if (impulse) {
+            instance.pendingImpulse = impulse.clone();
+        }
+        return instance;
+    }
+
     static dropCoin({ slot }) {
         this.#spawnedCoins.push({ slot });
     }
@@ -107,17 +126,6 @@ export default class {
             lastSlot = slot;
             this.#spawnedCoins.push({ slot });
         }
-    }
-
-    static depositCoin({ position, rotation = new Vector3(0, 0, 0), impulse }) {
-        const instance = this.#instances.find(instance => !instance.used);
-        instance.used = true;
-        initializePosition({ instance, position, rotation });
-        instance.body.setEnabled(true);
-        if (impulse) {
-            instance.pendingImpulse = impulse.clone();
-        }
-        return instance;
     }
 
     static depositCoins({ position, count }) {

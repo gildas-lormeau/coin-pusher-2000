@@ -2,8 +2,8 @@ import { Vector3, Quaternion, Matrix4, Euler, InstancedMesh } from "three";
 
 const TYPE = "ingot";
 const MAX_INSTANCES = 8;
-const WIDTH = 0.075;
-const HEIGHT = 0.15;
+const WIDTH = 0.15;
+const HEIGHT = 0.075;
 const DEPTH = 0.02;
 const INITIAL_POSITION = [0, .6, .5];
 const INITIAL_POSITION_DELTA_X = 0.2;
@@ -64,6 +64,23 @@ export default class {
 
     static refresh() {
         this.#meshes.forEach(mesh => mesh.instanceMatrix.needsUpdate = true);
+    }
+
+    static getSize() {
+        return {
+            width: WIDTH,
+            height: HEIGHT,
+            depth: DEPTH
+        };
+    }
+
+    static deposit({ position, rotation }) {
+        const instance = this.#instances.find(instance => !instance.used);
+        instance.used = true;
+        initializePosition({ instance, position, rotation });
+        instance.body.setEnabled(true);
+        update({ instance, meshes: this.#meshes });
+        return instance;
     }
 
     static dropIngot() {

@@ -73,6 +73,23 @@ export default class {
         }
     }
 
+    static getSize() {
+        return {
+            width: RADIUS * 2,
+            height: RADIUS * 2,
+            depth: DEPTH
+        };
+    }
+
+    static deposit({ type, position, rotation }) {
+        const instance = this.#instances[type].find(instance => !instance.used);
+        instance.used = true;
+        initializePosition({ instance, position, rotation });
+        instance.body.setEnabled(true);
+        update({ instance, meshes: this.#meshes[type] });
+        return instance;
+    }
+
     static dropToken({ type }) {
         const instance = this.#instances[type].find(instance => !instance.used);
         instance.used = true;
@@ -89,15 +106,6 @@ export default class {
             initializePosition({ instance, position, rotation });
             instance.body.setEnabled(true);
         }
-    }
-
-    static depositToken({ type, position, rotation }) {
-        const instance = this.#instances[type].find(instance => !instance.used);
-        instance.used = true;
-        initializePosition({ instance, position, rotation });
-        instance.body.setEnabled(true);
-        update({ instance, meshes: this.#meshes[type] });
-        return instance;
     }
 
     static recycle(instance) {
