@@ -268,7 +268,7 @@ export default class {
             cabinet: this,
             offsetX: -.25,
             oscillationDirection: 1,
-            onShootCoin: ({ position, impulse }) => Coins.depositCoin({ position, impulse }),
+            onShootCoin: ({ position, impulse }) => Coins.deposit({ position, impulse }),
             groups: GROUPS
         });
         this.#rightTower = new Tower({
@@ -276,13 +276,13 @@ export default class {
             cabinet: this,
             offsetX: .25,
             oscillationDirection: -1,
-            onShootCoin: ({ position, impulse }) => Coins.depositCoin({ position, impulse }),
+            onShootCoin: ({ position, impulse }) => Coins.deposit({ position, impulse }),
             groups: GROUPS
         });
         this.#coinRoller = new CoinRoller({
             scene,
             cabinet: this,
-            onInitializeCoin: ({ position, rotation }) => Coins.depositCoin({ position, rotation }),
+            onInitializeCoin: ({ position, rotation }) => Coins.deposit({ position, rotation }),
             onGameLost: () => this.#controlPanel.disableShootButton(),
             onBonusWon: bonus => {
                 Coins.dropCoins({ count: Math.pow(bonus + 1, 2) * 5 });
@@ -293,20 +293,20 @@ export default class {
         this.#stacker = new Stacker({
             scene,
             cabinet: this,
-            onInitializeCoin: ({ position, rotation, impulse }) => Coins.depositCoin({ position, rotation, impulse }),
+            onInitializeCoin: ({ position, rotation, impulse }) => Coins.deposit({ position, rotation, impulse }),
             groups: GROUPS
         });
         this.#leftStacker = new MiniStacker({
             scene,
             cabinet: this,
-            onInitializeCoin: ({ position, rotation, impulse }) => Coins.depositCoin({ position, rotation, impulse }),
+            onInitializeCoin: ({ position, rotation, impulse }) => Coins.deposit({ position, rotation, impulse }),
             offsetX: -0.4,
             groups: GROUPS
         });
         this.#rightStacker = new MiniStacker({
             scene,
             cabinet: this,
-            onInitializeCoin: ({ position, rotation, impulse }) => Coins.depositCoin({ position, rotation, impulse }),
+            onInitializeCoin: ({ position, rotation, impulse }) => Coins.deposit({ position, rotation, impulse }),
             offsetX: 0.4,
             groups: GROUPS
         });
