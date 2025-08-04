@@ -1,5 +1,5 @@
 import * as rapier from "@dimforge/rapier3d-simd";
-import Game from "./components/game.js";
+import Game from "./lib/index.js";
 
 Game.DEBUG_EMPTY_POOL = 0
 Game.DEBUG_AUTOPLAY = 0
