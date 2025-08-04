@@ -83,24 +83,6 @@ export default class {
         return instance;
     }
 
-    static dropIngot() {
-        const instance = this.#instances.find(instance => !instance.used);
-        instance.used = true;
-        initializePosition({ instance });
-        instance.body.setEnabled(true);
-    }
-
-    static depositIngots({ position, count }) {
-        for (let indexIngot = 0; indexIngot < count; indexIngot++) {
-            const instance = this.#instances.find(instance => !instance.used);
-            instance.used = true;
-            position.x = Math.random() * INITIAL_POSITION_DELTA_X - INITIAL_POSITION_DELTA_X / 2;
-            const rotation = new Vector3(0, 0, 0);
-            initializePosition({ instance, position, rotation });
-            instance.body.setEnabled(true);
-        }
-    }
-
     static recycle(instance) {
         instance.used = false;
         instance.body.setEnabled(false);

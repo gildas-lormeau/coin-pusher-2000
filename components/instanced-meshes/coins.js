@@ -128,22 +128,6 @@ export default class {
         }
     }
 
-    static depositCoins({ position, count }) {
-        position.x = -0.3;
-        for (let indexCoin = 0; indexCoin < count; indexCoin++) {
-            const instance = this.#instances.find(instance => !instance.used);
-            instance.used = true;
-            position.x += RADIUS * 2;
-            if (position.x > 0.3) {
-                position.x = -0.3;
-                position.z -= RADIUS * 2;
-            }
-            const rotation = new Vector3(0, 0, 0);
-            initializePosition({ instance, position, rotation });
-            instance.body.setEnabled(true);
-        }
-    }
-
     static recycle(instance) {
         instance.used = false;
         instance.body.setEnabled(false);

@@ -90,24 +90,6 @@ export default class {
         return instance;
     }
 
-    static dropToken({ type }) {
-        const instance = this.#instances[type].find(instance => !instance.used);
-        instance.used = true;
-        initializePosition({ instance });
-        instance.body.setEnabled(true);
-    }
-
-    static depositTokens({ position, count }) {
-        for (let indexToken = 0; indexToken < count; indexToken++) {
-            const instance = this.#instances[Math.floor(Math.random() * (TYPES - 1))].find(instance => !instance.used);
-            instance.used = true;
-            position.x = Math.random() * INITIAL_POSITION_DELTA_X - INITIAL_POSITION_DELTA_X / 2;
-            const rotation = new Vector3(0, 0, 0);
-            initializePosition({ instance, position, rotation });
-            instance.body.setEnabled(true);
-        }
-    }
-
     static recycle(instance) {
         instance.used = false;
         instance.body.setEnabled(false);
