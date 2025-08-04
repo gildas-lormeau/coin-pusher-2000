@@ -6,8 +6,6 @@ const WIDTH = 0.175;
 const HEIGHT = 0.11;
 const DEPTH = 0.005;
 const INITIAL_POSITION = [0, .6, .5];
-const INITIAL_POSITION_DELTA_X = 0.2;
-const INITIAL_POSITION_DELTA_Z = 0.2;
 const INITIAL_HIDDEN_POSITION = [0, 0, 0];
 const INITIAL_HIDDEN_ROTATION = [0, 0, 0, 1];
 const INITIAL_HIDDEN_LINEAR_VELOCITY = new Vector3(0, 0, 0);
@@ -21,7 +19,7 @@ const ANGULAR_DAMPING = 0;
 const LINEAR_DAMPING = 0;
 const FRICTION = 0.1;
 const RESTITUTION = 0.1;
-const DENSITY = 0.8;
+const DENSITY = 1;
 const MODEL_PATH = "./assets/card.glb";
 const COLORS = [
     { color: 0xffffff, background: 0x0031e7 },
@@ -244,11 +242,7 @@ function initializePosition({ instance, hidden, position, rotation, }) {
         if (position) {
             instance.position.copy(position);
         } else {
-            instance.position.fromArray([
-                INITIAL_POSITION[0] + (Math.random() * INITIAL_POSITION_DELTA_X) - INITIAL_POSITION_DELTA_X / 2,
-                INITIAL_POSITION[1],
-                INITIAL_POSITION[2] + (Math.random() * INITIAL_POSITION_DELTA_Z) - INITIAL_POSITION_DELTA_Z / 2
-            ]);
+            instance.position.fromArray(INITIAL_POSITION);
         }
         if (rotation) {
             instance.rotation.setFromEuler(new Euler(rotation.x, rotation.y, rotation.z));

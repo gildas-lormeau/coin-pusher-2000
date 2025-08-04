@@ -6,8 +6,6 @@ const WIDTH = 0.15;
 const HEIGHT = 0.075;
 const DEPTH = 0.02;
 const INITIAL_POSITION = [0, .6, .5];
-const INITIAL_POSITION_DELTA_X = 0.2;
-const INITIAL_POSITION_DELTA_Z = 0.2;
 const INITIAL_HIDDEN_POSITION = [0, 0, 0];
 const INITIAL_HIDDEN_ROTATION = [0, 0, 0, 1];
 const INITIAL_HIDDEN_LINEAR_VELOCITY = new Vector3(0, 0, 0);
@@ -38,11 +36,10 @@ export default class {
         const { materials, geometries } = await initializeModel({ scene });
         this.#meshes = initializeInstancedMeshes({ scene, materials, geometries });
         this.#instances = [];
-        const colliderData = scene.mergeGeometries(geometries);
         createInstances({
             scene,
             instances: this.#instances,
-            colliderData,
+            colliderData: scene.mergeGeometries(geometries),
             groups
         });
     }
@@ -210,11 +207,7 @@ function initializePosition({ instance, hidden, position, rotation, }) {
         if (position) {
             instance.position.copy(position);
         } else {
-            instance.position.fromArray([
-                INITIAL_POSITION[0] + (Math.random() * INITIAL_POSITION_DELTA_X) - INITIAL_POSITION_DELTA_X / 2,
-                INITIAL_POSITION[1],
-                INITIAL_POSITION[2] + (Math.random() * INITIAL_POSITION_DELTA_Z) - INITIAL_POSITION_DELTA_Z / 2
-            ]);
+            instance.position.fromArray(INITIAL_POSITION);
         }
         if (rotation) {
             instance.rotation.setFromEuler(new Euler(rotation.x, rotation.y, rotation.z));
