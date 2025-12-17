@@ -345,8 +345,14 @@ export default class {
                 this.#cabinet.state.coins = 100;
                 this.#cabinet.state.score = 0;
                 this.#cabinet.state.points = 0;
+                postDappMessage("coin-pusher:start", getDappEmbedContext());
             },
             onFinishedGame: () => {
+                postDappMessage("coin-pusher:finished", {
+                    ...getDappEmbedContext(),
+                    score: this.#cabinet.state.score,
+                    points: this.#cabinet.state.points,
+                });
                 this.#cabinet.state.coins = 0;
                 this.#controlPanel.enableStartButton();
                 this.#controlPanel.disableDropButtons();
@@ -633,6 +639,38 @@ export default class {
         }
         this.lastPhase = this.#pusher.phase;
     }
+}
+
+function getDappEmbedContext() {
+    if (typeof window === "undefined") {
+        return {};
+    }
+    try {
+        const params = new URLSearchParams(window.location.search);
+        const match = params.get("match");
+        const player = params.get("player");
+        return {
+            ...(match ? { match } : {}),
+            ...(player ? { player } : {}),
+        };
+    } catch {
+        return {};
+    }
+}
+
+function postDappMessage(type, payload) {
+    if (typeof window === "undefined") {
+        return;
+    }
+    if (!window.parent || window.parent === window) {
+        return;
+    }
+    const targetOrigin = window.location.origin === "null" ? "*" : window.location.origin;
+    window.parent.postMessage({
+        source: "coin-pusher-2000",
+        type,
+        ...payload
+    }, targetOrigin);
 }
 
 async function initializeModel({ scene, DEBUG_HIDE_CABINET }) {
